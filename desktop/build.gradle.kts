@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "info.socrtwo.quillbox"
-version = "1.3.0"
+version = "1.4.0"
 
 repositories {
     google()
@@ -63,7 +63,7 @@ compose.desktop {
             // .dmg builds on macOS, .msi on Windows, .deb on Linux (x64 and arm64 / Raspberry Pi OS).
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Quillbox"
-            packageVersion = "1.3.0"
+            packageVersion = "1.4.0"
             description = "Quillbox email client with junk protection"
             vendor = "socrtwo"
             // JDK modules the embedded server needs (Netty, TLS, logging, the tray icon).

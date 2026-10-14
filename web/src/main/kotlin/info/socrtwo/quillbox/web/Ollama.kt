@@ -81,6 +81,24 @@ class Ollama(private val cfg: OllamaConfigDto) {
         }.getOrElse { LlmAssessmentDto(cfg.model, true, error = it.message ?: "Ollama request failed") }
     }
 
+    /** Translates [text] into [language] with the local model; the text never leaves this machine. */
+    fun translate(text: String, language: String): String {
+        require(cfg.enabled) { "Turn on a local Ollama model under Settings → AI models to translate messages on this machine" }
+        val payload = buildJsonObject {
+            put("model", cfg.model)
+            put("stream", false)
+            put("options", buildJsonObject { put("temperature", 0.1) })
+            put("messages", buildJsonArray {
+                add(buildJsonObject { put("role", "system"); put("content", "You are a professional translator. Translate the user's email into $language. Keep the paragraph breaks, names, numbers and links. Output only the translation, with no preface or notes.") })
+                add(buildJsonObject { put("role", "user"); put("content", text.take(12_000)) })
+            })
+        }
+        val res = Http.postJson(cfg.url.trimEnd('/') + "/api/chat", payload.toString(), timeoutMs = 300_000)
+        if (res.status != 200) throw IllegalArgumentException("Ollama HTTP ${res.status}: ${res.body.take(200)}")
+        return json.parseToJsonElement(res.body).jsonObject["message"]?.jsonObject?.get("content")?.jsonPrimitive?.content?.trim()
+            ?: throw IllegalArgumentException("The model returned no translation")
+    }
+
     private fun extractJson(s: String): String {
         val start = s.indexOf('{'); val end = s.lastIndexOf('}')
         return if (start >= 0 && end > start) s.substring(start, end + 1) else "{}"

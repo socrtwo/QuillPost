@@ -25,9 +25,11 @@ fun main() {
     val green = GreenMail(arrayOf(ServerSetup(imapPort, "127.0.0.1", ServerSetup.PROTOCOL_IMAP), ServerSetup(smtpPort, "127.0.0.1", ServerSetup.PROTOCOL_SMTP)))
     green.start()
     val user = green.setUser("demo@quillbox.test", "demo@quillbox.test", "demo")
+    val second = green.setUser("second@quillbox.test", "second@quillbox.test", "second")
     val session = Session.getInstance(Properties())
     for (raw in DemoMail.messages()) user.deliver(MimeMessage(session, ByteArrayInputStream(raw.toByteArray())))
-    println("Demo IMAP on 127.0.0.1:$imapPort, SMTP on 127.0.0.1:$smtpPort — sign in as demo@quillbox.test / demo")
+    for (raw in DemoMail.secondMessages()) second.deliver(MimeMessage(session, ByteArrayInputStream(raw.toByteArray())))
+    println("Demo IMAP on 127.0.0.1:$imapPort, SMTP on 127.0.0.1:$smtpPort — sign in as demo@quillbox.test / demo (second account: second@quillbox.test / second)")
     embeddedServer(Netty, port = port, host = "0.0.0.0") { module() }.start(wait = true)
 }
 
@@ -80,12 +82,65 @@ object DemoMail {
             "--$outer\r\nContent-Type: application/pdf; name=\"minutes.pdf\"\r\nContent-Disposition: attachment; filename=\"minutes.pdf\"\r\nContent-Transfer-Encoding: base64\r\n\r\nJVBERi0xLjQKJcOkw7zDtsOfCjEgMCBvYmoKPDwvVHlwZS9DYXRhbG9nPj4KZW5kb2JqCnRyYWlsZXIKPDwvUm9vdCAxIDAgUj4+CiUlRU9G\r\n--$outer--\r\n"
     }
 
+    private fun messageId(from: String, subject: String) = "<${subject.hashCode().toString(16)}.${from.hashCode().toString(16)}@demo>"
+
+    private const val JANE = "Jane Smith <jane.smith@example.com>"
+    private const val TOM = "Tom Rivera <tom@riveraconsulting.example>"
+
+    /** A meeting request as Outlook and Google Calendar send it: text/plain + text/calendar; method=REQUEST. */
+    private fun invitation(): String {
+        val boundary = "==qb-invite"
+        val ics = listOf(
+            "BEGIN:VCALENDAR", "PRODID:-//Example Corp//Calendar 1.0//EN", "VERSION:2.0", "METHOD:REQUEST",
+            "BEGIN:VTIMEZONE", "TZID:Eastern Standard Time",
+            "BEGIN:STANDARD", "DTSTART:16011104T020000", "RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=11", "TZOFFSETFROM:-0400", "TZOFFSETTO:-0500", "END:STANDARD",
+            "BEGIN:DAYLIGHT", "DTSTART:16010311T020000", "RRULE:FREQ=YEARLY;BYDAY=2SU;BYMONTH=3", "TZOFFSETFROM:-0500", "TZOFFSETTO:-0400", "END:DAYLIGHT",
+            "END:VTIMEZONE",
+            "BEGIN:VEVENT", "UID:board-meeting-2026@example.com", "SEQUENCE:0", "DTSTAMP:20260928T130000Z",
+            "DTSTART;TZID=Eastern Standard Time:20261110T100000", "DTEND;TZID=Eastern Standard Time:20261110T113000",
+            "RRULE:FREQ=MONTHLY;BYDAY=2TU;COUNT=12",
+            "SUMMARY:Historical Society board meeting", "LOCATION:Library annex, room 2",
+            "DESCRIPTION:Monthly board meeting. Agenda to follow.",
+            "ORGANIZER;CN=Jane Smith:mailto:jane.smith@example.com",
+            "ATTENDEE;CN=Paul;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:demo@quillbox.test",
+            "ATTENDEE;CN=Tom Rivera;ROLE=OPT-PARTICIPANT;PARTSTAT=ACCEPTED:mailto:tom@riveraconsulting.example",
+            "END:VEVENT", "END:VCALENDAR"
+        ).joinToString("\r\n")
+        val head = listOf(
+            "Return-Path: <jane.smith@example.com>", recv("203.0.113.10", "mail.example.com", "spf=pass; dkim=pass header.d=example.com; dmarc=pass"),
+            "From: $JANE", "To: demo@quillbox.test", "Subject: Invitation: Historical Society board meeting",
+            "Date: Mon, 28 Sep 2026 13:00:00 +0000", "Message-ID: <invite.board-meeting@demo>", "MIME-Version: 1.0",
+            "Content-Type: multipart/alternative; boundary=\"$boundary\""
+        ).joinToString("\r\n").replace("\r\n", "\n").replace("\n", "\r\n")
+        return head + "\r\n\r\n" +
+            "--$boundary\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nYou are invited to the Historical Society board meeting, the second Tuesday of each month at 10:00 Eastern, starting 10 November 2026.\r\n" +
+            "--$boundary\r\nContent-Type: text/calendar; charset=utf-8; method=REQUEST\r\n\r\n$ics\r\n--$boundary--\r\n"
+    }
+
+    fun secondMessages(): List<String> = listOf(
+        msg("Genealogy Forum <digest@genforum.example>", "Weekly digest: Pruitt family queries", "Three new posts this week mention the Pruitt surname in Tennessee and Kentucky.\n\nRead them at https://genforum.example/pruitt",
+            recv("203.0.113.70", "mail.genforum.example", "spf=pass; dkim=pass header.d=genforum.example; dmarc=pass"), date = "Tue, 29 Sep 2026 07:00:00 +0000", to = "second@quillbox.test"),
+        msg(JANE, "Second-account test message", "This message lives only in the second demo account.\n\nJane",
+            recv("203.0.113.10", "mail.example.com", "spf=pass; dkim=pass header.d=example.com; dmarc=pass"), date = "Mon, 28 Sep 2026 16:00:00 +0000", to = "second@quillbox.test")
+    )
+
     fun messages(): List<String> = listOf(
+        invitation(),
+        msg(TOM, "Re: VBA macro for the quarterly report", "Paul,\n\nOne more fix: the macro now skips hidden sheets. Totals reconcile on my copy of the ledger.\n\nTom\n\n> Thanks Tom, I'll test it tonight.",
+            recv("203.0.113.90", "mail.riveraconsulting.example", "spf=pass; dkim=pass header.d=riveraconsulting.example; dmarc=pass") +
+                "\r\nIn-Reply-To: ${messageId(TOM, "VBA macro for the quarterly report")}\r\nReferences: ${messageId(TOM, "VBA macro for the quarterly report")}",
+            date = "Sun, 27 Sep 2026 19:40:00 +0000"),
+        msg("Margaret Ellis <margaret.ellis@example.org>", "Please confirm you received the bylaws draft", "Paul,\n\nCould you confirm you received the bylaws draft? I've asked for a read receipt so I know it arrived.\n\nMargaret",
+            recv("203.0.113.15", "mail.example.org", "spf=pass; dkim=pass header.d=example.org; dmarc=pass") + "\r\nDisposition-Notification-To: margaret.ellis@example.org",
+            date = "Sun, 27 Sep 2026 10:05:00 +0000"),
+        msg("Dan Hughes <dan.hughes@example.net>", "Server room access changes tomorrow", "Paul,\n\nHeads up: badge access to the server room changes at 8am tomorrow. Pick up your new badge from the front desk before 10.\n\nDan",
+            recv("203.0.113.33", "mail.example.net", "spf=pass; dkim=pass header.d=example.net; dmarc=pass") + "\r\nImportance: High\r\nX-Priority: 1 (Highest)",
+            date = "Sat, 26 Sep 2026 17:30:00 +0000"),
         withAttachment("Historical Society <secretary@localhistory.example>", "Minutes and photos from the September meeting",
             "Dear members,\n\nThe minutes from September are attached. The photo from the archive visit is below.\n\nRegards,\nAnne",
             "<html><body style='font-family:Segoe UI,Arial'><p>Dear members,</p><p>The minutes from September are attached. The photo from the archive visit is below.</p><p><img src='cid:logo@demo' width='64' height='64' alt='society logo'> <img src='https://tracker.example.net/pixel.gif?id=42' width='1' height='1'> <img src='https://images.example.net/archive.jpg' width='320' alt='archive visit'></p><p>Regards,<br>Anne</p></body></html>",
             "Sat, 26 Sep 2026 08:05:00 +0000", recv("203.0.113.44", "mail.localhistory.example", "spf=pass; dkim=pass header.d=localhistory.example; dmarc=pass")),
-        msg("Jane Smith <jane.smith@example.com>", "Re: Census record for great-grandfather", "Hi Paul,\n\nI found the 1910 census page you asked about — the surname is spelled \"Pruit\" there. Scan attached next time; the archive's scanner was down today.\n\nJane\n\n> Could you look for the 1910 census entry?",
+        msg(JANE, "Re: Census record for great-grandfather", "Hi Paul,\n\nI found the 1910 census page you asked about — the surname is spelled \"Pruit\" there. Scan attached next time; the archive's scanner was down today.\n\nJane\n\n> Could you look for the 1910 census entry?",
             recv("203.0.113.10", "mail.example.com", "spf=pass smtp.mailfrom=example.com; dkim=pass header.d=example.com; dmarc=pass header.from=example.com"), date = "Fri, 25 Sep 2026 14:20:00 +0000"),
         msg("PayPal <service@paypal.com>", "Receipt for your payment to Ancestry.com", "Hello Paul,\n\nYou sent a payment of $24.99 USD to Ancestry.com. Transaction ID 7HK21.\n\nThanks for using PayPal.\nThe PayPal Team",
             recv("173.0.84.226", "mx1.phx.paypal.com", "spf=pass smtp.mailfrom=paypal.com; dkim=pass header.d=paypal.com; dmarc=pass (p=REJECT) header.from=paypal.com"), date = "Fri, 25 Sep 2026 11:02:00 +0000"),
@@ -101,7 +156,7 @@ object DemoMail {
             recv("203.0.113.55", "mail.typographyweekly.example", "spf=pass; dkim=pass header.d=typographyweekly.example; dmarc=pass") + "\r\nList-Unsubscribe: <https://typographyweekly.example/unsub?u=42>\r\nPrecedence: bulk", date = "Thu, 24 Sep 2026 12:00:00 +0000"),
         msg("USPS <usps-delivery@track-parcel-status.info>", "USPS: Your package could not be delivered", "We attempted to deliver your package but the address was incomplete. Please confirm your address and pay the \$1.95 redelivery fee within 48 hours: http://198.51.100.23/usps/redeliver\n\nUnited States Postal Service",
             recv("198.51.100.23", "unknown", "spf=none; dkim=none; dmarc=none"), date = "Thu, 24 Sep 2026 07:45:00 +0000"),
-        msg("Tom Rivera <tom@riveraconsulting.example>", "VBA macro for the quarterly report", "Paul,\n\nAttached is the revised macro — it now handles the merged cells in the summary sheet and no longer throws on empty rows. Let me know if the totals reconcile with the ledger.\n\nTom",
+        msg(TOM, "VBA macro for the quarterly report", "Paul,\n\nAttached is the revised macro — it now handles the merged cells in the summary sheet and no longer throws on empty rows. Let me know if the totals reconcile with the ledger.\n\nTom",
             recv("203.0.113.90", "mail.riveraconsulting.example", "spf=pass; dkim=pass header.d=riveraconsulting.example; dmarc=pass"), date = "Wed, 23 Sep 2026 16:05:00 +0000"),
         msg("Lucky Winner Dept <claims@intl-lottery-payout.biz>", "CONGRATULATIONS!!! You have won \$2,500,000.00", "Dear Beneficiary,\n\nYou have been selected as the lucky winner of the International Email Lottery. To claim your prize money, kindly reply with your full name, address, date of birth and bank details.\n\nMr. Ade Williams\nClaims Agent",
             recv("198.51.100.77", "vps-77.cheaphost.example", "spf=softfail; dkim=none; dmarc=none"), date = "Wed, 23 Sep 2026 03:12:00 +0000"),

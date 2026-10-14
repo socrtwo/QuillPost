@@ -53,6 +53,10 @@ class SpamEngine(
                 RuleAction.DELETE -> "delete"
                 RuleAction.FLAG -> "flag"
                 RuleAction.MARK_SAFE -> "never treat as junk"
+                RuleAction.COPY_TO_FOLDER -> "copy to ${r.targetFolder}"
+                RuleAction.CATEGORIZE -> "categorize as ${r.categories.joinToString(", ")}"
+                RuleAction.PIN -> "pin"
+                RuleAction.FORWARD_TO -> "forward to ${r.forwardTo}"
             }
             val w = when {
                 r.action == RuleAction.MARK_SAFE -> -100

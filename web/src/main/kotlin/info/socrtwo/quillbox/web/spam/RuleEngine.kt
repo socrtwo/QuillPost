@@ -1,9 +1,9 @@
 package info.socrtwo.quillbox.web.spam
 
-enum class RuleField { SENDER, SENDER_NAME, SENDER_DOMAIN, SUBJECT, BODY, RECIPIENT, ATTACHMENT_NAME }
+enum class RuleField { SENDER, SENDER_NAME, SENDER_DOMAIN, SUBJECT, BODY, RECIPIENT, ATTACHMENT_NAME, CC, TO_OR_CC, HAS_ATTACHMENT, IMPORTANCE }
 enum class RuleOperator { CONTAINS, NOT_CONTAINS, EQUALS, STARTS_WITH, ENDS_WITH, MATCHES_REGEX }
 enum class RuleLogic { AND, OR }
-enum class RuleAction { MOVE_TO_FOLDER, MARK_READ, DELETE, FLAG, MARK_SAFE }
+enum class RuleAction { MOVE_TO_FOLDER, MARK_READ, DELETE, FLAG, MARK_SAFE, COPY_TO_FOLDER, CATEGORIZE, PIN, FORWARD_TO }
 
 data class RuleCriterion(val field: RuleField, val operator: RuleOperator = RuleOperator.CONTAINS, val value: String)
 
@@ -23,7 +23,11 @@ data class Rule(
     val createdAt: Long = System.currentTimeMillis(),
     val note: String = "",
     /** How many messages this rule has acted on. */
-    val hitCount: Int = 0
+    val hitCount: Int = 0,
+    /** Categories assigned by [RuleAction.CATEGORIZE]. */
+    val categories: List<String> = emptyList(),
+    /** Recipient for [RuleAction.FORWARD_TO]. */
+    val forwardTo: String = ""
 )
 
 data class RuleOutcome(
@@ -49,6 +53,7 @@ object RuleEngine {
                 RuleAction.DELETE -> RuleOutcome(rule, delete = true)
                 RuleAction.FLAG -> RuleOutcome(rule, flag = true)
                 RuleAction.MARK_SAFE -> RuleOutcome(rule, safe = true)
+                RuleAction.COPY_TO_FOLDER, RuleAction.CATEGORIZE, RuleAction.PIN, RuleAction.FORWARD_TO -> RuleOutcome(rule)
             }
         }
         return RuleOutcome()
@@ -69,6 +74,11 @@ object RuleEngine {
             RuleField.BODY -> listOf(facts.bodyText.ifBlank { facts.bodyHtml?.let { HeaderParser.htmlToText(it) } ?: "" })
             RuleField.RECIPIENT -> facts.toAddresses.ifEmpty { listOf("") }
             RuleField.ATTACHMENT_NAME -> facts.attachmentNames.ifEmpty { listOf("") }
+            RuleField.CC -> facts.ccAddresses.ifEmpty { listOf("") }
+            RuleField.TO_OR_CC -> (facts.toAddresses + facts.ccAddresses).ifEmpty { listOf("") }
+            // Flag-style conditions: the value says which state matches ("true"/"false", "high"/"low").
+            RuleField.HAS_ATTACHMENT -> return facts.attachmentNames.isNotEmpty() == !c.value.trim().equals("false", true)
+            RuleField.IMPORTANCE -> return facts.importance.equals(c.value.trim(), ignoreCase = true)
         }
         val value = c.value.trim()
         if (value.isEmpty()) return false
@@ -94,6 +104,10 @@ object RuleEngine {
             RuleField.BODY -> "body"
             RuleField.RECIPIENT -> "recipient"
             RuleField.ATTACHMENT_NAME -> "attachment name"
+            RuleField.CC -> "Cc"
+            RuleField.TO_OR_CC -> "To or Cc"
+            RuleField.HAS_ATTACHMENT -> return if (c.value.equals("false", true)) "has no attachment" else "has an attachment"
+            RuleField.IMPORTANCE -> return "importance is ${c.value.lowercase()}"
         }
         val op = when (c.operator) {
             RuleOperator.CONTAINS -> "contains"

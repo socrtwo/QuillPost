@@ -13,8 +13,8 @@ targets:
       path: Quillbox/Info.plist
       properties:
         CFBundleDisplayName: Quillbox
-        CFBundleShortVersionString: "1.3.0"
-        CFBundleVersion: "4"
+        CFBundleShortVersionString: "1.4.0"
+        CFBundleVersion: "5"
         UILaunchScreen:
           UIColorName: LaunchBackground
           UIImageName: LaunchLogo
@@ -40,8 +40,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: info.socrtwo.quillbox
-        MARKETING_VERSION: "1.3.0"
-        CURRENT_PROJECT_VERSION: 4
+        MARKETING_VERSION: "1.4.0"
+        CURRENT_PROJECT_VERSION: 5
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

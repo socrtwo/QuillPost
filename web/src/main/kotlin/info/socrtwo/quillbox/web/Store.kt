@@ -63,7 +63,13 @@ class DataStore(rootDir: File? = null) {
                 ?: BlacklistDefDto(def.id, def.label, def.zone, def.kind, def.weight, def.enabled, true, def.homepage)
         } + s.spam.blacklists.filter { !it.builtIn && it.id !in catalogue.map { c -> c.id } }
         val rules = if (s.rules.isEmpty() && s.version < 1) defaultRules() else s.rules
-        return s.copy(version = 1, rules = rules, spam = s.spam.copy(blacklists = merged))
+        // Version 2 replaced the single signature with named signatures.
+        var out = s.copy(version = 2, rules = rules, spam = s.spam.copy(blacklists = merged))
+        if (s.version < 2 && s.signature.isNotBlank() && s.signatures.isEmpty()) {
+            val html = s.signature.split("\n").joinToString("<br>") { it.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") }
+            out = out.copy(signatures = listOf(SignatureDto("sig-default", "Signature", html)), defaultSignatureNew = "sig-default", defaultSignatureReply = "sig-default")
+        }
+        return out
     }
 
     fun defaultRules(): List<RuleDto> = listOf(
@@ -126,7 +132,24 @@ class DataStore(rootDir: File? = null) {
         writeAtomic(File(accountDir(email), "analysis-cache.json"), Json { ignoreUnknownKeys = true; encodeDefaults = true }.encodeToString(trimmed))
     }
 
-    private fun writeAtomic(target: File, content: String) {
+    private val compact = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+    /** Reads `name` from the account directory, or null when missing or unreadable. */
+    fun <T> loadJson(email: String, name: String, serializer: kotlinx.serialization.KSerializer<T>): T? {
+        val f = File(accountDir(email), name)
+        if (!f.exists()) return null
+        return runCatching { compact.decodeFromString(serializer, f.readText()) }.getOrElse {
+            // Keep a copy of an unreadable file instead of silently overwriting it later.
+            runCatching { f.copyTo(File(f.parentFile, "$name.corrupt-${System.currentTimeMillis()}"), overwrite = false) }
+            null
+        }
+    }
+
+    fun <T> saveJson(email: String, name: String, serializer: kotlinx.serialization.KSerializer<T>, value: T) {
+        writeAtomic(File(accountDir(email), name), compact.encodeToString(serializer, value))
+    }
+
+    internal fun writeAtomic(target: File, content: String) {
         target.parentFile.mkdirs()
         val tmp = File(target.parentFile, target.name + ".tmp")
         tmp.writeText(content)

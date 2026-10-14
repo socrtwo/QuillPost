@@ -82,7 +82,26 @@ data class SendRequest(
     /** When replying, the original message so it can be flagged \Answered. */
     val replyTo: MessageRef? = null,
     /** Draft UID to delete after a successful send. */
-    val draftUid: Long? = null
+    val draftUid: Long? = null,
+    /** One of the account's aliases to send as (defaults to the account address). */
+    val from: String? = null,
+    /** Reply-To override ("Direct replies to"). */
+    val replyToAddress: String? = null,
+    /** "high", "normal" or "low". */
+    val importance: String? = null,
+    val readReceipt: Boolean = false,
+    val deliveryReceipt: Boolean = false,
+    /** Messages to attach whole (forward as attachment). */
+    val attachMessages: List<MessageRef> = emptyList(),
+    /** When forwarding: the original, so it can be marked as forwarded. */
+    val forwardOf: MessageRef? = null,
+    /** Epoch ms; a time in the future queues the message in the Scheduled folder. */
+    val sendAt: Long? = null,
+    /** Extra MIME parts, e.g. an iCalendar invitation. Not exposed to the UI. */
+    val calendarPart: String? = null,
+    val calendarMethod: String? = null,
+    /** Extra headers (Auto-Submitted for automatic replies). */
+    val extraHeaders: Map<String, String> = emptyMap()
 )
 
 @Serializable
@@ -178,7 +197,20 @@ data class MessageSummaryDto(
     val answered: Boolean,
     val hasAttachments: Boolean,
     val size: Long,
-    val verdict: VerdictDto? = null
+    val verdict: VerdictDto? = null,
+    val cc: List<String> = emptyList(),
+    val inReplyTo: String? = null,
+    /** Message-IDs from References (oldest first), for conversation grouping. */
+    val references: List<String> = emptyList(),
+    val importance: String = "normal",
+    /** Focused Inbox: false = belongs under Other. */
+    val focused: Boolean = true,
+    val forwarded: Boolean = false,
+    val categories: List<String> = emptyList(),
+    val pinned: Boolean = false,
+    val flagDue: String? = null,
+    val flagCompleted: Boolean = false,
+    val snoozeUntil: Long? = null
 )
 
 @Serializable
@@ -213,7 +245,18 @@ data class MessageDetailDto(
     val references: String? = null,
     val listUnsubscribe: String? = null,
     val headers: Map<String, String> = emptyMap(),
-    val verdict: VerdictDto? = null
+    val verdict: VerdictDto? = null,
+    val importance: String = "normal",
+    val forwarded: Boolean = false,
+    /** Address the sender asked a read receipt to go to, when not yet sent. */
+    val readReceiptTo: String? = null,
+    val invite: InviteDto? = null,
+    val categories: List<String> = emptyList(),
+    val pinned: Boolean = false,
+    val flagDue: String? = null,
+    val flagCompleted: Boolean = false,
+    val snoozeUntil: Long? = null,
+    val bcc: List<String> = emptyList()
 )
 
 @Serializable
@@ -269,7 +312,9 @@ data class DraftRequest(
     val body: String = "",
     val html: String? = null,
     val inReplyTo: String? = null,
-    val references: String? = null
+    val references: String? = null,
+    val attachments: List<OutgoingAttachmentDto> = emptyList(),
+    val importance: String? = null
 )
 
 @Serializable
@@ -295,7 +340,9 @@ data class RuleDto(
     val createdBy: String = "user",
     val createdAt: Long = 0,
     val note: String = "",
-    val hitCount: Int = 0
+    val hitCount: Int = 0,
+    val categories: List<String> = emptyList(),
+    val forwardTo: String = ""
 )
 
 @Serializable
@@ -346,7 +393,29 @@ data class AccountSettingsDto(
     /** Senders whose remote images may load automatically. */
     val imageSenders: List<String> = emptyList(),
     /** Local-only junk marks for POP3 accounts (server cannot move messages). */
-    val pop3Junk: List<String> = emptyList()
+    val pop3Junk: List<String> = emptyList(),
+    val categories: List<CategoryDto> = DEFAULT_CATEGORIES,
+    val signatures: List<SignatureDto> = emptyList(),
+    val defaultSignatureNew: String? = null,
+    val defaultSignatureReply: String? = null,
+    val templates: List<TemplateDto> = emptyList(),
+    val quickSteps: List<QuickStepDto> = DEFAULT_QUICK_STEPS,
+    val autoReply: AutoReplyDto = AutoReplyDto(),
+    val focused: FocusedDto = FocusedDto(),
+    /** Folder paths shown under Favorites. */
+    val favorites: List<String> = emptyList(),
+    /** Extra From addresses this account may send as. */
+    val aliases: List<String> = emptyList()
+)
+
+val DEFAULT_CATEGORIES = listOf(
+    CategoryDto("Red category", "#d13438"), CategoryDto("Orange category", "#ca5010"), CategoryDto("Yellow category", "#c19c00"),
+    CategoryDto("Green category", "#107c10"), CategoryDto("Blue category", "#0f6cbd"), CategoryDto("Purple category", "#8764b8")
+)
+
+val DEFAULT_QUICK_STEPS = listOf(
+    QuickStepDto("qs-done", "Done", listOf(QuickActionDto("MARK_READ"), QuickActionDto("ARCHIVE"))),
+    QuickStepDto("qs-flag-read", "Flag & mark read", listOf(QuickActionDto("FLAG"), QuickActionDto("MARK_READ")))
 )
 
 @Serializable

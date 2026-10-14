@@ -16,6 +16,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -26,6 +27,7 @@ import jakarta.mail.MessagingException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import org.slf4j.LoggerFactory
 
 private val log = LoggerFactory.getLogger("quillbox")
@@ -43,35 +45,10 @@ fun Application.module() {
     val sessions = Sessions(store, blacklists)
     log.info("Quillbox data directory: ${store.root.absolutePath}")
 
-    fun ApplicationCall.token(): String? =
-        request.header(HttpHeaders.Authorization)?.removePrefix("Bearer ")?.trim()?.takeIf { it.isNotBlank() }
-            ?: request.queryParameters["token"]
-
     fun ApplicationCall.ctx(): AccountContext = sessions.get(token())
 
-    suspend fun ApplicationCall.handle(block: suspend () -> Any?) {
-        try {
-            when (val result = block()) {
-                null -> respond(HttpStatusCode.NotFound, ApiError("Not found"))
-                is Unit -> respond(ApiStatus("ok"))
-                else -> respond(result)
-            }
-        } catch (e: AuthException) {
-            respond(HttpStatusCode.Unauthorized, ApiError(e.message ?: "Not signed in"))
-        } catch (e: AuthenticationFailedException) {
-            respond(HttpStatusCode.BadGateway, ApiError(friendlyAuthError(e)))
-        } catch (e: MessagingException) {
-            log.warn("Mail error: ${e.message}")
-            respond(HttpStatusCode.BadGateway, ApiError(e.message ?: "Mail server error"))
-        } catch (e: IllegalArgumentException) {
-            respond(HttpStatusCode.BadRequest, ApiError(e.message ?: "Bad request"))
-        } catch (e: Exception) {
-            log.error("Unhandled error", e)
-            respond(HttpStatusCode.InternalServerError, ApiError(e.message ?: e.javaClass.simpleName))
-        }
-    }
-
     routing {
+        extraRoutes(sessions)
         // The UI (index.html, styles.css, app.js) is read straight from the class path. This
         // deliberately avoids Ktor's file/jar resource resolution so it also works when the
         // resources live inside an Android APK.
@@ -156,7 +133,7 @@ fun Application.module() {
                 val ctx = call.ctx()
                 val folder = call.request.queryParameters["folder"] ?: MailSession.INBOX
                 val uid = call.request.queryParameters["uid"]?.toLongOrNull() ?: throw IllegalArgumentException("uid is required")
-                ctx.message(folder, uid)
+                ctx.message(folder, uid, call.request.queryParameters["tz"] ?: "")
             }
         }
 
@@ -262,12 +239,48 @@ fun Application.module() {
     }
 }
 
+internal fun ApplicationCall.token(): String? =
+    request.header(HttpHeaders.Authorization)?.removePrefix("Bearer ")?.trim()?.takeIf { it.isNotBlank() }
+        ?: request.queryParameters["token"]
+
+/** Returned by a handler that already wrote its own response (file downloads). */
+internal object Responded
+
+internal suspend fun ApplicationCall.handle(block: suspend () -> Any?) {
+    try {
+        when (val result = block()) {
+            Responded -> {}
+            null -> respond(HttpStatusCode.NotFound, ApiError("Not found"))
+            is Unit -> respond(ApiStatus("ok"))
+            // A JsonObject is also a Map, and Ktor would pick a map serializer for it by runtime type.
+            is JsonElement -> respondText(Json.encodeToString(JsonElement.serializer(), result), ContentType.Application.Json)
+            else -> respond(result)
+        }
+    } catch (e: AuthException) {
+        respond(HttpStatusCode.Unauthorized, ApiError(e.message ?: "Not signed in"))
+    } catch (e: AuthenticationFailedException) {
+        respond(HttpStatusCode.BadGateway, ApiError(friendlyAuthError(e)))
+    } catch (e: MessagingException) {
+        log.warn("Mail error: ${e.message}")
+        respond(HttpStatusCode.BadGateway, ApiError(e.message ?: "Mail server error"))
+    } catch (e: IllegalArgumentException) {
+        respond(HttpStatusCode.BadRequest, ApiError(e.message ?: "Bad request"))
+    } catch (e: Exception) {
+        log.error("Unhandled error", e)
+        respond(HttpStatusCode.InternalServerError, ApiError(e.message ?: e.javaClass.simpleName))
+    }
+}
+
 private object StaticFiles {
     private val cache = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
     private val safeName = Regex("^[A-Za-z0-9._-]+$")
 
+    /** Development aid: QUILLBOX_WEB_DIR serves the UI from a folder, re-read on every request. */
+    val devDir: java.io.File? = System.getenv("QUILLBOX_WEB_DIR")?.takeIf { it.isNotBlank() }?.let { java.io.File(it) }?.takeIf { it.isDirectory }
+
     fun bytes(name: String): ByteArray? {
         if (!safeName.matches(name) || name.startsWith(".")) return null
+        devDir?.let { d -> val f = java.io.File(d, name); return if (f.isFile) f.readBytes() else null }
         cache[name]?.let { return it }
         val loaded = StaticFiles::class.java.classLoader?.getResourceAsStream("web/$name")?.use { it.readBytes() } ?: return null
         cache[name] = loaded
@@ -290,7 +303,7 @@ private object StaticFiles {
 private suspend fun ApplicationCall.respondStatic(name: String) {
     val bytes = StaticFiles.bytes(name)
     if (bytes == null) { respond(HttpStatusCode.NotFound, ApiError("Not found")); return }
-    response.header(HttpHeaders.CacheControl, if (name.endsWith(".html")) "no-cache" else "max-age=300")
+    response.header(HttpHeaders.CacheControl, if (name.endsWith(".html") || StaticFiles.devDir != null) "no-cache" else "max-age=300")
     respondBytes(bytes, StaticFiles.contentType(name))
 }
 

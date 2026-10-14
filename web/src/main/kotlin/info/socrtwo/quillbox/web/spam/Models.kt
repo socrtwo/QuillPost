@@ -23,7 +23,10 @@ data class MessageFacts(
     val attachmentNames: List<String> = emptyList(),
     val date: Long = 0L,
     /** The account owner's own address(es); used to spot mail not addressed to the user. */
-    val userAddresses: List<String> = emptyList()
+    val userAddresses: List<String> = emptyList(),
+    val ccAddresses: List<String> = emptyList(),
+    /** "high", "normal" or "low" (from Importance / X-Priority). */
+    val importance: String = "normal"
 )
 
 enum class SpamLevel { CLEAN, SUSPICIOUS, SPAM }

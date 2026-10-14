@@ -19,8 +19,8 @@ by a Quillbox server on your network (Apple allows no JVM on iOS). Every feature
 client (junk protection, AI rule proposals, etc.) is therefore present everywhere from a
 single code base.
 
-**Pushing a tag such as `v1.3.0` triggers all of this.** Each workflow attaches its files to
-the same GitHub Release (`Releases` → `Quillbox v1.3.0`) as it finishes.
+**Pushing a tag such as `v1.4.0` triggers all of this.** Each workflow attaches its files to
+the same GitHub Release (`Releases` → `Quillbox v1.4.0`) as it finishes.
 
 ## Releasing from Termux (Android)
 
@@ -56,10 +56,10 @@ printf 'org.gradle.jvmargs=-Xmx1536m\norg.gradle.daemon=false\n' >> ~/.gradle/gr
 ```bash
 cd ~/quillbox/web
 chmod +x gradlew
-./gradlew build distZip --no-daemon           # runs the engine tests, packages build/distributions/quillbox-web-1.3.0.zip
+./gradlew build distZip --no-daemon           # runs the engine tests, packages build/distributions/quillbox-web-1.4.0.zip
 
 # Run it right here on the phone and open http://localhost:8080 in the phone's browser
-cd build/distributions && unzip -o quillbox-web-1.3.0.zip && cd quillbox-web-1.3.0
+cd build/distributions && unzip -o quillbox-web-1.4.0.zip && cd quillbox-web-1.4.0
 QUILLBOX_DATA_DIR=$HOME/.quillbox PORT=8080 ./bin/quillbox-web
 ```
 
@@ -81,26 +81,26 @@ git pull
 # bump the version if needed: app/build.gradle.kts (versionCode/versionName),
 #   web/build.gradle.kts (version), desktop/build.gradle.kts (version/packageVersion),
 #   ios/project.yml (CFBundleShortVersionString/MARKETING_VERSION)
-git commit -am "Release v1.3.0"
+git commit -am "Release v1.4.0"
 git push
-git tag -a v1.3.0 -m "Quillbox 1.3.0"
-git push origin v1.3.0
+git tag -a v1.4.0 -m "Quillbox 1.4.0"
+git push origin v1.4.0
 
 gh run watch                    # follow the four workflows
-gh release view v1.3.0 --web    # open the release page with every artifact
-gh release download v1.3.0 -D ~/storage/downloads/quillbox-v1.3.0   # pull the files to the phone
+gh release view v1.4.0 --web    # open the release page with every artifact
+gh release download v1.4.0 -D ~/storage/downloads/quillbox-v1.4.0   # pull the files to the phone
 ```
 
 The Android CI signs the APK automatically when the repository secrets
 `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` exist (see the README);
-without them the release carries `quillbox-v1.3.0-unsigned.apk`, which Android will not install
+without them the release carries `quillbox-v1.4.0-unsigned.apk`, which Android will not install
 until it is signed. You can sign it in Termux:
 
 ```bash
 pkg install -y apksigner
 keytool -genkeypair -v -keystore ~/quillbox-release.jks -alias quillbox -keyalg RSA -keysize 2048 -validity 10000
 apksigner sign --ks ~/quillbox-release.jks --ks-key-alias quillbox \
-  --out quillbox-v1.3.0.apk ~/storage/downloads/quillbox-v1.3.0/quillbox-v1.3.0-unsigned.apk
+  --out quillbox-v1.4.0.apk ~/storage/downloads/quillbox-v1.4.0/quillbox-v1.4.0-unsigned.apk
 ```
 
 ### 4. Building the APK in Termux itself (optional, unofficial)
@@ -133,7 +133,7 @@ If that route gives you trouble, use the CI build from step 3 — it is the supp
 
 ## Releasing from a desktop
 
-Exactly the same tag push (`git tag v1.3.0 && git push origin v1.3.0`). To build locally:
+Exactly the same tag push (`git tag v1.4.0 && git push origin v1.4.0`). To build locally:
 
 ```bash
 cd desktop && ./gradlew packageDistributionForCurrentOS   # installer for the OS you are on

@@ -35,7 +35,7 @@ object Http {
                 connectTimeout = minOf(timeoutMs, 5000)
                 readTimeout = timeoutMs
                 instanceFollowRedirects = false
-                setRequestProperty("User-Agent", "Quillbox/1.3 (+https://github.com/socrtwo/quillbox)")
+                setRequestProperty("User-Agent", "Quillbox/1.4 (+https://github.com/socrtwo/quillbox)")
                 setRequestProperty("Accept", "*/*")
                 headers.forEach { (k, v) -> setRequestProperty(k, v) }
                 if (body != null) {

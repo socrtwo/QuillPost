@@ -25,14 +25,15 @@ object Mapping {
             RuleCriterion(field, op, c.value)
         },
         action = runCatching { RuleAction.valueOf(action.uppercase()) }.getOrDefault(RuleAction.MOVE_TO_FOLDER),
-        targetFolder = targetFolder, priority = priority, createdBy = createdBy, createdAt = createdAt, note = note, hitCount = hitCount
+        targetFolder = targetFolder, priority = priority, createdBy = createdBy, createdAt = createdAt, note = note, hitCount = hitCount,
+        categories = categories, forwardTo = forwardTo
     )
 
     fun Rule.toDto(): RuleDto = RuleDto(
         id = id, name = name, enabled = enabled, logic = logic.name,
         criteria = criteria.map { RuleCriterionDto(it.field.name, it.operator.name, it.value) },
         action = action.name, targetFolder = targetFolder, priority = priority, createdBy = createdBy,
-        createdAt = createdAt, note = note, hitCount = hitCount
+        createdAt = createdAt, note = note, hitCount = hitCount, categories = categories, forwardTo = forwardTo
     )
 
     fun BlacklistDefDto.toDef() = BlacklistDef(id, label, zone, kind, weight, enabled, builtIn, homepage)
@@ -75,8 +76,21 @@ object Mapping {
         listUnsubscribe = headers["List-Unsubscribe"]?.firstOrNull(),
         precedence = headers["Precedence"]?.firstOrNull(),
         mailer = headers["X-Mailer"]?.firstOrNull(),
-        attachmentNames = attachmentNames, date = date, userAddresses = userAddresses
+        attachmentNames = attachmentNames, date = date, userAddresses = userAddresses,
+        ccAddresses = cc, importance = importanceOf(headers)
     )
+
+    /** "high", "low" or "normal" from the Importance, Priority or X-Priority header. */
+    fun importanceOf(headers: Map<String, List<String>>): String {
+        val imp = (headers["Importance"]?.firstOrNull() ?: headers["Priority"]?.firstOrNull())?.trim()?.lowercase()
+        when {
+            imp == null -> {}
+            imp.startsWith("high") || imp.startsWith("urgent") -> return "high"
+            imp.startsWith("low") || imp.startsWith("non-urgent") -> return "low"
+        }
+        val xp = headers["X-Priority"]?.firstOrNull()?.trim()?.take(1)?.toIntOrNull() ?: return "normal"
+        return when { xp <= 2 -> "high"; xp >= 4 -> "low"; else -> "normal" }
+    }
 
     fun RawMessage.toFacts(userAddresses: List<String>): MessageFacts =
         summary.toFacts(userAddresses, bodyText, bodyHtml, attachments.filter { !it.inline }.map { it.fileName })
@@ -84,8 +98,14 @@ object Mapping {
     fun RawSummary.toSummaryDto(folder: String, cached: CachedAnalysis?): MessageSummaryDto = MessageSummaryDto(
         uid = uid, folder = folder, messageId = messageId, fromName = fromName, fromAddress = fromAddress, to = to,
         subject = subject, preview = cached?.preview ?: "", date = date, read = seen, flagged = flagged, answered = answered,
-        hasAttachments = hasAttachments, size = size, verdict = cached?.verdict
+        hasAttachments = hasAttachments, size = size, verdict = cached?.verdict,
+        cc = cc, inReplyTo = headers["In-Reply-To"]?.firstOrNull()?.let { messageIds(it).lastOrNull() },
+        references = headers["References"]?.joinToString(" ")?.let { messageIds(it) } ?: emptyList(),
+        importance = importanceOf(headers), forwarded = forwarded
     )
+
+    /** All <message-id> tokens in a References / In-Reply-To header, in order. */
+    fun messageIds(header: String): List<String> = Regex("<[^<>\\s]+>").findAll(header).map { it.value }.toList()
 
     fun preview(text: String, html: String?): String {
         val t = text.ifBlank { html?.let { info.socrtwo.quillbox.web.spam.HeaderParser.htmlToText(it) } ?: "" }

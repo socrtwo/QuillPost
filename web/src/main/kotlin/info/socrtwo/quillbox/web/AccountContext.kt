@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class AccountContext(
     val account: AccountDto,
-    private val store: DataStore,
+    internal val store: DataStore,
     blacklists: BlacklistChecker
 ) {
     val mail = MailSession(account)
@@ -49,19 +49,24 @@ class AccountContext(
     val bayes: BayesClassifier = store.loadBayes(account.email)
     /** What this mailbox knows about each sender (replies, opens, junk marks, habitual link domains). */
     val history: SenderHistory = store.loadHistory(account.email)
+    /** Calendars, contacts, tasks, message metadata and the scheduled-send queue. */
+    val pim = PimStore(store, account.email)
     private val engine = SpamEngine(blacklists, bayes)
 
-    private val cache = ConcurrentHashMap<String, CachedAnalysis>()
+    internal val cache = ConcurrentHashMap<String, CachedAnalysis>()
     @Volatile private var initialised: Boolean
     @Volatile var version: Long = 0L
         private set
     @Volatile var lastUsed: Long = System.currentTimeMillis()
 
     private val ioLock = Mutex()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    internal val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val queue = LinkedHashMap<String, LinkedHashSet<Long>>()
     private var draining = false
-    private val userAddresses: List<String> = listOf(account.email.lowercase(), account.username.lowercase()).distinct()
+    internal val userAddresses: List<String> = listOf(account.email.lowercase(), account.username.lowercase()).distinct()
+
+    /** The account's own addresses including configured aliases. */
+    internal fun ownAddresses(): Set<String> = (userAddresses + settings.aliases.map { it.trim().lowercase() }).filter { it.contains('@') }.toSet()
 
     companion object {
         const val LOCAL_JUNK = "__local_junk__"
@@ -72,15 +77,16 @@ class AccountContext(
         val loaded = store.loadCache(account.email)
         cache.putAll(loaded.entries)
         initialised = loaded.inboxWatermark.isNotEmpty() || settings.spam.scanExisting
+        startScheduler()
     }
 
     val capabilities: Capabilities
         get() = Capabilities(folders = mail.isImap, move = mail.isImap, flags = mail.isImap, search = true, drafts = mail.isImap)
 
-    private suspend fun <T> io(block: () -> T): T = ioLock.withLock { withContext(Dispatchers.IO) { block() } }
+    internal suspend fun <T> io(block: () -> T): T = ioLock.withLock { withContext(Dispatchers.IO) { block() } }
 
-    private fun touch() { lastUsed = System.currentTimeMillis() }
-    private fun bump() { version++ }
+    internal fun touch() { lastUsed = System.currentTimeMillis() }
+    internal fun bump() { version++ }
 
     fun close() {
         scope.cancel()
@@ -92,7 +98,7 @@ class AccountContext(
 
     @Synchronized
     fun updateSettings(new: AccountSettingsDto): AccountSettingsDto {
-        settings = new.copy(version = 1)
+        settings = new.copy(version = 2)
         store.saveSettings(account.email, settings)
         bump()
         return settings
@@ -100,7 +106,18 @@ class AccountContext(
 
     private fun spamRules(): List<Rule> = settings.rules.map { it.toRule() }
 
-    private fun key(s: RawSummary, folder: String): String = s.messageId.ifBlank { "uid:$folder:${s.uid}" }
+    internal fun key(s: RawSummary, folder: String): String = s.messageId.ifBlank { "uid:$folder:${s.uid}" }
+
+    /** List-pane summary with cached verdict, Focused/Other and the message's categories, pin, flag and snooze. */
+    internal fun summary(raw: RawSummary, folder: String): MessageSummaryDto {
+        val dto = raw.toSummaryDto(folder, cache[key(raw, folder)])
+        val m = raw.messageId.takeIf { it.isNotBlank() }?.let { pim.meta(it) }
+        return dto.copy(
+            focused = isFocused(raw),
+            categories = m?.categories ?: emptyList(), pinned = m?.pinned ?: false,
+            flagDue = m?.flagDue, flagCompleted = m?.flagCompleted ?: false, snoozeUntil = m?.snoozeUntil
+        )
+    }
 
     @Synchronized
     private fun persistCache() {
@@ -110,7 +127,7 @@ class AccountContext(
     }
 
     private fun persistBayes() = runCatching { store.saveBayes(account.email, bayes) }
-    private fun persistHistory() { if (history.dirty) runCatching { store.saveHistory(account.email, history) } }
+    internal fun persistHistory() { if (history.dirty) runCatching { store.saveHistory(account.email, history) } }
 
     // --- folders ------------------------------------------------------------------------
 
@@ -139,7 +156,7 @@ class AccountContext(
         if (rescan) raws.forEach { cache.remove(key(it, folder)) }
         val missing = raws.filter { !cache.containsKey(key(it, folder)) }
         if (missing.isNotEmpty() && settings.spam.enabled) enqueue(folder, missing.map { it.uid })
-        val messages = raws.map { it.toSummaryDto(folder, cache[key(it, folder)]) }
+        val messages = raws.map { summary(it, folder) }
         return MessageListResponse(
             folder = folder, total = total, unread = raws.count { !it.seen }, messages = messages,
             pending = if (settings.spam.enabled) missing.size else 0, version = version
@@ -150,13 +167,13 @@ class AccountContext(
         val junkKeys = settings.pop3Junk.toSet()
         val (_, raws) = io { mail.listMessages(MailSession.INBOX, maxOf(limit, 500), 0) }
         val junk = raws.filter { key(it, MailSession.INBOX) in junkKeys }
-        return MessageListResponse(LOCAL_JUNK, junk.size, junk.count { !it.seen }, junk.map { it.toSummaryDto(MailSession.INBOX, cache[key(it, MailSession.INBOX)]) }, version = version)
+        return MessageListResponse(LOCAL_JUNK, junk.size, junk.count { !it.seen }, junk.map { summary(it, MailSession.INBOX) }, version = version)
     }
 
     suspend fun search(folder: String, q: String, limit: Int): SearchResponse {
         touch()
         val raws = io { mail.search(folder, q, limit) }
-        return SearchResponse(folder, q, raws.map { it.toSummaryDto(folder, cache[key(it, folder)]) })
+        return SearchResponse(folder, q, raws.map { summary(it, folder) })
     }
 
     // --- background analysis -------------------------------------------------------------
@@ -206,8 +223,12 @@ class AccountContext(
             }.awaitAll()
         }
         val moves = HashMap<String, MutableList<Long>>()      // destination -> uids
+        val copies = HashMap<String, MutableList<Long>>()
         val markRead = ArrayList<Long>()
         val flag = ArrayList<Long>()
+        val forwards = ArrayList<Pair<Long, String>>()
+        val autoReplies = ArrayList<RawMessage>()
+        val ignored = pim.ignoredThreads()
         val ruleHits = HashMap<String, Int>()
         var moved = 0
         for ((uid, raw, verdict) in results) {
@@ -226,6 +247,18 @@ class AccountContext(
                 }
                 if (rule != null && rule.action == RuleAction.MARK_READ) markRead += uid
                 if (rule != null && rule.action == RuleAction.FLAG) flag += uid
+                if (rule != null && rule.action == RuleAction.COPY_TO_FOLDER && rule.targetFolder != null)
+                    resolveFolder(rule.targetFolder)?.let { copies.getOrPut(it) { ArrayList() }.add(uid) }
+                if (rule != null && rule.action == RuleAction.CATEGORIZE && rule.categories.isNotEmpty() && raw.summary.messageId.isNotBlank())
+                    pim.updateMeta(MetaUpdateRequest(listOf(raw.summary.messageId), categoriesAdd = rule.categories))
+                if (rule != null && rule.action == RuleAction.PIN && raw.summary.messageId.isNotBlank())
+                    pim.updateMeta(MetaUpdateRequest(listOf(raw.summary.messageId), pinned = true))
+                if (rule != null && rule.action == RuleAction.FORWARD_TO && rule.forwardTo.contains('@') && rule.forwardTo.lowercase() !in ownAddresses())
+                    forwards += uid to rule.forwardTo
+                // "Ignore conversation": later messages in an ignored thread go straight to Deleted Items.
+                if (dest == null && previous == null && ignored.isNotEmpty() && threadIds(raw.summary).any { it in ignored })
+                    dest = runCatching { io { mail.ensureFolderForRole("trash") } }.getOrNull()
+                if (previous == null && dest == null && !verdict.isSpam && shouldAutoReply(raw)) autoReplies += raw
             }
             if (isInbox && !mail.isImap && initialised && !userSaidHam && verdict.isSpam && cfg.autoMoveToJunk) {
                 // POP3: remember locally that this message belongs in Junk.
@@ -240,8 +273,14 @@ class AccountContext(
             if (previous == null && raw.summary.fromAddress.isNotBlank()) history.seen(raw.summary.fromAddress, verdict.linkDomains, verdict.isSpam)
             cache[k] = CachedAnalysis(dto, preview(raw.bodyText, raw.bodyHtml), System.currentTimeMillis(), raw.summary.subject, raw.summary.fromAddress)
         }
-        if (moves.isNotEmpty() || markRead.isNotEmpty() || flag.isNotEmpty()) {
+        // Forward before any move so the UIDs are still valid in this folder.
+        for ((uid, to) in forwards) {
+            val subject = raws[uid]?.summary?.subject.orEmpty()
+            runCatching { io { mail.send(SendRequest(to = listOf(to), subject = "FW: $subject", body = "Forwarded automatically by a Quillbox rule.", attachMessages = listOf(MessageRef(folder, uid)))) } }
+        }
+        if (moves.isNotEmpty() || markRead.isNotEmpty() || flag.isNotEmpty() || copies.isNotEmpty()) {
             io {
+                for ((dest, ids) in copies) runCatching { mail.copy(folder, ids, dest) }
                 for ((dest, ids) in moves) {
                     if (dest == LOCAL_JUNK) {
                         val keys = ids.mapNotNull { id -> raws[id]?.summary?.let { key(it, folder) } }
@@ -256,6 +295,7 @@ class AccountContext(
             settings = settings.copy(rules = settings.rules.map { r -> ruleHits[r.id]?.let { n -> r.copy(hitCount = r.hitCount + n) } ?: r })
             store.saveSettings(account.email, settings)
         }
+        for (raw in autoReplies) runCatching { sendAutoReply(raw) }
         if (!initialised) initialised = true
         bump()
         persistCache()
@@ -263,7 +303,7 @@ class AccountContext(
     }
 
     /** Maps a rule's folder name to a real server path, creating it at the top level if needed. */
-    private suspend fun resolveFolder(name: String): String? {
+    internal suspend fun resolveFolder(name: String): String? {
         if (engine.isJunkFolder(name)) return runCatching { io { mail.ensureFolderForRole("junk") } }.getOrNull()
         val lower = name.lowercase()
         if (lower in setOf("trash", "deleted", "deleted items", "bin")) return runCatching { io { mail.ensureFolderForRole("trash") } }.getOrNull()
@@ -282,7 +322,7 @@ class AccountContext(
 
     // --- single message -----------------------------------------------------------------
 
-    suspend fun message(folder: String, uid: Long): MessageDetailDto? {
+    suspend fun message(folder: String, uid: Long, tz: String = ""): MessageDetailDto? {
         touch()
         val realFolder = if (folder == LOCAL_JUNK) MailSession.INBOX else folder
         val raw = io { mail.getMessage(realFolder, uid) } ?: return null
@@ -294,6 +334,7 @@ class AccountContext(
                 .also { cache[k] = it; persistCache() }
         }
         val s = raw.summary
+        val meta = s.messageId.takeIf { it.isNotBlank() }?.let { pim.meta(it) }
         val interesting = listOf("Message-ID", "Return-Path", "Reply-To", "X-Mailer", "Authentication-Results", "List-Unsubscribe", "X-Originating-IP", "Received")
         return MessageDetailDto(
             uid = s.uid, folder = folder, messageId = s.messageId, fromName = s.fromName, fromAddress = s.fromAddress,
@@ -301,7 +342,13 @@ class AccountContext(
             answered = s.answered, bodyText = raw.bodyText, bodyHtml = raw.bodyHtml, attachments = raw.attachments,
             inReplyTo = raw.inReplyTo, references = raw.references, listUnsubscribe = s.headers["List-Unsubscribe"]?.firstOrNull(),
             headers = interesting.mapNotNull { h -> s.headers[h]?.let { h to it.joinToString("\n") } }.toMap(),
-            verdict = cached.verdict
+            verdict = cached.verdict,
+            importance = Mapping.importanceOf(s.headers),
+            forwarded = s.forwarded,
+            readReceiptTo = s.headers["Disposition-Notification-To"]?.firstOrNull()?.trim()?.takeIf { !s.mdnSent && it.contains('@') && folder != (mail.folderForRole("sent") ?: "") },
+            invite = raw.calendar?.let { runCatching { inviteFrom(it, tz) }.getOrNull() },
+            categories = meta?.categories ?: emptyList(), pinned = meta?.pinned ?: false, flagDue = meta?.flagDue,
+            flagCompleted = meta?.flagCompleted ?: false, snoozeUntil = meta?.snoozeUntil
         )
     }
 
@@ -356,11 +403,11 @@ class AccountContext(
                 val full = io { mail.fetchMessages(folder, chunk.map { it.uid }) }
                 for (s in chunk) {
                     val facts = full[s.uid]?.toFacts(userAddresses) ?: s.toFacts(userAddresses)
-                    if (s.uid in headerOnlyMatches || RuleEngine.matches(rule, facts)) matches += s.toSummaryDto(folder, cache[key(s, folder)])
+                    if (s.uid in headerOnlyMatches || RuleEngine.matches(rule, facts)) matches += summary(s, folder)
                 }
             }
         } else {
-            raws.filter { RuleEngine.matches(rule, it.toFacts(userAddresses)) }.forEach { matches += it.toSummaryDto(folder, cache[key(it, folder)]) }
+            raws.filter { RuleEngine.matches(rule, it.toFacts(userAddresses)) }.forEach { matches += summary(it, folder) }
         }
         return RulePreviewResponse(matches, raws.size)
     }
@@ -383,6 +430,21 @@ class AccountContext(
             RuleAction.MARK_READ -> flags(FlagRequest(items, read = true))
             RuleAction.FLAG -> flags(FlagRequest(items, flagged = true))
             RuleAction.MARK_SAFE -> BatchResult(items.size, 0)
+            RuleAction.COPY_TO_FOLDER -> {
+                val dest = rule.targetFolder?.let { resolveFolder(it) } ?: return BatchResult(0, items.size, listOf("Folder ${rule.targetFolder} not found"))
+                var n = 0
+                for ((f, refs) in items.groupBy { it.folder }) n += runCatching { io { mail.copy(f, refs.map { it.uid }, dest) } }.getOrDefault(0)
+                BatchResult(n, items.size - n)
+            }
+            RuleAction.CATEGORIZE -> {
+                pim.updateMeta(MetaUpdateRequest(preview.matches.map { it.messageId }.filter { it.isNotBlank() }, categoriesAdd = rule.categories)); bump()
+                BatchResult(items.size, 0)
+            }
+            RuleAction.PIN -> {
+                pim.updateMeta(MetaUpdateRequest(preview.matches.map { it.messageId }.filter { it.isNotBlank() }, pinned = true)); bump()
+                BatchResult(items.size, 0)
+            }
+            RuleAction.FORWARD_TO -> BatchResult(0, items.size, listOf("Forwarding rules only act on newly arriving mail"))
         }
     }
 
@@ -521,8 +583,26 @@ class AccountContext(
 
     // --- sending / drafts ------------------------------------------------------------------------
 
-    suspend fun send(req: SendRequest): ApiStatus {
+    suspend fun send(req0: SendRequest): SendResponse {
         touch()
+        val from = req0.from?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+        require(from == null || from in ownAddresses()) { "$from is not one of this account's addresses (add it under Settings → Accounts → Aliases)" }
+        val req = req0.copy(from = from)
+        if (req.sendAt != null && req.sendAt > System.currentTimeMillis() + 1_000) {
+            val item = pim.schedule(req, req.sendAt)
+            // Undo send and near-term schedules fire on time instead of waiting for the next scheduler tick.
+            if (item.sendAt - System.currentTimeMillis() < 120_000) scope.launch { kotlinx.coroutines.delay(maxOf(0, item.sendAt - System.currentTimeMillis())); runCatching { tick() } }
+            // A draft that is now scheduled is no longer a draft.
+            if (mail.isImap) req.draftUid?.let { uid -> runCatching { io { mail.deletePermanently(mail.ensureFolderForRole("drafts"), listOf(uid)) } } }
+            bump()
+            return SendResponse("scheduled", item.id, item.sendAt)
+        }
+        deliver(req)
+        return SendResponse("sent")
+    }
+
+    /** Sends now, files a copy in Sent Items and updates answered/forwarded markers. */
+    internal suspend fun deliver(req: SendRequest) {
         val message = io { mail.send(req) }
         (req.to + req.cc).map { HeaderParser.splitAddress(it).second.ifBlank { it } }.filter { it.contains('@') }.forEach { history.replied(it) }
         persistHistory()
@@ -530,16 +610,16 @@ class AccountContext(
             runCatching { io { mail.append(mail.ensureFolderForRole("sent"), message, Flags(Flags.Flag.SEEN)) } }
             req.replyTo?.let { ref -> runCatching { io { mail.setFlag(ref.folder, listOf(ref.uid), Flags.Flag.ANSWERED, true) } } }
             req.draftUid?.let { uid -> runCatching { io { mail.deletePermanently(mail.ensureFolderForRole("drafts"), listOf(uid)) } } }
+            req.forwardOf?.let { ref -> runCatching { io { mail.setKeyword(ref.folder, listOf(ref.uid), "\$Forwarded", true) } } }
         }
         bump()
-        return ApiStatus("sent")
     }
 
     suspend fun saveDraft(req: DraftRequest): DraftResponse {
         touch()
         if (!mail.isImap) throw MessagingException("Drafts need an IMAP account")
         val drafts = io { mail.ensureFolderForRole("drafts") }
-        val msg = io { mail.buildMessage(SendRequest(null, req.to, req.cc, req.bcc, req.subject, req.body, req.html, emptyList(), req.inReplyTo, req.references)) }
+        val msg = io { mail.buildMessage(SendRequest(null, req.to, req.cc, req.bcc, req.subject, req.body, req.html, req.attachments, req.inReplyTo, req.references, importance = req.importance)) }
         val uid = io {
             req.uid?.let { runCatching { mail.deletePermanently(drafts, listOf(it)) } }
             mail.append(drafts, msg, Flags(Flags.Flag.DRAFT).apply { add(Flags.Flag.SEEN) })

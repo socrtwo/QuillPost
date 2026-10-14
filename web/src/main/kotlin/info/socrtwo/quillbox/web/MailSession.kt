@@ -44,8 +44,13 @@ data class RawSummary(
     val answered: Boolean,
     val size: Long,
     val hasAttachments: Boolean,
-    val headers: Map<String, List<String>>
-)
+    val headers: Map<String, List<String>>,
+    /** IMAP keywords such as \$Forwarded and \$MDNSent. */
+    val keywords: Set<String> = emptySet()
+) {
+    val forwarded: Boolean get() = keywords.any { it.equals("\$Forwarded", true) || it.equals("Forwarded", true) }
+    val mdnSent: Boolean get() = keywords.any { it.equals("\$MDNSent", true) }
+}
 
 /** Full message: summary plus bodies, attachment metadata and the headers the engine needs. */
 data class RawMessage(
@@ -54,7 +59,9 @@ data class RawMessage(
     val bodyHtml: String?,
     val attachments: List<AttachmentDto>,
     val inReplyTo: String?,
-    val references: String?
+    val references: String?,
+    /** The text/calendar part or .ics attachment, when the message carries one. */
+    val calendar: String? = null
 )
 
 data class FolderInfo(
@@ -76,12 +83,13 @@ class MailSession(val account: AccountDto) {
     val isImap: Boolean = account.protocol.uppercase() != "POP3"
     private val session: Session = Session.getInstance(incomingProperties())
     private var store: Store? = null
-    private val roleCache = HashMap<String, String?>()
+    internal val roleCache = HashMap<String, String?>()
 
     companion object {
         val LIST_HEADERS = listOf(
             "Received", "Authentication-Results", "ARC-Authentication-Results", "Reply-To", "List-Unsubscribe",
-            "Precedence", "X-Originating-IP", "X-Mailer", "Message-ID", "In-Reply-To", "References", "X-Priority", "Return-Path"
+            "Precedence", "X-Originating-IP", "X-Mailer", "Message-ID", "In-Reply-To", "References", "X-Priority", "Return-Path",
+            "Importance", "Priority", "List-Id", "Auto-Submitted", "Feedback-ID", "Disposition-Notification-To", "X-Auto-Response-Suppress"
         )
         const val INBOX = "INBOX"
     }
@@ -163,7 +171,7 @@ class MailSession(val account: AccountDto) {
             val inbox = s.getFolder(INBOX)
             if (inbox.exists()) { val (t, u) = counts(inbox); out.add(0, FolderInfo(INBOX, "Inbox", "/", "inbox", u, t, 0)) }
         }
-        val order = listOf("inbox", "drafts", "sent", "junk", "trash", "archive", "other")
+        val order = listOf("inbox", "drafts", "sent", "junk", "trash", "archive", "snoozed", "other")
         return out.sortedWith(compareBy({ order.indexOf(it.role).let { i -> if (i < 0) 99 else i } }, { it.path.lowercase() }))
     }
 
@@ -173,11 +181,11 @@ class MailSession(val account: AccountDto) {
 
     private fun displayName(f: Folder, role: String): String = when (role) {
         "inbox" -> "Inbox"; "junk" -> "Junk Email"; "sent" -> "Sent Items"; "drafts" -> "Drafts"
-        "trash" -> "Deleted Items"; "archive" -> "Archive"
+        "trash" -> "Deleted Items"; "archive" -> "Archive"; "snoozed" -> "Snoozed"
         else -> f.name
     }
 
-    private fun roleOf(f: Folder): String {
+    internal fun roleOf(f: Folder): String {
         val name = f.fullName
         if (name.equals(INBOX, ignoreCase = true)) return "inbox"
         val attrs = (f as? IMAPFolder)?.let { runCatching { it.attributes.toList() }.getOrDefault(emptyList()) } ?: emptyList()
@@ -194,6 +202,7 @@ class MailSession(val account: AccountDto) {
             leaf in setOf("drafts", "draft", "[gmail]/drafts") -> "drafts"
             leaf in setOf("trash", "deleted", "deleted items", "deleted messages", "bin", "[gmail]/trash", "[gmail]/bin") -> "trash"
             leaf in setOf("archive", "archives", "all mail", "[gmail]/all mail") -> "archive"
+            leaf == "snoozed" -> "snoozed"
             else -> "other"
         }
     }
@@ -216,7 +225,7 @@ class MailSession(val account: AccountDto) {
         val s = connect()
         val inbox = s.getFolder(INBOX)
         val delim = runCatching { inbox.separator.toString() }.getOrDefault("/")
-        val defaultName = when (role) { "junk" -> "Junk"; "sent" -> "Sent"; "drafts" -> "Drafts"; "trash" -> "Trash"; "archive" -> "Archive"; else -> role }
+        val defaultName = when (role) { "junk" -> "Junk"; "sent" -> "Sent"; "drafts" -> "Drafts"; "trash" -> "Trash"; "archive" -> "Archive"; "snoozed" -> "Snoozed"; else -> role }
         // Some servers (e.g. Courier) require folders under INBOX.
         val candidates = listOf(defaultName, "$INBOX$delim$defaultName")
         for (name in candidates) {
@@ -249,7 +258,7 @@ class MailSession(val account: AccountDto) {
         total to msgs.map { summarise(f, it) }.reversed()
     }
 
-    private fun listProfile() = FetchProfile().apply {
+    internal fun listProfile() = FetchProfile().apply {
         add(FetchProfile.Item.ENVELOPE); add(FetchProfile.Item.FLAGS); add(FetchProfile.Item.SIZE)
         add(UIDFolder.FetchProfileItem.UID); add(FetchProfile.Item.CONTENT_INFO)
         LIST_HEADERS.forEach { add(it) }
@@ -260,7 +269,7 @@ class MailSession(val account: AccountDto) {
         else -> m.messageNumber.toLong()
     }
 
-    private fun summarise(f: Folder, m: Message): RawSummary {
+    internal fun summarise(f: Folder, m: Message): RawSummary {
         val (fromName, fromAddress) = firstAddress(runCatching { m.from }.getOrNull())
         val headers = LinkedHashMap<String, List<String>>()
         for (h in LIST_HEADERS) runCatching { m.getHeader(h)?.toList() }.getOrNull()?.let { if (it.isNotEmpty()) headers[h] = it }
@@ -280,6 +289,7 @@ class MailSession(val account: AccountDto) {
             seen = runCatching { m.isSet(Flags.Flag.SEEN) }.getOrDefault(false),
             flagged = runCatching { m.isSet(Flags.Flag.FLAGGED) }.getOrDefault(false),
             answered = runCatching { m.isSet(Flags.Flag.ANSWERED) }.getOrDefault(false),
+            keywords = runCatching { m.flags.userFlags.toSet() }.getOrDefault(emptySet()),
             size = runCatching { m.size.toLong() }.getOrDefault(0L),
             hasAttachments = ct.startsWith("multipart/mixed") || ct.startsWith("application/") || ct.startsWith("multipart/report"),
             headers = headers
@@ -312,7 +322,7 @@ class MailSession(val account: AccountDto) {
         toRaw(f, m)
     }
 
-    private fun messagesByUid(f: Folder, uids: List<Long>): Map<Long, Message> {
+    internal fun messagesByUid(f: Folder, uids: List<Long>): Map<Long, Message> {
         if (uids.isEmpty()) return emptyMap()
         return if (f is UIDFolder && isImap) {
             val arr = f.getMessagesByUID(uids.toLongArray()).filterNotNull()
@@ -326,6 +336,7 @@ class MailSession(val account: AccountDto) {
         val text = StringBuilder()
         var html: StringBuilder? = null
         val attachments = ArrayList<AttachmentDto>()
+        var calendar: String? = null
     }
 
     /**
@@ -333,7 +344,7 @@ class MailSession(val account: AccountDto) {
      * round trip per MIME part and sidesteps servers whose per-section header fetches are
      * incomplete (some drop Content-ID / Content-Disposition).
      */
-    private fun localCopy(m: Message): Message = runCatching {
+    internal fun localCopy(m: Message): Message = runCatching {
         val bytes = java.io.ByteArrayOutputStream().also { m.writeTo(it) }.toByteArray()
         MimeMessage(session, java.io.ByteArrayInputStream(bytes)) as Message
     }.getOrDefault(m)
@@ -350,7 +361,8 @@ class MailSession(val account: AccountDto) {
             bodyHtml = ex.html?.toString()?.trim()?.takeIf { it.isNotBlank() },
             attachments = ex.attachments,
             inReplyTo = headers["In-Reply-To"]?.firstOrNull(),
-            references = headers["References"]?.firstOrNull()
+            references = headers["References"]?.firstOrNull(),
+            calendar = ex.calendar
         )
     }
 
@@ -374,6 +386,10 @@ class MailSession(val account: AccountDto) {
             }
             !isAttachment && ct.startsWith("text/plain") -> {
                 if (out.text.isEmpty()) out.text.append(runCatching { part.content?.toString() }.getOrNull().orEmpty())
+            }
+            ct.startsWith("text/calendar") || ct.startsWith("application/ics") || (fileName?.lowercase()?.endsWith(".ics") == true) -> {
+                if (out.calendar == null) out.calendar = runCatching { part.inputStream.use { it.readBytes().toString(Charsets.UTF_8) } }.getOrNull()
+                if (isAttachment) register(part, out, counter, ct, fileName, disposition)
             }
             !isAttachment && ct.startsWith("text/html") -> {
                 val h = out.html ?: StringBuilder().also { out.html = it }
@@ -425,6 +441,8 @@ class MailSession(val account: AccountDto) {
             return null
         }
         if (!isAttachment && (ct.startsWith("text/plain") || ct.startsWith("text/html"))) return null
+        val isCalendar = ct.startsWith("text/calendar") || ct.startsWith("application/ics") || (fileName?.lowercase()?.endsWith(".ics") == true)
+        if (isCalendar && !isAttachment) return null
         if (ct.startsWith("message/rfc822") && !isAttachment) {
             val inner = runCatching { part.content as? Message }.getOrNull()
             if (inner != null) return findPart(inner, counter, index, cid, depth + 1)
@@ -495,7 +513,7 @@ class MailSession(val account: AccountDto) {
     }
 
     fun search(path: String, query: String, limit: Int): List<RawSummary> = withFolder(path) { f ->
-        val term = OrTerm(arrayOf(FromStringTerm(query), SubjectTerm(query), BodyTerm(query)))
+        val term = OrTerm(arrayOf(FromStringTerm(query), jakarta.mail.search.HeaderTerm("From", query), SubjectTerm(query), BodyTerm(query)))
         val hits = runCatching { f.search(term) }.getOrDefault(emptyArray())
         val slice = hits.takeLast(limit).toTypedArray()
         if (slice.isEmpty()) return@withFolder emptyList()
@@ -519,9 +537,17 @@ class MailSession(val account: AccountDto) {
 
     // --- sending ----------------------------------------------------------------------------
 
-    fun buildMessage(req: SendRequest, session: Session = smtpSession()): MimeMessage {
+    fun buildMessage(req: SendRequest, session: Session = smtpSession(), attached: List<Pair<String, ByteArray>> = emptyList()): MimeMessage {
+        val fromAddress = req.from?.takeIf { it.isNotBlank() } ?: account.email
         val message = MimeMessage(session).apply {
-            setFrom(InternetAddress(account.email, account.displayName.ifBlank { account.email }, "UTF-8"))
+            setFrom(InternetAddress(fromAddress, account.displayName.ifBlank { fromAddress }, "UTF-8"))
+            req.replyToAddress?.takeIf { it.isNotBlank() }?.let { replyTo = addresses(listOf(it)) }
+            when (req.importance?.lowercase()) {
+                "high" -> { setHeader("Importance", "High"); setHeader("X-Priority", "1 (Highest)") }
+                "low" -> { setHeader("Importance", "Low"); setHeader("X-Priority", "5 (Lowest)") }
+            }
+            if (req.readReceipt) setHeader("Disposition-Notification-To", fromAddress)
+            req.extraHeaders.forEach { (k, v) -> setHeader(k, v) }
             setRecipients(Message.RecipientType.TO, addresses(req.to))
             if (req.cc.isNotEmpty()) setRecipients(Message.RecipientType.CC, addresses(req.cc))
             if (req.bcc.isNotEmpty()) setRecipients(Message.RecipientType.BCC, addresses(req.bcc))
@@ -534,10 +560,17 @@ class MailSession(val account: AccountDto) {
         val alternative = MimeMultipart("alternative").apply {
             addBodyPart(MimeBodyPart().apply { setText(req.body, "UTF-8") })
             req.html?.takeIf { it.isNotBlank() }?.let { html ->
-                addBodyPart(MimeBodyPart().apply { setContent(html, "text/html; charset=UTF-8") })
+                // Pictures pasted into the editor travel as data: URIs; mail programs expect cid: parts.
+                addBodyPart(
+                    if (html.contains("data:image/", ignoreCase = true)) MimeBodyPart().apply { setContent(relatedHtml(html)) }
+                    else MimeBodyPart().apply { setContent(html, "text/html; charset=UTF-8") }
+                )
+            }
+            req.calendarPart?.let { ics ->
+                addBodyPart(MimeBodyPart().apply { setContent(ics, "text/calendar; charset=UTF-8; method=${req.calendarMethod ?: "REQUEST"}") })
             }
         }
-        if (req.attachments.isEmpty()) {
+        if (req.attachments.isEmpty() && attached.isEmpty() && req.calendarPart == null) {
             message.setContent(alternative)
         } else {
             val mixed = MimeMultipart("mixed")
@@ -549,22 +582,72 @@ class MailSession(val account: AccountDto) {
                     fileName = att.fileName
                 })
             }
+            for ((name, raw) in attached) {
+                mixed.addBodyPart(MimeBodyPart().apply {
+                    dataHandler = DataHandler(ByteArrayDataSource(raw, "message/rfc822"))
+                    fileName = name
+                    disposition = Part.ATTACHMENT
+                })
+            }
+            req.calendarPart?.let { ics ->
+                mixed.addBodyPart(MimeBodyPart().apply {
+                    dataHandler = DataHandler(ByteArrayDataSource(ics.toByteArray(Charsets.UTF_8), "application/ics"))
+                    fileName = "invite.ics"
+                    disposition = Part.ATTACHMENT
+                })
+            }
             message.setContent(mixed)
         }
         message.saveChanges()
         return message
     }
 
+    /** Rewrites data: images in [html] as cid: references and returns a multipart/related body. */
+    private fun relatedHtml(html: String): MimeMultipart {
+        val related = MimeMultipart("related")
+        val parts = ArrayList<MimeBodyPart>()
+        var n = 0
+        val rewritten = Regex("""src\s*=\s*(["'])data:(image/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)\1""").replace(html) { m ->
+            val cid = "img${++n}.${System.nanoTime()}@quillbox"
+            val bytes = runCatching { Base64.getMimeDecoder().decode(m.groupValues[3]) }.getOrNull() ?: return@replace m.value
+            parts += MimeBodyPart().apply {
+                dataHandler = DataHandler(ByteArrayDataSource(bytes, m.groupValues[2]))
+                setHeader("Content-ID", "<$cid>")
+                disposition = Part.INLINE
+                fileName = "image$n." + m.groupValues[2].substringAfter('/').substringBefore('+').take(4)
+            }
+            "src=\"cid:$cid\""
+        }
+        related.addBodyPart(MimeBodyPart().apply { setContent(rewritten, "text/html; charset=UTF-8") })
+        parts.forEach { related.addBodyPart(it) }
+        return related
+    }
+
     fun send(req: SendRequest): MimeMessage {
-        val message = buildMessage(req)
+        val attached = req.attachMessages.mapNotNull { ref ->
+            rawBytes(ref.folder, ref.uid)?.let { bytes ->
+                val subject = runCatching { MimeMessage(session, java.io.ByteArrayInputStream(bytes)).subject }.getOrNull()
+                ((subject ?: "message").replace(Regex("[\\\\/:*?\"<>|]"), "_").take(80) + ".eml") to bytes
+            }
+        }
+        val message = buildMessage(req, smtpSession(req.deliveryReceipt), attached)
         Transport.send(message, account.username, account.password)
         return message
+    }
+
+    /** The complete RFC 822 source of a message. */
+    fun rawBytes(path: String, uid: Long): ByteArray? = withFolder(path) { f ->
+        val m = messagesByUid(f, listOf(uid))[uid] ?: return@withFolder null
+        java.io.ByteArrayOutputStream().also { m.writeTo(it) }.toByteArray()
     }
 
     private fun addresses(list: List<String>): Array<InternetAddress> =
         list.filter { it.isNotBlank() }.map { InternetAddress(it.trim()) }.toTypedArray()
 
-    fun smtpSession(): Session = Session.getInstance(outgoingProperties(), object : Authenticator() {
+    fun smtpSession(deliveryReceipt: Boolean = false): Session = Session.getInstance(outgoingProperties().apply {
+        // RFC 3461 delivery status notification; only sent when the server advertises DSN.
+        if (deliveryReceipt) { put("mail.smtp.dsn.notify", "SUCCESS,FAILURE,DELAY"); put("mail.smtp.dsn.ret", "HDRS") }
+    }, object : Authenticator() {
         override fun getPasswordAuthentication() = PasswordAuthentication(account.username, account.password)
     })
 
