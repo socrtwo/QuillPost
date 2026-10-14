@@ -448,6 +448,9 @@ button.avatar { cursor: pointer; margin-left: 4px; box-shadow: 0 0 0 2px rgba(25
 .sender-address.danger { color: var(--danger); }
 .sender-address.warn { color: var(--warn); }
 .sender-address.ok { color: var(--ok); }
+.sender-from-row { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.sender-from-row .sender-address { flex: 1; min-width: 0; }
+.sender-label { flex: none; font-size: 13px; font-weight: 600; color: var(--text-2); }
 .sender-address .domain { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 3px; }
 .sender-meta { font-size: 12px; color: var(--text-3); display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .sender-meta b { color: var(--text-2); font-weight: 600; }
