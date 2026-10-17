@@ -4,5 +4,6 @@
     <color name="quillbox_primary">#0F6CBD</color>
     <color name="quillbox_topbar">#0C3B5E</color>
     <color name="quillbox_background">#FFFFFF</color>
-    <color name="ic_launcher_background">#0F6CBD</color>
+    <!-- QuillPost icon tile colour (the suite's icon-background.txt). -->
+    <color name="ic_launcher_background">#0D7C86</color>
 </resources>
