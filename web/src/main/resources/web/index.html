@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="color-scheme" content="light dark" />
   <title>Quillbox Mail</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="scrollcue.css" />
   <link rel="stylesheet" href="scrollcue-app.css" />
   <link rel="stylesheet" href="embed.css" />
+  <!-- Clear of system bars, cut-outs and the keyboard (keep last). -->
+  <link rel="stylesheet" href="safearea.css" />
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -613,6 +615,7 @@
 <script src="mailplus.js"></script>
 <script src="app.js"></script>
 <script src="embed.js"></script>
+<script src="safearea.js"></script>
 <script type="module">
   // Scroll cues on every menu, dialog, settings page and choice list (long content lists get the
   // thin scrollbar only, see scrollcue-app.css).

@@ -6,13 +6,13 @@
 // IMAP/SMTP ports and data folder. From the web/ folder:
 //
 //   ./gradlew testClasses
-//   # desktop-mode server on 18090 (IMAP 13143, SMTP 13025) and web-mode server on 18091 (13144, 13026):
-//   PORT=18090 DEMO_IMAP_PORT=13143 DEMO_SMTP_PORT=13025 QUILLBOX_DATA_DIR=/tmp/qbA \
+//   # desktop-mode server on 8120 (IMAP 13143, SMTP 13025) and web-mode server on 8121 (13144, 13026):
+//   PORT=8120 DEMO_IMAP_PORT=13143 DEMO_SMTP_PORT=13025 QUILLBOX_DATA_DIR=/tmp/qbA \
 //     JAVA_TOOL_OPTIONS=-Dquillpost.desktop=true ./gradlew demo &
-//   PORT=18091 DEMO_IMAP_PORT=13144 DEMO_SMTP_PORT=13026 QUILLBOX_DATA_DIR=/tmp/qbB ./gradlew demo &
+//   PORT=8121 DEMO_IMAP_PORT=13144 DEMO_SMTP_PORT=13026 QUILLBOX_DATA_DIR=/tmp/qbB ./gradlew demo &
 //   node src/test/e2e/embed.mjs
 //
-// Environment: DESKTOP_URL (default http://127.0.0.1:18090/), WEB_URL (http://127.0.0.1:18091/),
+// Environment: DESKTOP_URL (default http://127.0.0.1:8120/), WEB_URL (http://127.0.0.1:8121/),
 // DESKTOP_IMAP/DESKTOP_SMTP, WEB_IMAP/WEB_SMTP (ports above), CHROMIUM (browser executable).
 // The script itself serves the fake QuillPen for the web-deployment and Android cases.
 import http from "node:http";
@@ -25,8 +25,8 @@ import { loadPlaywright, chromiumPath, demoAccount, signIn, waitSignedIn, checke
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FAKE_DIR = path.resolve(here, "../quillpen-fake");
 const FAKE_HTML = fs.readFileSync(path.join(FAKE_DIR, "index.html"), "utf8");
-const DESKTOP_URL = process.env.DESKTOP_URL || "http://127.0.0.1:18090/";
-const WEB_URL = process.env.WEB_URL || "http://127.0.0.1:18091/";
+const DESKTOP_URL = process.env.DESKTOP_URL || "http://127.0.0.1:8120/";
+const WEB_URL = process.env.WEB_URL || "http://127.0.0.1:8121/";
 const desktopAccount = demoAccount(Number(process.env.DESKTOP_IMAP || 13143), Number(process.env.DESKTOP_SMTP || 13025));
 const webAccount = demoAccount(Number(process.env.WEB_IMAP || 13144), Number(process.env.WEB_SMTP || 13026));
 
@@ -120,8 +120,6 @@ async function flow(page, label) {
   await pen(page).locator("#doc").click();
   await page.keyboard.type(" SENT-MARKER");
   const sendReq = page.waitForRequest((r) => r.url().includes("/api/send") && r.method() === "POST", { timeout: 10000 }).catch(() => null);
-  // Transient toasts (e.g. the notifications offer) sit over the window's bottom edge; clear them.
-  await page.evaluate(() => document.querySelectorAll("#toasts .toast").forEach((x) => x.remove()));
   await page.click("#cSend");
   const req = await sendReq;
   const body = req ? JSON.parse(req.postData() || "{}") : {};
