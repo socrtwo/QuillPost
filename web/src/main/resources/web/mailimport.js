@@ -36,7 +36,6 @@ const mailImport = {
     folders.load = async function () { await self.loadArchives(); return load(); };
     folders.byPath = function (p) { return byPath(p) || self.archiveFolders.find((f) => f.path === p); };
     folders.render = function () { render(); try { self.renderSection(); } catch (e) { console.error(e); } };
-    this.injectIcons();
     this.wireDrop();
     // A file handed over by a shell before the page was ready (desktop: #open=<name>).
     const names = [...(location.hash || "").matchAll(/[#&]open=([^&]+)/g)].map((m) => decodeURIComponent(m[1]));
@@ -49,18 +48,6 @@ const mailImport = {
   whenSignedIn(fn) {
     const t = setInterval(() => { if (typeof state !== "undefined" && state.token && state.settings) { clearInterval(t); fn(); } }, 300);
     setTimeout(() => clearInterval(t), 120000);
-  },
-
-  injectIcons() {
-    const defs = {
-      "folder-open": '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1"/><path d="M3 19l3-8h16l-3 8z"/>',
-      "box": '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
-      "mailbox-in": '<path d="M4 13h4l2 3h4l2-3h4"/><path d="M4 13l2-8h12l2 8v6H4z"/><path d="M12 3v7M9 7l3 3 3-3"/>',
-    };
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("style", "display:none");
-    svg.innerHTML = "<defs>" + Object.entries(defs).map(([k, v]) => `<symbol id="i-${k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${v}</symbol>`).join("") + "</defs>";
-    document.body.appendChild(svg);
   },
 
   renderSection() {
@@ -183,19 +170,23 @@ const mailImport = {
   },
 
   // ------------------------------------------------------------------ drag and drop
+  /** Set to false when another module owns window drops; it can then call handleDrop(dataTransfer). */
+  dropEnabled: true,
+  async handleDrop(dt, opts = {}) { const entries = await this.entriesFromDrop(dt); if (entries.length) this.open(entries, opts); },
+
   wireDrop() {
     const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files") && !Array.from(e.dataTransfer.types).includes("application/x-quillpost");
     const inCompose = (t) => t && t.closest && (t.closest("#composeDialog") || t.closest("#cEditor") || t.closest(".qb-drop-zone") || t.closest("dialog[open]"));
     let overlay = null;
     const hide = () => { overlay?.remove(); overlay = null; };
     window.addEventListener("dragover", (e) => {
-      if (!hasFiles(e) || inCompose(e.target) || !state.token) return;
+      if (!this.dropEnabled || !hasFiles(e) || inCompose(e.target) || !state.token) return;
       e.preventDefault();
       if (!overlay) { overlay = el("div", { class: "qb-drop-overlay" }, el("div", {}, icon("mailbox-in", 48), el("b", { text: "Drop to open" }), el("div", { class: "small", text: "Messages open to read; mailboxes and mail folders can be imported." }))); document.body.appendChild(overlay); }
     });
     window.addEventListener("dragleave", (e) => { if (!e.relatedTarget || e.relatedTarget === document.documentElement) hide(); });
     window.addEventListener("drop", async (e) => {
-      if (!hasFiles(e) || inCompose(e.target) || !state.token) { hide(); return; }
+      if (!this.dropEnabled || !hasFiles(e) || inCompose(e.target) || !state.token) { hide(); return; }
       e.preventDefault(); hide();
       const entries = await this.entriesFromDrop(e.dataTransfer);
       if (entries.length) this.open(entries);
@@ -423,9 +414,21 @@ const mailImport = {
 };
 
 /** Shells call this with the name of a file they copied into the data folder's "incoming" folder. */
-window.quillpostOpenIncoming = function (name) {
+if (typeof window !== "undefined") window.quillpostOpenIncoming = function (name) {
   if (typeof state === "undefined" || !state.token) { mailImport.whenSignedIn(() => mailImport.openIncoming(name)); return false; }
   mailImport.openIncoming(name);
+  return true;
+};
+
+/** The iOS app hands over files opened with QuillPost as base64 (the server is remote there). */
+if (typeof window !== "undefined") window.quillpostOpenData = function (name, base64) {
+  const go = () => {
+    const bin = atob(base64); const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    mailImport.open([{ file: new File([bytes], name), path: name }]);
+  };
+  if (typeof state === "undefined" || !state.token) { mailImport.whenSignedIn(go); return false; }
+  go();
   return true;
 };
 
@@ -444,4 +447,4 @@ window.quillpostOpenIncoming = function (name) {
   ]);
 })();
 
-try { mailImport.install(); } catch (e) { console.error("Mail import failed to start", e); }
+if (typeof document !== "undefined") { try { mailImport.install(); } catch (e) { console.error("Mail import failed to start", e); } }

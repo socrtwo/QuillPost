@@ -132,9 +132,9 @@ is marked for deletion).
 <!-- generated -->
 ## Command table
 
-367 commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).
+370 commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).
 
-### File (21)
+### File (23)
 
 | Command | Id | Group | Keys | Origin |
 |---|---|---|---|---|
@@ -159,6 +159,8 @@ is marked for deletion).
 | Quick Print (Selected Messages) | `file.quickPrint` | Print |  | Outlook |
 | Options | `file.options` | Options |  | Outlook |
 | Exit (Sign Out) | `file.signOut` | Options |  | Outlook |
+| Open File… | `mail.openMessageFile` | Open & Export |  | Outlook |
+| Import Mailbox… | `mail.importMailbox` | Open & Export |  | Outlook |
 
 ### Home (85)
 
@@ -262,7 +264,7 @@ is marked for deletion).
 | Work Offline | `mail.workOffline` | Send & Receive |  | Outlook |
 | Outbox (Scheduled) | `mail.viewOutbox` | Send & Receive |  | Outlook |
 
-### Folder (20)
+### Folder (21)
 
 | Command | Id | Group | Keys | Origin |
 |---|---|---|---|---|
@@ -286,6 +288,7 @@ is marked for deletion).
 | Archive Old Items… | `folder.archiveOld` | Clean Up |  | Outlook |
 | Show All Folders A to Z | `folder.showAllAZ` | View |  | Outlook |
 | New Search Folder… | `folder.newSearchFolder` | New |  | Outlook |
+| Local Archives | `mail.localArchives` | Actions |  | Outlook |
 
 ### View (29)
 

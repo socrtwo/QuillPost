@@ -15,6 +15,8 @@ struct QuillPostApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(state)
+                // "Open in QuillPost" / Files app: mail files are handed to the page, which uploads them.
+                .onOpenURL { url in if url.isFileURL { state.pendingFiles.append(url) } }
         }
     }
 }
@@ -33,6 +35,8 @@ final class AppState: ObservableObject {
     @Published var reloadToken: Int = 0
     /// True once the web client has rendered; the in-app splash fades out then.
     @Published var webReady: Bool = false
+    /// Mail files opened with QuillPost (.eml, .msg, .mbox, .pst…), waiting for the page to take them.
+    @Published var pendingFiles: [URL] = []
 
     init() {
         let saved = UserDefaults.standard.string(forKey: "serverURL") ?? ""

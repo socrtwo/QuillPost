@@ -14,6 +14,8 @@ struct QuillPostWebView: UIViewRepresentable {
     let state: AppState
     let url: URL
     let reloadToken: Int
+    /// Number of opened files waiting; a change makes SwiftUI call updateUIView, which delivers them.
+    let pendingFiles: Int
 
     func makeCoordinator() -> Coordinator { Coordinator(state: state) }
 
@@ -44,6 +46,7 @@ struct QuillPostWebView: UIViewRepresentable {
             context.coordinator.lastReloadToken = reloadToken
             context.coordinator.load(url)
         }
+        context.coordinator.deliverFiles()
     }
 
     static func dismantleUIView(_ web: WKWebView, coordinator: Coordinator) {
@@ -57,11 +60,30 @@ struct QuillPostWebView: UIViewRepresentable {
         weak var webView: WKWebView?
         var loadedURL: URL?
         var lastReloadToken = -1
+        private var pageLoaded = false
         private var downloadFiles: [ObjectIdentifier: URL] = [:]
 
         init(state: AppState) { self.state = state }
 
+        /// Hands opened mail files to the page (window.quillpostOpenData), which uploads them to the server.
+        func deliverFiles() {
+            guard pageLoaded, let web = webView else { return }
+            Task { @MainActor in
+                let files = state.pendingFiles
+                if files.isEmpty { return }
+                state.pendingFiles = []
+                for url in files {
+                    let scoped = url.startAccessingSecurityScopedResource()
+                    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                    guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { continue }
+                    let js = "window.quillpostOpenData && window.quillpostOpenData(\(Coordinator.jsString(url.lastPathComponent)), \"\(data.base64EncodedString())\")"
+                    web.evaluateJavaScript(js, completionHandler: nil)
+                }
+            }
+        }
+
         func load(_ url: URL) {
+            pageLoaded = false
             loadedURL = url
             webView?.load(URLRequest(url: url))
         }
@@ -112,6 +134,8 @@ struct QuillPostWebView: UIViewRepresentable {
                 // Let the page's own splash fade before revealing the web view.
                 try? await Task.sleep(nanoseconds: 350_000_000)
                 withAnimation(.easeOut(duration: 0.35)) { state.webReady = true }
+                pageLoaded = true
+                deliverFiles()
             }
         }
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

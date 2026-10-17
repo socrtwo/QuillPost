@@ -215,6 +215,23 @@ message source and headers, open in a new window, .eml download.
 Mailbox: automatic replies (date range, contacts-only, once per sender per N days), mbox export
 and .eml/.mbox import, storage quota, several accounts at once with unread counts.
 
+**Opening and importing mail from other programs.** *File ▸ Open File…*, *File ▸ Import Mailbox…*,
+dropping files or folders on the window, or "Open with QuillPost" in the file manager (Android,
+desktop, iOS) open any mail file, recognised by its content rather than its extension: single
+messages open in the reading pane; mailboxes and whole mail folders — Outlook `.pst`/`.ost`
+(ANSI and Unicode, read clean-room from Microsoft's published MS-PST specification, including
+RTF bodies, attachments, contacts, calendar and tasks), mbox in every dialect (Thunderbird,
+Netscape, SeaMonkey, Pine/Alpine, mutt, Eudora, Gmail Takeout split by label), Maildir, MH,
+Apple Mail `.emlx`/`.mbox` bundles, Outlook Express `.dbx` and OE4 `.mbx`, Eudora `.mbx` + `.toc`,
+Pegasus Mail, The Bat! (best effort), Windows Live Mail folders, or a `.zip`/`.tar.gz` of any of
+them — are shown with their folder tree and imported, with read/replied/flagged status, original
+arrival dates and tags, either into a folder of your IMAP account or into **Local Archives**, a
+read-only, searchable store on your device shown in the folder pane. Lotus Notes `.nsf` is
+recognised but not readable (its format is proprietary and undocumented). Word-processor,
+spreadsheet and presentation files are recognised and handed to QuillPen, QuillGrid or
+QuillStage. Every format, its detection signature and fidelity are listed in
+[docs/FORMATS.md](docs/FORMATS.md).
+
 **Calendar.** Day, 3-day, work week, week, month and agenda views; mini month; several
 calendars with colours; recurring events (daily, weekdays, weekly, monthly by date or by "second
 Tuesday", "last Friday", yearly, custom intervals, end by date or count) with single-occurrence
@@ -280,8 +297,6 @@ Exchange or Microsoft 365 servers are not available, and QuillPost does not imit
 - calendar and contact sync with CalDAV/CardDAV or Exchange: calendars, contacts and tasks are
   stored by QuillPost per account and move between programs as `.ics`, `.vcf` and `.csv` files;
   internet calendars can be subscribed to read-only;
-- Outlook `.pst`/`.ost` files: convert them first (for example with `readpst -M` from libpst) and
-  import the resulting `.mbox` or `.eml` files;
 - S/MIME signing and encryption.
 
 **Where the data lives.** Each account's calendars, contacts, tasks, message categories and

@@ -19,7 +19,7 @@ struct ContentView: View {
                     pageColor.ignoresSafeArea()
                     VStack(spacing: 0) {
                         topBarColor.frame(height: geo.safeAreaInsets.top)
-                        QuillPostWebView(state: state, url: state.serverBase!, reloadToken: state.reloadToken)
+                        QuillPostWebView(state: state, url: state.serverBase!, reloadToken: state.reloadToken, pendingFiles: state.pendingFiles.count)
                         pageColor.frame(height: geo.safeAreaInsets.bottom)
                     }
                     .padding(.leading, geo.safeAreaInsets.leading)

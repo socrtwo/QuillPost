@@ -1246,7 +1246,8 @@ const mailplus = {
         el("div", { class: "btn-row" },
           el("button", { class: "btn", onclick: () => download(apiUrl("/api/export/mbox", { folder: fsel.value })) }, icon("download"), "Export folder (.mbox)"),
           el("button", { class: "btn", disabled: !state.capabilities.folders || null, onclick: () => mailplus.importInto(folders.byPath(fsel.value)) }, icon("upload"), "Import .eml / .mbox into folder")),
-        el("p", { class: "small muted", text: "Most mail programs export .mbox or .eml. Desktop .pst files can be converted to .mbox with readpst (libpst) first." }));
+        el("p", { class: "small muted", text: "Mailboxes from other programs — Outlook .pst/.ost, Thunderbird, Apple Mail, Eudora, Outlook Express, Gmail Takeout and more — can be imported with all their folders:" }),
+        el("div", { class: "btn-row" }, el("button", { class: "btn", onclick: () => { $("settingsDialog")?.close?.(); Commands.run("mail.importMailbox"); } }, icon("upload"), "Import mailbox from another program…")));
       host.appendChild(el("h4", { text: "Calendar" }));
       const csel = select(pim.data.calendars.filter((c) => !c.readOnly).map((c) => [c.id, c.name]), "calendar", { style: { width: "240px" } });
       host.append(settingsUI.row("Calendar", "", csel), el("div", { class: "btn-row" },

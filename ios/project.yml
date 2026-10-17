@@ -30,6 +30,47 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIViewControllerBasedStatusBarAppearance: true
         ITSAppUsesNonExemptEncryption: false
+        # "Open in QuillPost" for mail files. QuillPost reads the content, so the types only tell iOS
+        # which files to offer; the page uploads them to the QuillPost server (mailimport.js).
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Mail message
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.email-message, com.apple.mail.emlx, com.microsoft.outlook.msg]
+          - CFBundleTypeName: Mailbox
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [info.socrtwo.quillpost.mbox, com.microsoft.outlook.pst, com.microsoft.outlook.ost, com.microsoft.outlook-express.dbx, info.socrtwo.quillpost.mbx]
+        LSSupportsOpeningDocumentsInPlace: false
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.apple.mail.emlx
+            UTTypeDescription: Apple Mail message
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [emlx] }
+          - UTTypeIdentifier: com.microsoft.outlook.msg
+            UTTypeDescription: Outlook message
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [msg], public.mime-type: [application/vnd.ms-outlook] }
+          - UTTypeIdentifier: info.socrtwo.quillpost.mbox
+            UTTypeDescription: Mailbox
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [mbox], public.mime-type: [application/mbox] }
+          - UTTypeIdentifier: com.microsoft.outlook.pst
+            UTTypeDescription: Outlook data file
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [pst] }
+          - UTTypeIdentifier: com.microsoft.outlook.ost
+            UTTypeDescription: Outlook offline folders
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [ost] }
+          - UTTypeIdentifier: com.microsoft.outlook-express.dbx
+            UTTypeDescription: Outlook Express mail folder
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [dbx] }
+          - UTTypeIdentifier: info.socrtwo.quillpost.mbx
+            UTTypeDescription: Eudora / Outlook Express 4 mailbox
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [mbx] }
         # The app talks to the user's own QuillPost server, which on a home network is often
         # plain http://192.168.x.y:8080. Allow that; HTTPS still works and is recommended
         # for servers reachable from the internet.
