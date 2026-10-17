@@ -136,7 +136,9 @@ class MailSession(val account: AccountDto) {
                 try {
                     return block(folder)
                 } finally {
-                    if (folder.isOpen) runCatching { folder.close(mode == Folder.READ_WRITE) }
+                    // IMAP deletions expunge explicitly, so closing does not: a message marked \Deleted
+                    // (Pine/mutt "mark for deletion") stays until Compact. POP3 deletes on close.
+                    if (folder.isOpen) runCatching { folder.close(mode == Folder.READ_WRITE && !isImap) }
                 }
             } catch (e: MessagingException) {
                 if (attempt++ >= 1 || e is jakarta.mail.FolderNotFoundException) throw e
