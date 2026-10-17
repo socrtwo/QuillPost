@@ -234,7 +234,7 @@ const FileOpen = typeof document === "undefined" ? null : {
       el("div", { class: "sender-top" }, el("span", { class: "sender-name", text: fromName }), el("span", { class: "grow" }),
         m.importance === "high" ? el("span", { class: "badge danger", text: "High importance" }) : m.importance === "low" ? el("span", { class: "badge info", text: "Low importance" }) : null,
         m.security ? el("span", { class: "badge", title: "Signatures are not verified and encrypted content is not decrypted" }, icon("lock", 12), m.security.startsWith("smime") ? "S/MIME" : "OpenPGP") : null),
-      el("div", { class: "sender-from-row" }, el("span", { class: "sender-label", text: "From:" }), el("div", { class: "sender-address" + (m.fromAddress ? "" : " qp-none"), text: m.fromAddress || "(not in this file)" })),
+      el("div", { class: "sender-from-row" }, el("span", { class: "sender-label", text: "From:" }), el("div", { class: "sender-address" + (m.fromAddress ? "" : " qp-none"), text: m.fromAddress || (m.fromName ? "(no Internet address recorded)" : "(not in this file)") })),
       meta)));
     card.appendChild(el("div", { class: "sender-date-row" }, el("span", { class: "sender-date", text: m.date ? fmtDate(m.date, { long: true }) : "No date" })));
     if (r.events && r.events.length) card.appendChild(this.eventsBlock(r));
@@ -483,7 +483,8 @@ if (FileOpen) {
   FileOpen.installDrop();
   // Files handed over by the desktop or Android app ("Open with QuillPost"): checked once signed in, and on request.
   window.quillpostOpenPending = () => FileOpen.openPending();
-  (function waitForSession(n) { if (typeof state !== "undefined" && state.token && state.settings) FileOpen.openPending(); else if (n < 600) setTimeout(() => waitForSession(n + 1), 500); })(0);
+  let seenToken = null;
+  setInterval(() => { const t = typeof state !== "undefined" && state.settings ? state.token : null; if (t && t !== seenToken) { seenToken = t; FileOpen.openPending(); } }, 1500);
 }
 
 if (typeof module !== "undefined" && module.exports) module.exports = { FileOpenLogic, FILE_COMMANDS };

@@ -18,7 +18,8 @@ object MimeReader {
     class Entity(val headers: List<Pair<String, String>>, val body: ByteArray) {
         fun header(n: String): String? = headers.firstOrNull { it.first.equals(n, true) }?.second
         val contentType: Pair<String, Map<String, String>> by lazy { HeaderParams.parse(header("Content-Type") ?: "") }
-        val type: String get() = contentType.first.ifEmpty { "text/plain" }
+        /** The media type; a missing or subtype-less type is text/plain as RFC 2045 says ("text" → text/plain). */
+        val type: String get() = contentType.first.let { if (it.isEmpty() || !it.contains('/')) (if (it.isEmpty() || it == "text") "text/plain" else "application/octet-stream") else it }
         fun param(n: String): String? = contentType.second[n.lowercase()]
         val disposition: Pair<String, Map<String, String>> by lazy { HeaderParams.parse(header("Content-Disposition") ?: "") }
         val fileName: String? get() = (disposition.second["filename"] ?: contentType.second["name"])?.let { TextCodec.decodeHeader(it).trim() }?.takeIf { it.isNotEmpty() }
@@ -90,7 +91,18 @@ object MimeReader {
 
     /** The parts of a multipart body, split on [boundary] (guessed when missing). */
     fun splitMultipart(body: ByteArray, boundary0: String?): List<Entity> {
-        val boundary = boundary0?.takeIf { it.isNotEmpty() } ?: guessBoundary(body) ?: return emptyList()
+        val declared = boundary0?.takeIf { it.isNotEmpty() }
+        if (declared != null) {
+            val parts = splitOn(body, declared)
+            if (parts.isNotEmpty()) return parts
+            // The boundary parameter does not match the delimiter lines: use the one the body uses.
+            val guessed = guessBoundary(body)?.takeIf { it != declared } ?: return parts
+            return splitOn(body, guessed)
+        }
+        return splitOn(body, guessBoundary(body) ?: return emptyList())
+    }
+
+    private fun splitOn(body: ByteArray, boundary: String): List<Entity> {
         val delim = "--$boundary".toByteArray(Charsets.ISO_8859_1)
         val parts = ArrayList<Entity>()
         var partStart = -1
@@ -302,6 +314,12 @@ object MimeReader {
                 if (ctx.calendar == null) ctx.calendar = TextCodec.decode(e.decoded(), e.param("charset") ?: "utf-8")
                 if (isAttachment) attach(e, type, ctx)
             }
+            (type == "message/delivery-status" || type == "message/disposition-notification" || type == "text/rfc822-headers" || type == "message/global-delivery-status") && disp != "attachment" -> {
+                // Delivery and read reports: shown under the explanation, as mail programs do.
+                val t = TextCodec.decode(e.decoded(), e.param("charset") ?: "utf-8").trim()
+                if (t.isNotEmpty()) { if (ctx.text.isNotEmpty()) ctx.text.append("\n\n"); ctx.text.append(t); if (ctx.html != null) ctx.appendHtml("<pre style=\"white-space:pre-wrap\">" + Rtf.escapeHtml(t) + "</pre>") }
+            }
+            isAttachment && disp == "inline" && type == "text/plain" -> { plain(e, ctx); attach(e, type, ctx) }
             isAttachment -> attach(e, type, ctx)
             type == "text/html" || type == "application/xhtml+xml" -> {
                 val bytes = e.decoded()
@@ -432,7 +450,9 @@ object MimeReader {
 
     private fun attach(e: Entity, type: String, ctx: Ctx, related: Boolean = false, fallbackName: String? = null) {
         val bytes = e.decoded()
-        val name = e.fileName ?: fallbackName ?: e.contentLocation?.substringAfterLast('/')?.substringBefore('?')?.takeIf { it.isNotBlank() && it.length < 120 }?.let { java.net.URLDecoder.decode(it.replace("+", "%2B"), "UTF-8") }
+        val described = e.header("Content-Description")?.let { TextCodec.decodeHeader(it).trim() }?.takeIf { it.isNotEmpty() && it.length < 80 && !it.contains('/') && !it.contains('\\') }
+            ?.let { if (it.contains('.')) it else it + MimeTypes.extensionFor(type) }
+        val name = e.fileName ?: fallbackName ?: e.contentLocation?.substringAfterLast('/')?.substringBefore('?')?.takeIf { it.isNotBlank() && it.length < 120 }?.let { java.net.URLDecoder.decode(it.replace("+", "%2B"), "UTF-8") } ?: described
             ?: ((if (related || e.contentId != null) "inline-" else "attachment-") + (ctx.atts.size + 1) + MimeTypes.extensionFor(type))
         val mime = if (type == "application/octet-stream" || type.isEmpty()) MimeTypes.byName(name).takeIf { it != "application/octet-stream" } ?: type.ifEmpty { "application/octet-stream" } else type
         ctx.atts += ParsedAttachment(name, mime, bytes, e.contentId, related, e.contentLocation)

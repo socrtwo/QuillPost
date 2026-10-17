@@ -47,8 +47,12 @@ import java.util.prefs.Preferences
  * web UI in the default browser. The window shows the address, lets you reopen or copy it,
  * and the app keeps running from the system tray.
  */
-fun main() {
+fun main(args: Array<String>) {
     val prefs = Preferences.userRoot().node("info/socrtwo/quillpost/desktop")
+    // Files the system asked QuillPost to open (double-click, "Open with"): messages, contacts,
+    // calendars, documents. When QuillPost already runs, hand them to it and show its window.
+    val files = args.map { java.io.File(it) }.filter { it.isFile }
+    if (files.isNotEmpty() && FileLaunch.handToRunning(prefs, files)) return
     val port = System.getenv("PORT")?.toIntOrNull() ?: prefs.getInt("port", 8642).let { if (isFree(it)) it else freePort() }
     // QuillPen embedded editor: serve an installed QuillPen's resources/embed folder at /quillpen-embed/.
     QuillPenEmbed.desktop = true
@@ -58,6 +62,7 @@ fun main() {
     val server = embeddedServer(Netty, port = port, host = "127.0.0.1") { module() }
     server.start(wait = false)
     val url = "http://127.0.0.1:$port/"
+    FileLaunch.install(prefs, port, files) { openBrowser(url) }
     if (prefs.getBoolean("openOnStart", true)) openBrowser(url)
 
     application {
@@ -72,7 +77,7 @@ fun main() {
                 Item("Open QuillPost", onClick = { openBrowser(url) })
                 Item("Show window", onClick = { visible = true })
                 Separator()
-                Item("Quit", onClick = { stop(server); exitApplication() })
+                Item("Quit", onClick = { FileLaunch.uninstall(prefs); stop(server); exitApplication() })
             }
         )
         Window(
@@ -82,7 +87,7 @@ fun main() {
             title = "QuillPost",
             icon = painterResource("tray.svg")
         ) {
-            LauncherScreen(url = url, onQuit = { stop(server); exitApplication() })
+            LauncherScreen(url = url, onQuit = { FileLaunch.uninstall(prefs); stop(server); exitApplication() })
         }
     }
 }

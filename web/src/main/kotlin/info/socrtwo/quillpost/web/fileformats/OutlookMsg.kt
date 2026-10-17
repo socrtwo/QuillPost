@@ -22,14 +22,16 @@ object OutlookMsg {
 
     private fun readMessage(cfb: Cfb, storage: Cfb.Entry, headerSize: Int, names: Map<Int, String>, format: String, depth: Int): ParsedMessage {
         val props = readProps(cfb, storage, headerSize, names)
+        // Recipient and attachment objects carry no code page of their own: they use the message's.
+        val cp = props.codepage
         val recips = storage.children.filter { it.isStorage && it.name.startsWith("__recip_version1.0_", true) }
             .sortedBy { it.name.substringAfter('#').toIntOrNull(16) ?: 0 }
-            .map { readProps(cfb, it, 8, names) }
+            .map { readProps(cfb, it, 8, names, cp) }
         val notes = ArrayList<String>()
         val atts = storage.children.filter { it.isStorage && it.name.startsWith("__attach_version1.0_", true) }
             .sortedBy { it.name.substringAfter('#').toIntOrNull(16) ?: 0 }
             .map { st ->
-                val ap = readProps(cfb, st, 8, names)
+                val ap = readProps(cfb, st, 8, names, cp)
                 val obj = st.child("__substg1.0_3701000D")
                 val embedded = if (obj != null && obj.isStorage && obj.child(PROPS) != null && depth < MAX_DEPTH)
                     runCatching { readMessage(cfb, obj, 24, names, "msg", depth + 1) }.getOrNull()
@@ -41,7 +43,7 @@ object OutlookMsg {
     }
 
     /** Reads the fixed-size values from the property stream and every variable-size property stream. */
-    private fun readProps(cfb: Cfb, storage: Cfb.Entry, headerSize: Int, names: Map<Int, String>): MapiProps {
+    private fun readProps(cfb: Cfb, storage: Cfb.Entry, headerSize: Int, names: Map<Int, String>, parentCodepage: Int = 0): MapiProps {
         val p = MapiProps()
         p.names = names
         storage.child(PROPS)?.let { e ->
@@ -64,7 +66,7 @@ object OutlookMsg {
                 off += 16
             }
         }
-        p.codepage = p.int(Mapi.MESSAGE_CODEPAGE) ?: p.int(Mapi.INTERNET_CPID) ?: 0
+        p.codepage = p.int(Mapi.MESSAGE_CODEPAGE) ?: p.int(Mapi.INTERNET_CPID) ?: parentCodepage
         for (e in storage.children) {
             if (!e.isStream || !e.name.startsWith("__substg1.0_", true) || e.name.length < 20) continue
             val tag = e.name.substring(12, 20).toLongOrNull(16)?.toInt() ?: continue

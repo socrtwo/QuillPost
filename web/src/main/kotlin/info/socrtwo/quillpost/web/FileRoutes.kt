@@ -125,6 +125,12 @@ object OpenedFiles {
     /** The desktop launcher installs this to open a file with the operating system's registered program. */
     @Volatile var nativeOpener: ((java.io.File) -> Boolean)? = null
 
+    /**
+     * Desktop only: the secret a second launch of the app (a file double-clicked while QuillPost
+     * runs) presents to hand its files to this instance ("/api/file/handoff"). Null disables the route.
+     */
+    @Volatile var handoffKey: String? = null
+
     @Synchronized fun get(id: String, owner: String): Entry? = files[id]?.takeIf { it.owner == owner }
 
     fun open(owner: String, name: String, bytes: ByteArray): Entry {
@@ -227,6 +233,17 @@ internal fun Routing.fileRoutes(sessions: Sessions) {
             val a = e.message?.attachments?.getOrNull(i) ?: throw IllegalArgumentException("No such attachment")
             withContext(Dispatchers.Default) { OpenedFiles.response(OpenedFiles.open(e.owner, a.fileName, a.bytes)) }
         }
+    }
+
+    /** Desktop: a second launch hands over the files it was asked to open (local, key-protected). */
+    post("/api/file/handoff") {
+        val key = OpenedFiles.handoffKey
+        val given = call.request.headers["X-QuillPost-Handoff"]
+        if (key == null || given == null || !java.security.MessageDigest.isEqual(key.toByteArray(), given.toByteArray())) { call.respond(HttpStatusCode.NotFound, ApiError("Not found")); return@post }
+        val bytes = call.receiveChannel().toByteArray()
+        if (bytes.size > OpenedFiles.MAX_FILE) { call.respond(HttpStatusCode.PayloadTooLarge, ApiError("The file is larger than 200 MB")); return@post }
+        OpenedFiles.enqueue(call.q("name") ?: "file", bytes)
+        call.respond(ApiStatus("queued"))
     }
 
     /** Files the desktop or Android app was asked to open ("Open with QuillPost"), opened for this account. */

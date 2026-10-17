@@ -176,6 +176,7 @@ object Mapi {
             if (text.isBlank()) text = runCatching { Rtf.toText(rtfBytes) }.getOrDefault("")
         }
 
+        if (text.isBlank() && html != null) text = Rtf.htmlToText(html)
         val atts = attachments.mapNotNull { attachment(it, html) }
         val date = p.time(CLIENT_SUBMIT_TIME) ?: p.time(DELIVERY_TIME) ?: h("Date")?.let { MimeReader.parseDate(it) } ?: p.time(CREATION_TIME)
         val importance = when (p.int(IMPORTANCE)) { 0 -> "low"; 2 -> "high"; else -> "normal" }

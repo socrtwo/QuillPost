@@ -98,6 +98,8 @@ class MainActivity : ComponentActivity() {
         window.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.quillpost_background)))
         configureWebView()
         pendingMailto = mailtoFrom(intent)
+        // "Open with" / "Share to" QuillPost (FileHandoff.kt); not again when the Activity is recreated.
+        if (savedInstanceState == null) FileHandoff.receive(this, intent) { deliverFiles() }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (!::webView.isInitialized || splash.visibility == View.VISIBLE) { moveTaskToBack(true); return }
@@ -113,6 +115,13 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         mailtoFrom(intent)?.let { deliverMailto(it) }
+        FileHandoff.receive(this, intent) { deliverFiles() }
+    }
+
+    /** Asks the page to show files queued by [FileHandoff] (it also checks by itself once signed in). */
+    private fun deliverFiles() {
+        if (!::webView.isInitialized || LocalServer.url == null || splash.visibility == View.VISIBLE) return
+        webView.evaluateJavascript("window.quillpostOpenPending && window.quillpostOpenPending()", null)
     }
 
     override fun onResume() {
@@ -368,6 +377,10 @@ class MainActivity : ComponentActivity() {
         }
         /** True when QuillPen is installed and its embed provider answers (compose "QuillPen" button). */
         @JavascriptInterface fun quillPenAvailable(): Boolean = QuillPenAndroid.isAvailable(this@MainActivity)
+        /** "Open in QuillPen / QuillGrid / QuillStage" for an opened document (fileopen.js). */
+        @JavascriptInterface fun openInApp(url: String, fileName: String, mimeType: String, packageName: String) {
+            if (pageIsLocal && isLocal(Uri.parse(url))) FileHandoff.openInApp(this@MainActivity, url, fileName, mimeType, packageName)
+        }
         @JavascriptInterface fun toast(text: String) { runOnUiThread { Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show() } }
 
         // AI tab API keys, encrypted with an Android Keystore key (AiSecureStore). "" = none.
