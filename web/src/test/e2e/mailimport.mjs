@@ -1,15 +1,15 @@
-// Opening mail files and importing mailboxes in the browser: File ▸ Open File… (a single .eml opens in
-// the reading pane from Local Archives ▸ Opened files), File ▸ Import Mailbox… into Local Archives (an
-// mbox) and into the signed-in IMAP account (an Outlook .pst), a folder upload (an Outlook Express
-// store), drag-and-drop, and the hand-off of a word-processor file.
+// Importing mailboxes in the browser: a mailbox given to File ▸ Open File… (mail.openFile) is routed to
+// the Import Mailbox dialog while a single message still opens in the message window; File ▸ Import
+// Mailbox… into Local Archives (an mbox) and into the signed-in IMAP account (an Outlook .pst), a
+// folder upload (an Outlook Express store), a dropped message, and a word-processor file handed back
+// to the Open File window.
 //
 // Run against the demo server (from web/):
 //   QUILLPOST_FIXTURE_OUT=/tmp/qp-fixtures ./gradlew test --tests '*FixtureExport*'
 //   PORT=8160 DEMO_IMAP_PORT=13160 DEMO_SMTP_PORT=13161 QUILLPOST_DATA_DIR=/tmp/qpA ./gradlew demo &
-//   FIXTURES=/tmp/qp-fixtures DATA_DIR=/tmp/qpA node src/test/e2e/mailimport.mjs
+//   FIXTURES=/tmp/qp-fixtures node src/test/e2e/mailimport.mjs
 // Environment: BASE_URL (default http://127.0.0.1:8160/), IMAP_PORT / SMTP_PORT (13160 / 13161),
-// FIXTURES (folder written by FixtureExport), DATA_DIR (the demo's QUILLPOST_DATA_DIR, to test files handed
-// over by the shells), CHROMIUM, SHOTS=<folder> for screenshots.
+// FIXTURES (folder written by FixtureExport), CHROMIUM, SHOTS=<folder> for screenshots.
 import fs from "node:fs";
 import path from "node:path";
 import { loadPlaywright, chromiumPath, demoAccount, signIn, waitSignedIn, checker } from "./common.mjs";
@@ -36,14 +36,20 @@ const pickWith = async (trigger, files) => {
 };
 
 // The commands exist and can go on the Quick Access Toolbar.
-for (const id of ["mail.importMailbox", "mail.openMessageFile", "mail.localArchives"]) t.ok(await page.evaluate((i) => Commands.has(i) && Commands.all().some((c) => c.id === i), id), `command ${id} registered`);
+for (const id of ["mail.importMailbox", "mail.openFile", "mail.localArchives"]) t.ok(await page.evaluate((i) => Commands.has(i) && Commands.all().some((c) => c.id === i), id), `command ${id} registered`);
 
-// 1. File ▸ Open File… with a single .eml: it opens in the reading pane.
-await pickWith(() => page.evaluate(() => { Commands.run("mail.openMessageFile"); }), path.join(FIX, "note.eml"));
-await page.waitForFunction("state.openDetail && state.openDetail.subject === 'Opened from a file'", null, { timeout: 15000 });
-t.ok(await page.evaluate(() => state.folder === "@archive/opened/files"), "opened message lives in Local Archives ▸ Opened files");
-t.ok(await page.locator("#folderTree .tree-head", { hasText: "Local Archives" }).count() === 1, "Local Archives section in the folder pane");
+// 1. File ▸ Open File…: a single .eml opens in the message window; a mailbox goes to Import Mailbox.
+await pickWith(() => page.evaluate(() => { Commands.run("mail.openFile"); }), path.join(FIX, "note.eml"));
+await page.waitForSelector("#fileDialog[open]", { timeout: 15000 });
+t.ok((await page.textContent("#fileDialog")).includes("Opened from a file"), "message opened in the Open File window");
 await shot("1-opened-eml");
+await page.evaluate(() => document.getElementById("fileDialog")?.close());
+await pickWith(() => page.evaluate(() => { Commands.run("mail.openFile"); }), path.join(FIX, "takeout.mbox"));
+await page.waitForSelector("#qbImport[open] .qb-import-tree", { timeout: 20000 });
+t.ok((await page.textContent("#qbImport .qb-import-head")).includes("Gmail"), "Open File routes a mailbox to Import Mailbox");
+t.ok(!(await page.isVisible("#fileDialog[open]")), "no Open File window for a mailbox");
+await shot("1b-openfile-mailbox");
+await page.click("#qbImport .dlg-foot button:has-text('Cancel')");
 
 // 2. Import Mailbox… an mbox into Local Archives.
 await page.evaluate(() => Commands.run("mail.importMailbox"));
@@ -63,6 +69,7 @@ const archived = await page.evaluate(() => state.messages.map((m) => ({ s: m.sub
 t.ok(archived.some((m) => m.s === "Mozilla read flagged" && m.read && m.flagged), "flags kept in Local Archives: " + JSON.stringify(archived));
 const hits = await page.evaluate(async () => (await api("/api/search", { query: { folder: state.folder, q: "Hello from Mozilla forwarded" } })).messages.length);
 t.eq(hits, 1, "body search in a Local Archives folder");
+t.ok(await page.locator("#folderTree .tree-head", { hasText: "Local Archives" }).count() === 1, "Local Archives section in the folder pane");
 await page.click(".msg >> nth=0");
 await page.waitForFunction("state.openDetail && state.openDetail.folder.startsWith('@archive/')");
 await shot("5-archive-folder");
@@ -111,41 +118,29 @@ t.ok(oeRows.some((r) => r.includes("Clients")) && oeRows.some((r) => r.includes(
 await shot("9-import-dialog-oe");
 await page.click("#qbImport .dlg-foot button:has-text('Cancel')");
 
-// 5. Dropping a file on the window opens it.
+// 5. Dropping a message on the window opens it in the Open File window (fileopen.js owns file drops).
 await page.evaluate(async () => {
   const dt = new DataTransfer();
   dt.items.add(new File(["From: Zed <zed@example.com>\r\nTo: you@example.org\r\nSubject: Dropped message\r\nDate: Thu, 24 Sep 2026 09:12:00 +0000\r\n\r\nDropped on the window.\r\n"], "dropped.eml", { type: "message/rfc822" }));
-  window.dispatchEvent(new DragEvent("dragover", { dataTransfer: dt, bubbles: true, cancelable: true }));
-  document.querySelector("#messageList").dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
+  const target = document.querySelector("#messageList");
+  for (const type of ["dragenter", "dragover", "drop"]) target.dispatchEvent(new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true }));
 });
-await page.waitForFunction("state.openDetail && state.openDetail.subject === 'Dropped message'", null, { timeout: 15000 });
+await page.waitForFunction("document.querySelector('#fileDialog[open]')?.textContent.includes('Dropped message')", null, { timeout: 15000 });
 t.ok(true, "dropped .eml opened");
+await page.evaluate(() => document.getElementById("fileDialog")?.close());
 
-// 6. A word-processor file is recognised and handed off to QuillPen (or another app), not imported.
+// 6. A word-processor file given to Import Mailbox is handed back to the Open File window (QuillPen).
 const doc = fs.readFileSync(path.join(FIX, "letter.doc")).toString("base64");
 await page.evaluate((b64) => {
   const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   mailImport.open([{ file: new File([bytes], "letter.dat"), path: "letter.dat" }]);
 }, doc);
-await page.waitForFunction("document.querySelector('#qbImport[open] .dlg-body')?.textContent.includes('Word 97')", null, { timeout: 15000 });
-t.ok((await page.textContent("#qbImport .dlg-body")).includes("QuillPen"), "Word file handed to QuillPen");
-t.ok(await page.locator("#qbImport button:has-text('Attach to new email')").count() === 1, "offer to attach the document");
+await page.waitForSelector("#fileDialog[open]", { timeout: 15000 });
+t.ok((await page.textContent("#fileDialog")).includes("QuillPen"), "Word file handed to QuillPen");
 await shot("10-word-handoff");
-await page.click("#qbImport .dlg-foot button:has-text('Close')");
+await page.evaluate(() => document.getElementById("fileDialog")?.close());
 
-// 7. A file handed over by a shell ("Open with"): copied into <data>/incoming, opened by name (#open=).
-if (process.env.DATA_DIR) {
-  fs.mkdirSync(path.join(process.env.DATA_DIR, "incoming"), { recursive: true });
-  fs.writeFileSync(path.join(process.env.DATA_DIR, "incoming", "handed over.eml"), "From: Shell <shell@example.com>\r\nTo: you@example.org\r\nSubject: Opened with QuillPost\r\nDate: Thu, 24 Sep 2026 09:12:00 +0000\r\n\r\nFrom the file manager.\r\n");
-  await page.goto("about:blank");
-  await page.goto(BASE + "#open=" + encodeURIComponent("handed over.eml"));
-  await waitSignedIn(page);
-  await page.waitForFunction("state.openDetail && state.openDetail.subject === 'Opened with QuillPost'", null, { timeout: 20000 });
-  t.ok(!fs.existsSync(path.join(process.env.DATA_DIR, "incoming", "handed over.eml")), "incoming file consumed");
-  await shot("11-open-with");
-}
-
-// 8. Local Archives command and phone width.
+// 7. Local Archives command and phone width.
 await page.evaluate(() => Commands.run("mail.localArchives"));
 await page.waitForFunction("state.folder.startsWith('@archive/')");
 await page.setViewportSize({ width: 412, height: 915 });
