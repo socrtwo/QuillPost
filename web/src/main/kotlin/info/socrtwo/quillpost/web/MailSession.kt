@@ -198,6 +198,11 @@ class MailSession(val account: AccountDto) {
             }
         }
         val leaf = f.name.lowercase().trim()
+        // Guess from the name only near the top of the tree (top level, under INBOX, or under a
+        // provider container such as "[Gmail]"), so an imported "Archive 2010/Sent Items" stays an
+        // ordinary folder instead of becoming the account's Sent folder.
+        val parent = runCatching { f.parent?.fullName }.getOrNull().orEmpty()
+        if (parent.isNotEmpty() && !parent.equals(INBOX, true) && !parent.startsWith("[")) return "other"
         return when {
             leaf in setOf("junk", "spam", "junk e-mail", "junk email", "bulk mail", "bulk", "[gmail]/spam", "unerwünscht", "courrier indésirable") -> "junk"
             leaf in setOf("sent", "sent items", "sent mail", "sent messages", "[gmail]/sent mail") -> "sent"

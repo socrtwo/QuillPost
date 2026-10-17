@@ -130,3 +130,18 @@ class FormatsTest {
         assertEquals("A&B", MailStores.decodeImapUtf7("A&-B"))
     }
 }
+
+/** Writes fixture files for the browser test (src/test/e2e/mailimport.mjs) when QUILLPOST_FIXTURE_OUT is set. */
+class FixtureExport {
+    @Test
+    fun writeFixtures() {
+        val out = System.getenv("QUILLPOST_FIXTURE_OUT")?.let { File(it) } ?: return
+        out.mkdirs()
+        Fixtures.pst(File(out, "fixture.pst"), unicode = true, encode = true)
+        File(out, "Thunderbird Inbox").writeText(Fixtures.thunderbird())
+        File(out, "takeout.mbox").writeText(Fixtures.takeout())
+        File(out, "note.eml").writeText(Fixtures.msg("Opened from a file", body = "This message was opened from an .eml file.\n"))
+        Fixtures.oeStore(File(out, "OE Store"))
+        File(out, "letter.doc").writeBytes(Fixtures.cfb(listOf("WordDocument", "1Table")))
+    }
+}

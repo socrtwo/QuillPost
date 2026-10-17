@@ -74,6 +74,15 @@ const mailImport = {
     for (const a of this.archives) {
       const fs = this.archiveFolders.filter((f) => f.path.startsWith("@archive/" + a.id + "/"));
       if (!fs.length) continue;
+      if (fs.length === 1) {
+        // A one-folder archive (an mbox file, Opened files) is a single row.
+        const li = folders.item({ ...fs[0], name: a.name });
+        li.querySelector("svg use")?.setAttribute("href", "#i-box");
+        li.title = [a.formatLabel, a.sourceName].filter(Boolean).join(" — ") || a.name;
+        li.oncontextmenu = (e) => { e.preventDefault(); this.folderMenu(e, fs[0], a); };
+        ul.appendChild(li);
+        continue;
+      }
       const title = el("li", { class: "archive-head other", title: [a.formatLabel, a.sourceName].filter(Boolean).join(" — "), style: { "--depth": 0 } }, icon("box", 18), el("span", { class: "name", text: a.name }));
       title.onclick = () => { const first = fs.find((f) => f.total > 0) || fs[0]; list.load(first.path); shell.setModule("mail", { silent: true }); };
       title.oncontextmenu = (e) => { e.preventDefault(); this.archiveMenu(e, a); };
@@ -402,9 +411,9 @@ const mailImport = {
       body.append(det);
       foot.append(el("button", { class: "btn", onclick: () => { const blob = new Blob([`${title}: ${a.name}\n${j.imported} imported, ${j.skipped} skipped\n\n` + notes.join("\n")], { type: "text/plain" }); const u = URL.createObjectURL(blob); const x = el("a", { href: u, download: "import-report.txt" }); document.body.appendChild(x); x.click(); x.remove(); } }, icon("download"), "Save report"));
     }
-    await folders.load();
     if (j.firstFolder) foot.append(el("button", { class: "btn", onclick: () => { d.close(); shell.setModule("mail", { silent: true }); list.load(j.firstFolder); } }, icon("folder"), "Show imported mail"));
     foot.append(el("button", { class: "btn primary", onclick: () => d.close() }, "Close"));
+    folders.load();
     if (typeof pim !== "undefined" && pim.load && (j.contacts || j.events || j.tasks)) pim.load().catch(() => {});
     api("/api/mailbox/upload", { method: "DELETE", query: { upload: a.upload } }).catch(() => {});
   },

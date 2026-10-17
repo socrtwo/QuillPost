@@ -7,4 +7,5 @@
     <string name="no_viewer">No app can open this file type.</string>
     <string name="download_failed">Could not save the attachment: %1$s</string>
     <string name="no_browser">No browser is available to open this link.</string>
+    <string name="open_file_failed">The file could not be read.</string>
 </resources>

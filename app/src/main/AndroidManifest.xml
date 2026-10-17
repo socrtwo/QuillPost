@@ -34,6 +34,48 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- "Open with" for mail files: messages (.eml, .msg, .emlx) and mailboxes (.mbox, .pst,
+                 .ost, .dbx, .mbx). Content is identified by its bytes, so any of these may arrive. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="message/rfc822" />
+                <data android:mimeType="application/vnd.ms-outlook" />
+                <data android:mimeType="application/vnd.ms-outlook-pst" />
+                <data android:mimeType="application/mbox" />
+                <data android:mimeType="application/x-mbox" />
+                <data android:mimeType="application/x-ms-tnef" />
+                <data android:mimeType="application/ms-tnef" />
+            </intent-filter>
+            <!-- Files without a mail MIME type, recognised by name. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:pathPattern=".*\\.eml" />
+                <data android:pathPattern=".*\\.msg" />
+                <data android:pathPattern=".*\\.emlx" />
+                <data android:pathPattern=".*\\.mbox" />
+                <data android:pathPattern=".*\\.mbx" />
+                <data android:pathPattern=".*\\.pst" />
+                <data android:pathPattern=".*\\.ost" />
+                <data android:pathPattern=".*\\.dbx" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="message/rfc822" />
+                <data android:mimeType="application/vnd.ms-outlook" />
+                <data android:mimeType="application/mbox" />
+            </intent-filter>
             <!-- Let QuillPost be chosen for mailto: links from other apps. -->
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />

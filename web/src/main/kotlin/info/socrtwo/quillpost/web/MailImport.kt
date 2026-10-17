@@ -283,6 +283,11 @@ class MailImport(private val ctx: AccountContext, private val tmpRoot: File) {
         val delim = if (writer == null) ctx.io { ctx.mail.connect().defaultFolder.separator.toString() } else "/"
         fun clean(n: String) = n.replace(delim, "_").replace(Regex("[\\u0000-\\u001f*%]"), "_").trim().ifBlank { "Folder" }
 
+        if (writer == null && req.imapParent.isNotBlank()) {
+            // Create the destination chain first, so it is a real (listable) folder on every server.
+            val parts = req.imapParent.split(delim).filter { it.isNotBlank() }
+            for (i in parts.indices) ensureImapFolder(parts.take(i + 1).joinToString(delim))
+        }
         fun parentChainSelected(f: StoreFolder): Boolean = tree.any { (p, g) -> g in chosen && pathOf[g]!!.size > pathOf[f]!!.size && pathOf[g]!!.take(pathOf[f]!!.size) == pathOf[f] }
 
         for ((path, folder) in tree) {
