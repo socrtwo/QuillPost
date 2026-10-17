@@ -14,7 +14,7 @@ function load() {
   const def = Commands.def.bind(Commands);
   Commands.def = (c) => { for (const x of Array.isArray(c) ? c : [c]) if (Commands.get(x.id)) duplicates.push(x.id); def(c); };
   Object.assign(globalThis, { Commands, Qat, MailTools });
-  for (const f of ["mailcommands.js", "mailextra.js"]) vm.runInThisContext(fs.readFileSync(path.join(WEB, f), "utf8"), { filename: f });
+  for (const f of ["mailcommands.js", "mailextra.js", "fileopen.js"]) vm.runInThisContext(fs.readFileSync(path.join(WEB, f), "utf8"), { filename: f });
   const qat = fs.readFileSync(path.join(WEB, "qat.js"), "utf8");
   const extraIcons = [...qat.matchAll(/^\s+"(c-[a-z0-9-]+)":/gm)].map((m) => m[1]);
   const html = fs.readFileSync(path.join(WEB, "index.html"), "utf8");

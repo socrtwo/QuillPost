@@ -1,0 +1,31 @@
+From: "Quill Team" <team@quillpost.test>
+To: demo@quillpost.test
+Subject: =?UTF-8?Q?Welcome_to_QuillPost_=E2=9C=93?=
+Date: Tue, 22 Sep 2026 09:15:00 +0200
+Message-ID: <welcome@quillpost.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="m"
+
+--m
+Content-Type: multipart/related; boundary="r"
+
+--r
+Content-Type: text/html; charset=utf-8
+
+<h2 style="color:#0f6cbd">Hello from a saved .eml file</h2><p>This message has an <b>inline image</b>:</p><img src="cid:logo@quill" width="64" height="64"><p>and a remote tracking pixel that stays blocked:</p><img src="https://tracker.example/pixel.gif" width="1" height="1">
+--r
+Content-Type: image/png
+Content-ID: <logo@quill>
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAo0lEQVR42u2WQQ6FMAhE5wZe1Ct6
+Hdd//VdujbUwwJCYaNJdYR5NaQfsv3/rwiMAy7rdLgFgJs1jUJFmMJCoGwyQ6ukwuGnRS7IAiSZx
+E6eAaL/7gHT5djok5RsKkJRviEBV/kznA7wTQDLGYKtNE4cY4wMvmWGQ3lD67BjnqX7XMUC74dQt
+0z9BxfT9Sy6OLc47kAxe45Z+dLzEtAy/7YAz4wBHbRkYQDAOfAAAAABJRU5ErkJggg==
+--r--
+--m
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: attachment; filename*=UTF-8''notes%20%E2%9C%93.txt
+
+Attached notes.
+--m--

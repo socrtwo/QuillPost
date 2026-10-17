@@ -132,9 +132,9 @@ is marked for deletion).
 <!-- generated -->
 ## Command table
 
-367 commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).
+369 commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).
 
-### File (21)
+### File (23)
 
 | Command | Id | Group | Keys | Origin |
 |---|---|---|---|---|
@@ -159,6 +159,8 @@ is marked for deletion).
 | Quick Print (Selected Messages) | `file.quickPrint` | Print |  | Outlook |
 | Options | `file.options` | Options |  | Outlook |
 | Exit (Sign Out) | `file.signOut` | Options |  | Outlook |
+| Open File… | `mail.openFile` | Open & Export |  | QuillPost |
+| Send File as Attachment… | `mail.sendFileAsAttachment` | Open & Export |  | QuillPost |
 
 ### Home (85)
 

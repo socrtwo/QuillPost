@@ -1,0 +1,17 @@
+BEGIN:VCARD
+VERSION:2.1
+N:Lovelace;Ada
+FN:Ada Lovelace
+ORG:Analytical Engines Ltd
+TITLE:Programmer
+TEL;WORK;VOICE:+44 20 7946 0000
+TEL;CELL:+44 7700 900000
+EMAIL;PREF;INTERNET:ada@example.org
+ADR;WORK;ENCODING=QUOTED-PRINTABLE:;;12 St James=E2=80=99s Square;London;;SW1Y 4JH;United Kingdom
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+N:Babbage;Charles;;;
+FN:Charles Babbage
+item1.EMAIL;type=INTERNET;type=pref:charles@example.org
+END:VCARD
