@@ -271,7 +271,7 @@ class MailSession(val account: AccountDto) {
         else -> m.messageNumber.toLong()
     }
 
-    internal fun summarise(f: Folder, m: Message): RawSummary {
+    internal fun summarise(f: Folder?, m: Message, knownUid: Long? = null): RawSummary {
         val (fromName, fromAddress) = firstAddress(runCatching { m.from }.getOrNull())
         val headers = LinkedHashMap<String, List<String>>()
         for (h in LIST_HEADERS) runCatching { m.getHeader(h)?.toList() }.getOrNull()?.let { if (it.isNotEmpty()) headers[h] = it }
@@ -279,7 +279,7 @@ class MailSession(val account: AccountDto) {
             ?.takeIf { it != fromAddress } ?: ""
         val ct = runCatching { m.contentType?.lowercase() }.getOrNull() ?: ""
         return RawSummary(
-            uid = uidOf(f, m),
+            uid = knownUid ?: uidOf(f!!, m),
             messageId = runCatching { (m as? MimeMessage)?.messageID }.getOrNull() ?: headers["Message-ID"]?.firstOrNull() ?: "",
             fromName = fromName,
             fromAddress = fromAddress,
@@ -351,8 +351,8 @@ class MailSession(val account: AccountDto) {
         MimeMessage(session, java.io.ByteArrayInputStream(bytes)) as Message
     }.getOrDefault(m)
 
-    private fun toRaw(f: Folder, m: Message): RawMessage {
-        val summary = summarise(f, m)
+    private fun toRaw(f: Folder?, m: Message, knownUid: Long? = null): RawMessage {
+        val summary = summarise(f, m, knownUid)
         val ex = Extracted()
         val counter = intArrayOf(0)
         runCatching { walk(localCopy(m), ex, counter, 0) }
@@ -420,6 +420,19 @@ class MailSession(val account: AccountDto) {
     }
 
     data class AttachmentData(val fileName: String, val mimeType: String, val bytes: ByteArray)
+
+    /** A message that is not on the server (Local Archives, opened message files), parsed like a fetched one. */
+    internal fun localMessage(m: Message, uid: Long): RawMessage = toRaw(null, m, uid)
+
+    /** An attachment of a message that is not on the server, by index or Content-ID. */
+    internal fun localAttachment(m: Message, index: Int?, cid: String?): AttachmentData? {
+        val counter = intArrayOf(0)
+        return findPart(m, counter, index, cid, 0)?.let { p ->
+            val ct = runCatching { p.contentType?.substringBefore(';')?.trim() }.getOrNull() ?: "application/octet-stream"
+            val name = runCatching { p.fileName }.getOrNull()?.let { decode(it) } ?: "attachment"
+            AttachmentData(name, ct, p.inputStream.use { it.readBytes() })
+        }
+    }
 
     fun getAttachment(path: String, uid: Long, index: Int?, cid: String?): AttachmentData? = withFolder(path) { f ->
         val m = messagesByUid(f, listOf(uid))[uid] ?: return@withFolder null

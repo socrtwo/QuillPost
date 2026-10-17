@@ -50,6 +50,7 @@ fun Application.module() {
     routing {
         extraRoutes(sessions)
         commandRoutes(sessions)
+        mailImportRoutes(sessions) // File ▸ Open, mailbox import, Local Archives (MailImportRoutes.kt)
         // QuillPen embedded editor (desktop): /api/quillpen and /quillpen-embed/<path>. See QuillPenEmbed.kt.
         quillPenEmbedRoutes(sessions, store.root)
         aiRoutes(sessions, store) // AI tab: ai/*.js, relay, desktop key store (AiRoutes.kt)

@@ -479,7 +479,9 @@ suspend fun AccountContext.declineReadReceipt(req: MdnRequest): ApiStatus {
 suspend fun AccountContext.quota(): QuotaDto? = runCatching { io { mail.quota() } }.getOrNull()
 
 suspend fun AccountContext.rawMessage(folder: String, uid: Long): ByteArray? {
-    touch(); return io { mail.rawBytes(folder, uid) }
+    touch()
+    if (LocalArchives.isArchive(folder)) return withContext(Dispatchers.IO) { archives.raw(folder, uid) }
+    return io { mail.rawBytes(folder, uid) }
 }
 
 suspend fun AccountContext.importMessages(folder: String, bytes: ByteArray): ImportResult {
@@ -491,7 +493,8 @@ suspend fun AccountContext.importMessages(folder: String, bytes: ByteArray): Imp
     return ImportResult(n, skipped = messages.size - n)
 }
 
-suspend fun AccountContext.exportMbox(folder: String, out: java.io.OutputStream): Int = io { mail.exportMbox(folder, out) }
+suspend fun AccountContext.exportMbox(folder: String, out: java.io.OutputStream): Int =
+    if (LocalArchives.isArchive(folder)) withContext(Dispatchers.IO) { archives.exportMbox(folder, out) } else io { mail.exportMbox(folder, out) }
 
 // --- calendar & contacts import/export, subscriptions -----------------------------------------------------
 

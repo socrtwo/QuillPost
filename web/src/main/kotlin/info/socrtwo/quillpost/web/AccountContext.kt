@@ -52,6 +52,10 @@ class AccountContext(
     /** Calendars, contacts, tasks, message metadata and the scheduled-send queue. */
     val pim = PimStore(store, account.email)
     private val engine = SpamEngine(blacklists, bayes)
+    /** Mailboxes imported from other programs, kept read-only in the data folder (LocalArchives.kt). */
+    val archives: LocalArchives by lazy { LocalArchives(java.io.File(store.accountDir(account.email), "archives"), mail) }
+    /** Uploads and background imports of mail stores (MailImport.kt). */
+    val imports: MailImport by lazy { MailImport(this, java.io.File(store.root, "import-tmp/" + store.accountDir(account.email).name)) }
 
     internal val cache = ConcurrentHashMap<String, CachedAnalysis>()
     @Volatile private var initialised: Boolean
@@ -150,6 +154,7 @@ class AccountContext(
 
     suspend fun listMessages(folder: String, limit: Int, offset: Int, rescan: Boolean = false): MessageListResponse {
         touch()
+        if (LocalArchives.isArchive(folder)) return withContext(Dispatchers.IO) { archives.listMessages(folder, limit, offset) }
         if (!mail.isImap && folder == LOCAL_JUNK) return listLocalJunk(limit)
         val (total, raws0) = io { mail.listMessages(folder, limit, offset) }
         val raws = if (!mail.isImap && folder.equals(MailSession.INBOX, true)) raws0.filter { key(it, folder) !in settings.pop3Junk.toSet() } else raws0
@@ -172,6 +177,7 @@ class AccountContext(
 
     suspend fun search(folder: String, q: String, limit: Int): SearchResponse {
         touch()
+        if (LocalArchives.isArchive(folder)) return withContext(Dispatchers.IO) { archives.search(folder, q, limit) }
         val raws = io { mail.search(folder, q, limit) }
         return SearchResponse(folder, q, raws.map { summary(it, folder) })
     }
@@ -324,6 +330,7 @@ class AccountContext(
 
     suspend fun message(folder: String, uid: Long, tz: String = ""): MessageDetailDto? {
         touch()
+        if (LocalArchives.isArchive(folder)) return archiveMessage(folder, uid, tz)
         val realFolder = if (folder == LOCAL_JUNK) MailSession.INBOX else folder
         val raw = io { mail.getMessage(realFolder, uid) } ?: return null
         val k = key(raw.summary, realFolder)
@@ -354,6 +361,7 @@ class AccountContext(
 
     suspend fun attachment(folder: String, uid: Long, index: Int?, cid: String?): MailSession.AttachmentData? {
         touch()
+        if (LocalArchives.isArchive(folder)) return withContext(Dispatchers.IO) { archives.mime(folder, uid)?.let { mail.localAttachment(it, index, cid) } }
         val realFolder = if (folder == LOCAL_JUNK) MailSession.INBOX else folder
         return io { mail.getAttachment(realFolder, uid, index, cid) }
     }
@@ -452,6 +460,7 @@ class AccountContext(
 
     suspend fun junk(req: JunkRequest): BatchResult {
         touch()
+        if (req.items.any { LocalArchives.isArchive(it.folder) }) return archiveReadOnly(req.items.size)
         var ok = 0; val errors = ArrayList<String>()
         val junkPath = if (mail.isImap) runCatching { io { mail.ensureFolderForRole("junk") } }.getOrNull() else LOCAL_JUNK
         val byFolder = req.items.groupBy { it.folder }
@@ -536,6 +545,7 @@ class AccountContext(
 
     suspend fun move(req: MoveRequest): BatchResult {
         touch()
+        if (req.items.any { LocalArchives.isArchive(it.folder) } || LocalArchives.isArchive(req.to)) return archiveReadOnly(req.items.size)
         var ok = 0; val errors = ArrayList<String>(); val moved = ArrayList<MessageRef>()
         for ((folder, refs) in req.items.groupBy { it.folder }) {
             runCatching { io { mail.move(folder, refs.map { it.uid }, req.to) } }
@@ -550,6 +560,7 @@ class AccountContext(
         touch()
         var ok = 0; val errors = ArrayList<String>()
         for ((folder, refs) in req.items.groupBy { it.folder }) {
+            if (LocalArchives.isArchive(folder)) { ok += withContext(Dispatchers.IO) { archives.setFlags(folder, refs.map { it.uid }.toSet(), req.read, req.flagged) }; continue }
             val realFolder = if (folder == LOCAL_JUNK) MailSession.INBOX else folder
             runCatching {
                 io {
@@ -564,6 +575,7 @@ class AccountContext(
 
     suspend fun delete(req: DeleteRequest): BatchResult {
         touch()
+        if (req.items.any { LocalArchives.isArchive(it.folder) }) return archiveReadOnly(req.items.size)
         var ok = 0; val errors = ArrayList<String>()
         val trash = if (mail.isImap) runCatching { io { mail.ensureFolderForRole("trash") } }.getOrNull() else null
         val moved = ArrayList<MessageRef>()
