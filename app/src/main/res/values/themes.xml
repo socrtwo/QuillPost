@@ -4,16 +4,16 @@
          window background and the light/dark flag the WebView uses for the
          prefers-color-scheme media query. The system bars are drawn edge-to-edge by
          MainActivity, which colours the strips behind them to match the web UI. -->
-    <style name="Theme.Quillbox" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/quillbox_background</item>
+    <style name="Theme.QuillPost" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/quillpost_background</item>
     </style>
 
     <!-- Launch splash (androidx SplashScreen): the envelope on the top-bar blue, kept on screen
-         until the embedded mail engine answers, then swapped for Theme.Quillbox. -->
-    <style name="Theme.Quillbox.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/quillbox_topbar</item>
+         until the embedded mail engine answers, then swapped for Theme.QuillPost. -->
+    <style name="Theme.QuillPost.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/quillpost_topbar</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
         <item name="windowSplashScreenAnimationDuration">400</item>
-        <item name="postSplashScreenTheme">@style/Theme.Quillbox</item>
+        <item name="postSplashScreenTheme">@style/Theme.QuillPost</item>
     </style>
 </resources>

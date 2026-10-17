@@ -21,15 +21,15 @@ fun signingValue(propKey: String, envKey: String): String? =
     (keystoreProperties.getProperty(propKey) ?: System.getenv(envKey))?.takeIf { it.isNotBlank() }
 
 android {
-    namespace = "info.socrtwo.quillbox"
+    namespace = "info.socrtwo.quillpost"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "info.socrtwo.quillbox"
+        applicationId = "io.github.socrtwo.quillpost"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
@@ -48,14 +48,14 @@ android {
     signingConfigs {
         // Release signing reads from local.properties or env vars. Keys:
         //   RELEASE_STORE_FILE / RELEASE_STORE_PASSWORD / RELEASE_KEY_ALIAS / RELEASE_KEY_PASSWORD
-        // (env equivalents: QUILLBOX_RELEASE_STORE_FILE, _STORE_PASSWORD, _KEY_ALIAS, _KEY_PASSWORD)
-        val storeFilePath = signingValue("RELEASE_STORE_FILE", "QUILLBOX_RELEASE_STORE_FILE")
+        // (env equivalents: QUILLPOST_RELEASE_STORE_FILE, _STORE_PASSWORD, _KEY_ALIAS, _KEY_PASSWORD)
+        val storeFilePath = signingValue("RELEASE_STORE_FILE", "QUILLPOST_RELEASE_STORE_FILE")
         if (storeFilePath != null) {
             create("release") {
                 storeFile = file(storeFilePath)
-                storePassword = signingValue("RELEASE_STORE_PASSWORD", "QUILLBOX_RELEASE_STORE_PASSWORD")
-                keyAlias = signingValue("RELEASE_KEY_ALIAS", "QUILLBOX_RELEASE_KEY_ALIAS")
-                keyPassword = signingValue("RELEASE_KEY_PASSWORD", "QUILLBOX_RELEASE_KEY_PASSWORD")
+                storePassword = signingValue("RELEASE_STORE_PASSWORD", "QUILLPOST_RELEASE_STORE_PASSWORD")
+                keyAlias = signingValue("RELEASE_KEY_ALIAS", "QUILLPOST_RELEASE_KEY_ALIAS")
+                keyPassword = signingValue("RELEASE_KEY_PASSWORD", "QUILLPOST_RELEASE_KEY_PASSWORD")
             }
         }
     }

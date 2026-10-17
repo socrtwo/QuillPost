@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Matches the web UI's light palette (styles.css): the accent-pressed and bg-elev tokens. -->
-    <color name="quillbox_primary">#0F6CBD</color>
-    <color name="quillbox_topbar">#0C3B5E</color>
-    <color name="quillbox_background">#FFFFFF</color>
-    <color name="ic_launcher_background">#0F6CBD</color>
+    <color name="quillpost_primary">#0F6CBD</color>
+    <color name="quillpost_topbar">#0C3B5E</color>
+    <color name="quillpost_background">#FFFFFF</color>
+    <!-- QuillPost icon tile colour (the suite's icon-background.txt). -->
+    <color name="ic_launcher_background">#0D7C86</color>
 </resources>

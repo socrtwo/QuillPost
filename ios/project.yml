@@ -1,20 +1,20 @@
-name: Quillbox
+name: QuillPost
 options:
-  bundleIdPrefix: info.socrtwo
+  bundleIdPrefix: io.github.socrtwo
   deploymentTarget:
     iOS: "16.0"
 targets:
-  Quillbox:
+  QuillPost:
     type: application
     platform: iOS
     sources:
-      - Quillbox
+      - QuillPost
     info:
-      path: Quillbox/Info.plist
+      path: QuillPost/Info.plist
       properties:
-        CFBundleDisplayName: Quillbox
-        CFBundleShortVersionString: "1.4.0"
-        CFBundleVersion: "5"
+        CFBundleDisplayName: QuillPost
+        CFBundleShortVersionString: "1.5.0"
+        CFBundleVersion: "6"
         UILaunchScreen:
           UIColorName: LaunchBackground
           UIImageName: LaunchLogo
@@ -30,24 +30,65 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIViewControllerBasedStatusBarAppearance: true
         ITSAppUsesNonExemptEncryption: false
-        # The app talks to the user's own Quillbox server, which on a home network is often
+        # "Open in QuillPost" for mail files. QuillPost reads the content, so the types only tell iOS
+        # which files to offer; the page uploads them to the QuillPost server (mailimport.js).
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Mail message
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [public.email-message, com.apple.mail.emlx, com.microsoft.outlook.msg]
+          - CFBundleTypeName: Mailbox
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [info.socrtwo.quillpost.mbox, com.microsoft.outlook.pst, com.microsoft.outlook.ost, com.microsoft.outlook-express.dbx, info.socrtwo.quillpost.mbx]
+        LSSupportsOpeningDocumentsInPlace: false
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.apple.mail.emlx
+            UTTypeDescription: Apple Mail message
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [emlx] }
+          - UTTypeIdentifier: com.microsoft.outlook.msg
+            UTTypeDescription: Outlook message
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [msg], public.mime-type: [application/vnd.ms-outlook] }
+          - UTTypeIdentifier: info.socrtwo.quillpost.mbox
+            UTTypeDescription: Mailbox
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [mbox], public.mime-type: [application/mbox] }
+          - UTTypeIdentifier: com.microsoft.outlook.pst
+            UTTypeDescription: Outlook data file
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [pst] }
+          - UTTypeIdentifier: com.microsoft.outlook.ost
+            UTTypeDescription: Outlook offline folders
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [ost] }
+          - UTTypeIdentifier: com.microsoft.outlook-express.dbx
+            UTTypeDescription: Outlook Express mail folder
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [dbx] }
+          - UTTypeIdentifier: info.socrtwo.quillpost.mbx
+            UTTypeDescription: Eudora / Outlook Express 4 mailbox
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification: { public.filename-extension: [mbx] }
+        # The app talks to the user's own QuillPost server, which on a home network is often
         # plain http://192.168.x.y:8080. Allow that; HTTPS still works and is recommended
         # for servers reachable from the internet.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
           NSAllowsLocalNetworking: true
-        NSLocalNetworkUsageDescription: Quillbox connects to the Quillbox server on your own network to show your mail.
+        NSLocalNetworkUsageDescription: QuillPost connects to the QuillPost server on your own network to show your mail.
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: info.socrtwo.quillbox
-        MARKETING_VERSION: "1.4.0"
-        CURRENT_PROJECT_VERSION: 5
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.socrtwo.quillpost
+        MARKETING_VERSION: "1.5.0"
+        CURRENT_PROJECT_VERSION: 6
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 schemes:
-  Quillbox:
+  QuillPost:
     build:
       targets:
-        Quillbox: all
+        QuillPost: all

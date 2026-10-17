@@ -1,11 +1,11 @@
-/* Quillbox — menus, dialogs and the mail features layered on the core client: ribbon,
+/* QuillPost — menus, dialogs and the mail features layered on the core client: ribbon,
  * folder management, categories, follow-up, snooze, quick steps, sweep, search options,
  * invitations, attachments, immersive reader, translation, My Day, notifications, swipe,
  * recipient autocomplete and the extra settings pages. Loaded before app.js.
  */
 "use strict";
-const QB_VERSION = "1.4.0";
-const QB_REPO = "https://github.com/socrtwo/quillbox";
+const QB_VERSION = "1.5.0";
+const QB_REPO = "https://github.com/socrtwo/QuillPost";
 
 // ============================================================================ menus
 /**
@@ -33,7 +33,7 @@ const menu = {
   openAt(x, y, items, anchorRect = null) {
     this.stack = [items];
     // A modal dialog sits in the top layer, above anything outside it: open the menu inside it.
-    const m0 = this.node(), modal = qsa("dialog[open]").filter((d) => d.matches(":modal")).pop();
+    const m0 = this.node(), modal = typeof topModal === "function" ? topModal() : qsa("dialog[open]").filter((d) => d.matches(":modal")).pop();
     const host = modal || document.body;
     if (m0.parentNode !== host) host.appendChild(m0);
     // The click that opened the menu is still bubbling; don't let the document handler close it.
@@ -470,7 +470,7 @@ const mailplus = {
     ]);
   },
   whatsNew() {
-    const node = el("div", { class: "whats-new" }, el("h4", { text: `Quillbox ${QB_VERSION}` }), el("ul", {}, ...[
+    const node = el("div", { class: "whats-new" }, el("h4", { text: `QuillPost ${QB_VERSION}` }), el("ul", {}, ...[
       "Calendar with day, work week, week and month views, recurring events, reminders, meeting invitations and replies, .ics import/export, internet calendar subscriptions, holiday and birthday calendars.",
       "People: contacts and contact lists with vCard and CSV import/export.",
       "To Do: task lists, My Day, Important, Planned, steps, due dates, reminders and repeats, plus flagged email.",
@@ -621,7 +621,7 @@ const mailplus = {
     menu.openFor(anchor, [
       { header: "Schedule send" },
       opt("Tomorrow morning", tm), opt("Tomorrow afternoon", ta), opt("Monday morning", mon),
-      { label: "Custom time…", icon: "calendar", onClick: async () => { const v = await formDialog.open({ title: "Schedule send", ok: "Schedule", fields: [{ key: "when", label: "Send at", type: "datetime-local", value: localIso(tm), required: true }, { type: "info", text: "Quillbox sends the message at that time while it is running (always the case for the server version; keep the desktop or phone app open)." }] }); if (!v) return; const t = new Date(v.when).getTime(); if (t < Date.now() + 60000) return toast("Choose a time at least a minute from now.", { danger: true }); compose.send({ sendAt: t }); } },
+      { label: "Custom time…", icon: "calendar", onClick: async () => { const v = await formDialog.open({ title: "Schedule send", ok: "Schedule", fields: [{ key: "when", label: "Send at", type: "datetime-local", value: localIso(tm), required: true }, { type: "info", text: "QuillPost sends the message at that time while it is running (always the case for the server version; keep the desktop or phone app open)." }] }); if (!v) return; const t = new Date(v.when).getTime(); if (t < Date.now() + 60000) return toast("Choose a time at least a minute from now.", { danger: true }); compose.send({ sendAt: t }); } },
     ]);
   },
 
@@ -1090,8 +1090,8 @@ const mailplus = {
       const add = (k, v) => { kv.appendChild(el("dt", { text: k })); kv.appendChild(el("dd", { text: v || "—" })); };
       add("Name", a.displayName); add("Incoming", a.incomingHost ? `${a.protocol} ${a.incomingHost}:${a.incomingPort} (${a.incomingSecurity})` : a.protocol); add("Outgoing", a.smtpHost ? `SMTP ${a.smtpHost}:${a.smtpPort} (${a.smtpSecurity})` : ""); add("User name", a.username);
       if (state.quota) add("Storage", `${fmtSize(state.quota.usedKb * 1024)} of ${fmtSize(state.quota.limitKb * 1024)} used`);
-      if (NATIVE === "ios") add("Quillbox server", location.origin);
-      if (NATIVE === "android") add("Mail engine", "Running inside the Quillbox app on this phone (127.0.0.1)");
+      if (NATIVE === "ios") add("QuillPost server", location.origin);
+      if (NATIVE === "android") add("Mail engine", "Running inside the QuillPost app on this phone (127.0.0.1)");
       host.appendChild(kv);
       host.appendChild(el("h4", { text: "Send-as addresses (aliases)" }));
       host.appendChild(el("p", { class: "small muted", text: "Other addresses your provider lets this account send from. They appear in the From box when you write." }));
@@ -1134,7 +1134,7 @@ const mailplus = {
     render_autoreply(host) {
       const ar = state.settings.autoReply || {};
       host.append(el("h3", { text: "Automatic replies" }), el("p", { text: "Send an automatic reply (an out-of-office message) to people who write to you. Each sender gets it at most once in the chosen interval; mailing lists, newsletters and automated senders are never answered." }));
-      host.appendChild(el("div", { class: "info-bar warn" }, icon("warning"), el("span", { class: "grow", text: "IMAP has no server-side automatic replies, so Quillbox answers new mail while it is running — always for the server version, and while the desktop or phone app is open. If your provider offers a vacation responder in its webmail, that also works when Quillbox is closed." })));
+      host.appendChild(el("div", { class: "info-bar warn" }, icon("warning"), el("span", { class: "grow", text: "IMAP has no server-side automatic replies, so QuillPost answers new mail while it is running — always for the server version, and while the desktop or phone app is open. If your provider offers a vacation responder in its webmail, that also works when QuillPost is closed." })));
       const on = el("input", { type: "checkbox" }); on.checked = !!ar.enabled;
       const period = el("input", { type: "checkbox" }); period.checked = !!(ar.start || ar.end);
       const start = el("input", { type: "datetime-local", value: ar.start ? localIso(new Date(ar.start)) : localIso(new Date()) });
@@ -1156,7 +1156,7 @@ const mailplus = {
         } }, "Save")));
     },
     render_notifications(host) {
-      host.append(el("h3", { text: "Notifications" }), el("p", { text: "Desktop notifications appear when Quillbox is in the background. Stored in this browser." }));
+      host.append(el("h3", { text: "Notifications" }), el("p", { text: "Desktop notifications appear when QuillPost is in the background. Stored in this browser." }));
       const perm = "Notification" in window ? Notification.permission : "unsupported";
       host.appendChild(settingsUI.row("Desktop notifications", perm === "granted" ? "Allowed by the browser." : perm === "denied" ? "Blocked in the browser's site settings." : perm === "unsupported" ? "Not supported here." : "Not yet allowed.", perm === "default" ? el("button", { class: "btn sm", onclick: () => Notification.requestPermission().then(() => settingsUI.render()) }, "Allow") : settingsUI.toggle(prefs.get("notifyDesktop", true), (v) => prefs.set("notifyDesktop", v))));
       host.appendChild(settingsUI.row("New mail", "Notify about new messages in Focused (or the whole Inbox when Focused Inbox is off).", settingsUI.toggle(prefs.get("notifyMail", true), (v) => prefs.set("notifyMail", v))));
@@ -1239,14 +1239,15 @@ const mailplus = {
       host.appendChild(settingsUI.row("Swipe left", "", settingsUI.pref("swipeLeft", "delete", opts)));
     },
     render_importexport(host) {
-      host.append(el("h3", { text: "Import and export" }), el("p", { text: "Move mail, calendars and contacts in and out of Quillbox using standard files." }));
+      host.append(el("h3", { text: "Import and export" }), el("p", { text: "Move mail, calendars and contacts in and out of QuillPost using standard files." }));
       host.appendChild(el("h4", { text: "Mail" }));
       const fsel = select(state.folders.map((f) => [f.path, f.name]), state.folder !== SCHEDULED ? state.folder : "INBOX", { style: { width: "240px" } });
       host.append(settingsUI.row("Folder", "", fsel),
         el("div", { class: "btn-row" },
           el("button", { class: "btn", onclick: () => download(apiUrl("/api/export/mbox", { folder: fsel.value })) }, icon("download"), "Export folder (.mbox)"),
           el("button", { class: "btn", disabled: !state.capabilities.folders || null, onclick: () => mailplus.importInto(folders.byPath(fsel.value)) }, icon("upload"), "Import .eml / .mbox into folder")),
-        el("p", { class: "small muted", text: "Most mail programs export .mbox or .eml. Desktop .pst files can be converted to .mbox with readpst (libpst) first." }));
+        el("p", { class: "small muted", text: "Mailboxes from other programs — Outlook .pst/.ost, Thunderbird, Apple Mail, Eudora, Outlook Express, Gmail Takeout and more — can be imported with all their folders:" }),
+        el("div", { class: "btn-row" }, el("button", { class: "btn", onclick: () => { $("settingsDialog")?.close?.(); Commands.run("mail.importMailbox"); } }, icon("upload"), "Import mailbox from another program…")));
       host.appendChild(el("h4", { text: "Calendar" }));
       const csel = select(pim.data.calendars.filter((c) => !c.readOnly).map((c) => [c.id, c.name]), "calendar", { style: { width: "240px" } });
       host.append(settingsUI.row("Calendar", "", csel), el("div", { class: "btn-row" },
@@ -1279,10 +1280,10 @@ const mailplus = {
       host.appendChild(settingsUI.row("Birthdays of my contacts", "", settingsUI.toggle(prefs.get("cal.birthdays", true), (v) => { prefs.set("cal.birthdays", v); pim.emit(); })));
     },
     render_about(host) {
-      host.append(el("h3", { text: "About Quillbox" }), el("p", { text: `Version ${QB_VERSION}` }));
-      host.appendChild(el("p", { text: "Quillbox is an open-source mail, calendar, contacts and to-do client for any IMAP or POP3 account, with built-in junk and phishing protection. It runs on Windows, macOS, Linux, Raspberry Pi, Android, ChromeOS and iOS, and as a self-hosted web app." }));
-      host.appendChild(el("p", { class: "small muted", text: "Quillbox is an independent project. Its layout follows common desktop mail-client conventions; it is not affiliated with, endorsed by or connected to Microsoft or any other mail software vendor. Product names mentioned in the documentation belong to their owners." }));
-      host.appendChild(el("p", { class: "small muted", text: "Privacy: messages stay between this Quillbox server and your mail provider. Calendars, contacts, tasks and settings are stored in the Quillbox data folder on the machine that runs it. Junk checks make only DNS queries; AI features use a local model you install yourself." }));
+      host.append(el("h3", { text: "About QuillPost" }), el("p", { text: `Version ${QB_VERSION}` }));
+      host.appendChild(el("p", { text: "QuillPost is an open-source mail, calendar, contacts and to-do client for any IMAP or POP3 account, with built-in junk and phishing protection. It runs on Windows, macOS, Linux, Raspberry Pi, Android, ChromeOS and iOS, and as a self-hosted web app." }));
+      host.appendChild(el("p", { class: "small muted", text: "QuillPost is an independent project. Its layout follows common desktop mail-client conventions; it is not affiliated with, endorsed by or connected to Microsoft or any other mail software vendor. Product names mentioned in the documentation belong to their owners." }));
+      host.appendChild(el("p", { class: "small muted", text: "Privacy: messages stay between this QuillPost server and your mail provider. Calendars, contacts, tasks and settings are stored in the QuillPost data folder on the machine that runs it. Junk checks make only DNS queries; AI features use a local model you install yourself." }));
       host.appendChild(el("div", { class: "btn-row" }, el("button", { class: "btn", onclick: () => openExternal(QB_REPO) }, icon("external"), "Project page"), el("button", { class: "btn", onclick: () => mailplus.whatsNew() }, icon("sparkle"), "What's new")));
     },
   },

@@ -1,4 +1,4 @@
-/* Quillbox — desktop-mail-client layout (mail, calendar, people, to do). Own brand, icons and
+/* QuillPost — desktop-mail-client layout (mail, calendar, people, to do). Own brand, icons and
    name; the layout conventions (app rail, simplified ribbon, three panes) are generic. */
 :root {
   --font: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -185,7 +185,9 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 16
 .topbar .icon-btn:hover, .topbar .icon-btn.active { background: rgba(255,255,255,.16); color: #fff; }
 .brand { font-weight: 700; font-size: 16px; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; margin-right: 8px; white-space: nowrap; }
 .brand svg { width: 22px; height: 22px; }
-.search { flex: 1; max-width: 680px; margin: 0 auto; position: relative; }
+/* The search box gives way to the buttons (never the other way round, which would push the
+   title bar wider than the window), but keeps room to type. */
+.search { flex: 1; max-width: 680px; margin: 0 auto; position: relative; min-width: 96px; }
 .search input { height: 32px; border-radius: var(--radius); border: 0; background: rgba(255,255,255,.95); color: #242424; padding-left: 34px; padding-right: 64px; }
 :root[data-theme="dark"] .search input { background: #2b2b2b; color: #f0f0f0; }
 .search > svg { position: absolute; left: 10px; top: 8px; width: 16px; height: 16px; color: #616161; pointer-events: none; }
@@ -194,7 +196,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 16
 .search .clear { right: 32px; }
 .search .options { right: 2px; }
 .search .icon-btn svg { width: 15px; height: 15px; }
-.topbar-right { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.topbar-right { display: flex; align-items: center; gap: 2px; margin-left: auto; flex: none; }
+.topbar > .icon-btn, .topbar > .brand { flex: none; }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;
   color: #fff; background: #6b69d6; flex: none; text-transform: uppercase; letter-spacing: .5px; border: 0; cursor: default;
@@ -205,8 +208,8 @@ button.avatar { cursor: pointer; margin-left: 4px; box-shadow: 0 0 0 2px rgba(25
 
 /* ---------- shell: app rail + module ---------- */
 .shell { flex: 1; display: flex; min-height: 0; background: var(--bg); }
-.app-rail { width: 68px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; background: var(--bg); }
-.app-rail button { position: relative; width: 60px; height: 54px; border: 0; background: transparent; border-radius: var(--radius); color: var(--text-3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; }
+.app-rail { width: 68px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; background: var(--bg); min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.app-rail button { flex: none; position: relative; width: 60px; height: 54px; border: 0; background: transparent; border-radius: var(--radius); color: var(--text-3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; }
 .app-rail button svg { width: 22px; height: 22px; }
 .app-rail button:hover { background: var(--bg-hover); color: var(--text); }
 .app-rail button.active { color: var(--accent); background: var(--bg-elev); box-shadow: var(--shadow-1); font-weight: 600; }
@@ -258,8 +261,12 @@ button.avatar { cursor: pointer; margin-left: 4px; box-shadow: 0 0 0 2px rgba(25
 .workspace.pane-off .reading-pane { display: none; }
 .workspace.pane-off.show-reading .list-pane { display: none; }
 .workspace.pane-off.show-reading .reading-pane { display: flex; }
-.workspace.nav-collapsed { grid-template-columns: 0 minmax(340px, 440px) 1fr; column-gap: 0; }
-.workspace.nav-collapsed.with-myday { grid-template-columns: 0 minmax(320px, 400px) 1fr 300px; }
+.workspace.nav-collapsed { grid-template-columns: minmax(340px, 440px) 1fr; }
+.workspace.nav-collapsed.with-myday { grid-template-columns: minmax(320px, 400px) 1fr 300px; }
+/* The hidden folder pane takes no grid column, so the other panes move one column left. */
+.workspace.nav-collapsed.pane-bottom, .workspace.nav-collapsed.pane-off { grid-template-columns: 1fr; }
+.workspace.nav-collapsed.pane-bottom.with-myday, .workspace.nav-collapsed.pane-off.with-myday { grid-template-columns: 1fr 300px; }
+.workspace.nav-collapsed.pane-bottom.with-myday .my-day { grid-column: 2; }
 .workspace.nav-collapsed .folders { display: none; }
 .workspace.nav-collapsed .list-pane { margin-left: 0; }
 
@@ -388,6 +395,18 @@ button.avatar { cursor: pointer; margin-left: 4px; box-shadow: 0 0 0 2px rgba(25
 
 /* ---------- reading pane ---------- */
 .reading-pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; overflow: hidden; }
+/* Reading pane in a narrow column (a small window, or the AI pane open beside it): the subject
+   gets a line of its own under the buttons instead of being squeezed to a letter per line. */
+@media (min-width: 701px) {
+  .reading-pane { container: reading / inline-size; }
+  @container reading (max-width: 560px) {
+    .reading-toolbar { flex-wrap: wrap; }
+    .reading-toolbar .btn:not(.ai) { font-size: 0; gap: 0; padding: 0 7px; }
+    .reading-toolbar .btn svg { width: 18px; height: 18px; }
+    .reading-toolbar .rd-subject { flex-basis: 100%; order: 20; margin-top: 6px; }
+    .reading-toolbar #rdAnalyze { margin-left: auto; }
+  }
+}
 .reading-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-3); gap: 8px; }
 .reading-empty svg { width: 96px; height: 96px; color: var(--border-strong); }
 .reading { flex: 1; display: flex; flex-direction: column; min-height: 0; }
@@ -611,6 +630,9 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 .sig-row, .tpl-row, .qs-row, .cat-row, .acct-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; background: var(--bg-elev); }
 .sig-row .grow, .tpl-row .grow, .qs-row .grow, .cat-row .grow, .acct-row .grow { flex: 1; min-width: 0; }
 .acct-row .avatar { width: 36px; height: 36px; }
+/* Narrow windows: the buttons go to a line of their own rather than squeezing the address. */
+.sig-row, .tpl-row, .qs-row, .cat-row, .acct-row { flex-wrap: wrap; }
+.sig-row .grow, .tpl-row .grow, .qs-row .grow, .cat-row .grow, .acct-row .grow { flex-basis: 10em; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .swatch.active { border-color: var(--text); }
@@ -643,6 +665,8 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 .splash.fade { opacity: 0; pointer-events: none; }
 .splash-mark { width: 96px; height: 96px; border-radius: 26px; background: rgba(255,255,255,.14); box-shadow: 0 10px 30px rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; animation: splash-pop .5s ease-out; }
 .splash-mark svg { width: 56px; height: 56px; }
+.splash-mark:has(img) { background: none; border-radius: 22%; }
+.splash-mark img { width: 96px; height: 96px; display: block; }
 .splash-name { font-size: 34px; font-weight: 800; letter-spacing: .3px; }
 .splash-tag { font-size: 14px; opacity: .85; }
 .splash-spin { margin-top: 22px; width: 22px; height: 22px; border-color: rgba(255,255,255,.35); border-top-color: #fff; }
@@ -692,6 +716,11 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 
 /* toast / context menu */
 .toast-host { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; align-items: center; }
+/* In a modal dialog (app.js toastHost) the toasts are a line at the foot of the dialog: they cover
+   none of its fields or buttons. */
+dialog > .toast-host { position: static; transform: none; inset: auto; flex: none; padding: 0 12px; margin: 0 0 10px; }
+dialog > .toast-host:empty { display: none; }
+dialog > .toast-host .toast { max-width: 100%; }
 .toast { background: #292929; color: #fff; padding: 10px 16px; border-radius: var(--radius); box-shadow: var(--shadow-3); font-size: 13px; display: flex; gap: 12px; align-items: center; animation: rise .2s ease-out; max-width: 90vw; }
 :root[data-theme="dark"] .toast { background: #f0f0f0; color: #1b1b1b; }
 .toast button { background: none; border: 0; color: #479ef5; font-weight: 700; cursor: pointer; }
@@ -713,8 +742,8 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 /* immersive reader */
 .reader-dialog { max-width: 100vw; width: 100vw; height: 100vh; max-height: 100vh; margin: 0; border-radius: 0; }
 .reader-dialog[open] { display: flex; flex-direction: column; }
-.reader-bar { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-bottom: 1px solid var(--border); flex: none; }
-.reader-bar select { width: auto; }
+.reader-bar { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-bottom: 1px solid var(--border); flex: none; flex-wrap: wrap; }
+.reader-bar select { width: auto; min-width: 0; max-width: 100%; }
 .reader-bar .grow { flex: 1; }
 .reader-page { flex: 1; overflow: auto; padding: 32px max(24px, calc((100vw - 760px) / 2)); font-size: var(--rdr-size, 22px); line-height: var(--rdr-spacing, 1.5); font-family: Georgia, "Times New Roman", serif; }
 .reader-page.sans { font-family: var(--font); }
@@ -732,6 +761,12 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 .rem-item b { display: block; }
 .rem-item .small { color: var(--text-3); }
 
+/* Very short windows (a phone on its side with the keyboard up): the panes keep a usable height
+   and the module scrolls instead of squeezing the message list to nothing. */
+@media (max-height: 300px) {
+  .shell > .module { overflow-y: auto; }
+  .shell > .module > .workspace { flex: none; height: max(200px, 100%); }
+}
 /* ---------- responsive ---------- */
 .mobile-only { display: none; }
 /* Medium windows: no My Day column, narrower folder pane. */
@@ -742,6 +777,7 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 /* Tablets and small windows: the reading pane replaces the list. */
 @media (max-width: 1000px) {
   .workspace, .workspace.pane-bottom, .workspace.pane-off, .workspace.with-myday { grid-template-columns: 210px 1fr; grid-template-rows: 1fr; }
+  .workspace.nav-collapsed, .workspace.nav-collapsed.pane-bottom, .workspace.nav-collapsed.pane-off, .workspace.nav-collapsed.with-myday { grid-template-columns: 1fr; }
   .workspace .reading-pane { display: none; }
   .workspace.show-reading .list-pane { display: none; }
   .workspace.show-reading .reading-pane { display: flex; }

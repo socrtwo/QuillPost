@@ -1,0 +1,86 @@
+/*
+ * Safe area: keeps the page, its dialogs, menus, drawers, toasts and floating buttons clear of the
+ * system bars, display cut-outs and the on-screen keyboard.
+ *
+ * The Android and iOS apps pad their WebView natively (the insets are 0 there). A browser or a
+ * home-screen web app draws under the bars because index.html asks for viewport-fit=cover; then
+ * env(safe-area-inset-*) is non-zero. Everything below reads the --sa-* variables, so a test can
+ * set them to emulate a phone (web/src/test/e2e/layout.mjs). --kb is the part of the layout that
+ * the keyboard covers without the browser shrinking the page (iOS), measured by safearea.js.
+ */
+:root {
+  --sa-top: env(safe-area-inset-top, 0px);
+  --sa-right: env(safe-area-inset-right, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left: env(safe-area-inset-left, 0px);
+  --kb: 0px;
+}
+/* The bottom edge in use: the home indicator / navigation bar, or the keyboard when it is up. */
+html { --sa-b: max(var(--sa-bottom), var(--kb)); }
+/* The bottom edge of the app's own content: above the system edge and, when the Quick Access
+   Toolbar sits at the bottom, above that bar too (--qat-b, commands.css). Floating buttons, toasts,
+   drawers and panes keep above it. */
+:root { --app-b: calc(var(--sa-b) + var(--qat-b, 0px)); }
+
+body { padding: var(--sa-top) var(--sa-right) var(--sa-b) var(--sa-left); }
+/* The strip behind the status bar takes the title-bar colour, as in the native apps. */
+body::before { content: ""; position: fixed; left: 0; right: 0; top: 0; height: var(--sa-top); background: var(--topbar); z-index: 1; pointer-events: none; }
+:root[data-theme="dark"] body::before { background: #0f0f0f; }
+
+/* Dialogs: centred inside the safe area and never taller or wider than it. */
+dialog:modal {
+  inset: var(--sa-top) var(--sa-right) var(--sa-b) var(--sa-left);
+  max-height: calc(100dvh - var(--sa-top) - var(--sa-b) - 16px);
+}
+dialog:modal:not(.reader-dialog) { max-width: min(96vw, var(--dlg-max, 900px), calc(100vw - var(--sa-left) - var(--sa-right) - 16px)); }
+dialog.wide { --dlg-max: 1100px; }
+dialog.narrow { --dlg-max: 480px; }
+/* The immersive reader fills the safe area. */
+dialog.reader-dialog:modal { width: auto; height: auto; max-width: none; max-height: none; margin: 0; }
+
+/* Toasts and the draft chip float above the bottom edge. */
+.toast-host { bottom: calc(20px + var(--app-b)); }
+/* A message docked in the reading pane has its Send button at the bottom: keep toasts above it. */
+body:has(#composeDialog.docked[open]) .toast-host { bottom: calc(76px + var(--app-b)); }
+.draft-chips { bottom: calc(12px + var(--app-b)); right: calc(16px + var(--sa-right)); }
+.ac-popup { max-height: min(280px, 45dvh); }
+
+/* Phones. */
+@media (max-width: 700px) {
+  .bottom-nav { padding-bottom: 0; }
+  /* Under the bottom navigation bar the strip takes the bar's colour. */
+  body::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: var(--sa-b); background: var(--bg-elev); pointer-events: none; }
+  .fab { bottom: calc(56px + 16px + var(--app-b)); right: calc(16px + var(--sa-right)); }
+  .toast-host { bottom: calc(66px + var(--app-b)); left: calc(8px + var(--sa-left)); right: calc(8px + var(--sa-right)); }
+  /* While the New mail button shows, toasts keep out of its column instead of covering it. */
+  body:has(#modMail:not(.hidden) #workspace:not(.show-reading):not(.nav-open):not(.with-myday)) .toast-host { right: calc(88px + var(--sa-right)); }
+  .draft-chips { bottom: calc(66px + var(--app-b)); right: calc(8px + var(--sa-right)); }
+  .folders { top: calc(48px + var(--sa-top)); bottom: var(--app-b); left: var(--sa-left); }
+  .workspace.nav-open::after { top: calc(48px + var(--sa-top)); bottom: var(--app-b); }
+  .workspace.with-myday .my-day { top: calc(48px + var(--sa-top)); bottom: calc(56px + var(--app-b)); left: var(--sa-left); right: var(--sa-right); }
+  .module .side-pane { top: calc(48px + var(--sa-top)); bottom: calc(56px + var(--app-b)); left: var(--sa-left); }
+  .module.nav-open::after { top: calc(48px + var(--sa-top)); bottom: calc(56px + var(--app-b)); }
+  .todo-detail { inset: calc(48px + var(--sa-top)) var(--sa-right) calc(56px + var(--app-b)) var(--sa-left); }
+  /* Full-screen dialogs fill the safe area, not the whole screen. */
+  dialog.wide:modal, dialog.compose:modal {
+    inset: var(--sa-top) var(--sa-right) var(--sa-b) var(--sa-left);
+    width: auto; height: auto; max-width: none; max-height: none; margin: 0;
+  }
+  .compose[open] { height: auto; }
+}
+
+/* Short windows (a phone on its side, more so with the keyboard up): the message window fills the
+   screen and scrolls as a whole, so the text and the Send button can always be reached. */
+@media (max-height: 500px) {
+  dialog.compose:modal {
+    inset: var(--sa-top) var(--sa-right) var(--sa-b) var(--sa-left);
+    width: auto; height: auto; max-width: none; max-height: none; margin: 0; border-radius: 0;
+    overflow: auto;
+  }
+  .compose[open] { height: auto; }
+  /* The body keeps nearly a screenful (the editor scrolls inside it); the title and the
+     formatting bars scroll away above it, Send stays just below it. */
+  .compose[open] .dlg-body { flex: 0 0 auto; height: max(200px, calc(100dvh - var(--sa-top) - var(--sa-b) - 64px)); }
+  .compose[open] .editor { min-height: 90px; }
+  .compose[open] .compose-head { padding-top: 4px; padding-bottom: 2px; }
+}

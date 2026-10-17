@@ -54,8 +54,8 @@ jobs:
       - name: Build app (simulator, unsigned)
         run: |
           xcodebuild \
-            -project Quillbox.xcodeproj \
-            -scheme Quillbox \
+            -project QuillPost.xcodeproj \
+            -scheme QuillPost \
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
@@ -65,27 +65,27 @@ jobs:
 
       - name: Package simulator app
         run: |
-          APP=$(find build/Build/Products -name "Quillbox.app" -type d | head -n 1)
+          APP=$(find build/Build/Products -name "QuillPost.app" -type d | head -n 1)
           test -n "$APP"
-          ditto -c -k --keepParent "$APP" "Quillbox-iOS-simulator.app.zip"
+          ditto -c -k --keepParent "$APP" "QuillPost-iOS-simulator.app.zip"
 
       - name: Upload simulator app
         uses: actions/upload-artifact@v4
         with:
-          name: quillbox-ios-simulator-app
-          path: ios/Quillbox-iOS-simulator.app.zip
+          name: quillpost-ios-simulator-app
+          path: ios/QuillPost-iOS-simulator.app.zip
           if-no-files-found: error
 
       # An App Store / TestFlight build needs an Apple Developer account and signing
       # certificates; this unsigned simulator build is what can be produced without them.
       - name: Stage release asset
         if: steps.rel.outputs.tag != ''
-        run: cp Quillbox-iOS-simulator.app.zip "Quillbox-iOS-simulator-${RELEASE_TAG}.app.zip"
+        run: cp QuillPost-iOS-simulator.app.zip "QuillPost-iOS-simulator-${RELEASE_TAG}.app.zip"
       - name: Publish to GitHub Release
         if: steps.rel.outputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.rel.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Quillbox ${{ steps.rel.outputs.tag }}
-          files: ios/Quillbox-iOS-simulator-${{ steps.rel.outputs.tag }}.app.zip
+          name: QuillPost ${{ steps.rel.outputs.tag }}
+          files: ios/QuillPost-iOS-simulator-${{ steps.rel.outputs.tag }}.app.zip

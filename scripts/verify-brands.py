@@ -13,7 +13,7 @@ def alive(domain):
             continue
     return False
 rows = []
-for f in sorted(glob.glob('/home/user/quillbox/web/src/main/resources/brands/brands-*.tsv')):
+for f in sorted(glob.glob('/home/user/quillpost/web/src/main/resources/brands/brands-*.tsv')):
     for line in open(f):
         line = line.rstrip('\n')
         if not line or line.startswith('#'): continue

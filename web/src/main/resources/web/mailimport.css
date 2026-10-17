@@ -1,0 +1,26 @@
+/* File ▸ Open, Import Mailbox and Local Archives (mailimport.js). */
+.qb-import .dlg-body { max-height: min(70vh, 640px); overflow: auto; }
+.qb-import-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 8px; }
+.qb-import-head svg { color: var(--accent); flex: none; }
+.qb-import-tree { border: 1px solid var(--border); border-radius: 6px; max-height: 260px; overflow: auto; padding: 4px 0; }
+.qb-import-row { display: flex; align-items: center; gap: 8px; padding: 4px 10px; cursor: pointer; min-height: 30px; }
+.qb-import-row:hover { background: var(--accent-soft); }
+.qb-import-row .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qb-import-dest { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; margin: 6px 0; cursor: pointer; }
+.qb-import-dest.disabled { opacity: .55; cursor: default; }
+.qb-import-dest input[type="text"], .qb-import-dest select { margin-top: 6px; max-width: 100%; }
+.qb-import-report { margin-top: 10px; }
+.qb-import-report ul { max-height: 220px; overflow: auto; margin: 6px 0; padding-left: 20px; }
+.qb-import .warn { color: var(--warn); }
+.qb-import .danger { color: var(--danger); }
+.qb-drop-zone { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 28px 16px; border: 2px dashed var(--border-strong); border-radius: 10px; }
+.qb-drop-zone.over { border-color: var(--accent); background: var(--accent-soft); }
+.qb-drop-zone svg { color: var(--accent); }
+.qb-drop-overlay { position: fixed; inset: 0; z-index: 9000; display: flex; align-items: center; justify-content: center; background: rgba(15, 108, 189, .12); border: 3px dashed var(--accent); pointer-events: none; }
+.qb-drop-overlay > div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 32px; border-radius: 12px; background: var(--bg-elev); color: var(--text); box-shadow: 0 8px 30px rgba(0, 0, 0, .2); text-align: center; max-width: 80vw; }
+.qb-drop-overlay svg { color: var(--accent); }
+#folderTree li.archive-head { font-weight: 600; }
+@media (max-width: 600px) {
+  .qb-import-dest { flex-wrap: wrap; }
+  .qb-import-dest input[type="text"] { width: 100% !important; }
+}

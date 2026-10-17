@@ -2,11 +2,22 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="color-scheme" content="light dark" />
-  <title>Quillbox Mail</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f6cbd' stroke-width='2'%3E%3Cpath d='M3 6h18v12H3z'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E" />
+  <title>QuillPost Mail</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="ai.css" /><!-- AI tab (ai/*.js) -->
+  <link rel="stylesheet" href="commands.css" />
+  <link rel="stylesheet" href="mailimport.css" /><!-- File ▸ Open, Import Mailbox, Local Archives -->
+  <!-- Suite scroll cues (more choices below the fold) and the QuillPen embedded editor. -->
+  <link rel="stylesheet" href="scrollcue.css" />
+  <link rel="stylesheet" href="scrollcue-app.css" />
+  <link rel="stylesheet" href="embed.css" />
+  <link rel="stylesheet" href="fileopen.css" /><!-- Open file window (fileopen.js) -->
+  <!-- Clear of system bars, cut-outs and the keyboard (keep last). -->
+  <link rel="stylesheet" href="safearea.css" />
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -130,13 +141,16 @@
     <symbol id="i-folder-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><path d="M12 10v6M9 13h6"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></symbol>
     <symbol id="i-send-later" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-4.5 12.5"/><path d="M11 13 2 9l20-7"/><circle cx="7" cy="18" r="4"/><path d="M7 16.5V18l1 1"/></symbol>
+    <symbol id="i-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1"/><path d="M3 19l3-8h16l-3 8z"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></symbol>
+    <symbol id="i-mailbox-in" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13h4l2 3h4l2-3h4"/><path d="M4 13l2-8h12l2 8v6H4z"/><path d="M12 3v7M9 7l3 3 3-3"/></symbol>
   </defs>
 </svg>
 
 <!-- ============================ Splash ============================ -->
 <div id="splash" class="splash" aria-hidden="true">
-  <div class="splash-mark"><svg><use href="#i-mail"/></svg></div>
-  <div class="splash-name">Quillbox</div>
+  <div class="splash-mark"><img src="favicon.svg" alt="" width="96" height="96" /></div>
+  <div class="splash-name">QuillPost</div>
   <div class="splash-tag">Mail with built-in junk protection</div>
   <span class="spinner splash-spin"></span>
 </div>
@@ -144,12 +158,12 @@
 <!-- ============================ Setup wizard ============================ -->
 <div id="setup" class="setup hidden">
   <div class="setup-card">
-    <div class="logo"><svg><use href="#i-mail"/></svg> Quillbox</div>
+    <div class="logo"><svg><use href="#i-mail"/></svg> QuillPost</div>
     <div class="steps"><i id="step0" class="done"></i><i id="step1"></i><i id="step2"></i></div>
 
     <div id="setupStep0">
       <h2>Choose your email provider</h2>
-      <p class="lead">Pick your provider and Quillbox fills in the server settings — over a hundred providers worldwide are ready to go. Not listed? Choose <b>Other</b> and the settings are looked up from your address.</p>
+      <p class="lead">Pick your provider and QuillPost fills in the server settings — over a hundred providers worldwide are ready to go. Not listed? Choose <b>Other</b> and the settings are looked up from your address.</p>
       <div class="provider-search"><svg><use href="#i-search"/></svg><input id="suProviderSearch" type="search" placeholder="Search providers or domains (gmail, orange.fr, 163…)" autocomplete="off" /></div>
       <div id="suRegionTabs" class="region-tabs"></div>
       <div id="suProviders" class="provider-grid"></div>
@@ -159,7 +173,7 @@
 
     <div id="setupStep1" class="hidden">
       <h2>Add your email account</h2>
-      <p class="lead" id="suLead1">Enter your address and password. Quillbox finds the server settings for you, the same way Outlook does.</p>
+      <p class="lead" id="suLead1">Enter your address and password. QuillPost finds the server settings for you, the same way Outlook does.</p>
       <div id="suChosen" class="chosen-provider hidden"><span id="suChosenMark" class="provider-mark"></span><span class="grow"><b id="suChosenLabel"></b><span id="suChosenDomains" class="small muted"></span></span><button id="suChangeProvider" class="btn sm">Change</button></div>
       <div id="suProviderNotes" class="provider-box hidden"></div>
       <div id="suError" class="error-box hidden"></div>
@@ -168,7 +182,7 @@
       <div class="field"><label for="suPassword">Password</label><input id="suPassword" type="password" placeholder="Mail or app password" autocomplete="current-password" /><span class="hint" id="suPasswordHint">Gmail, Yahoo, iCloud, AOL and Fastmail require an <em>app password</em> rather than your normal password.</span></div>
       <label class="check"><input id="suRemember" type="checkbox" /><span>Keep me signed in on this device<br /><span class="desc">Stores the account, including the password, in this browser. Only tick this on a device you own.</span></span></label>
       <div class="btn-row" style="margin-top:12px"><button id="suBack1" class="btn">Back</button><span class="grow" style="flex:1"></span><button id="suContinue" class="btn primary">Continue</button></div>
-      <p class="small muted" style="margin-top:14px">Your credentials go only to this Quillbox server (<span id="suOrigin"></span>) and from there to your own mail provider. Use HTTPS when the server is not on your own machine.</p>
+      <p class="small muted" style="margin-top:14px">Your credentials go only to this QuillPost server (<span id="suOrigin"></span>) and from there to your own mail provider. Use HTTPS when the server is not on your own machine.</p>
     </div>
 
     <div id="setupStep2" class="hidden">
@@ -204,7 +218,7 @@
 <div id="app" class="app hidden">
   <header class="topbar">
     <button id="navToggle" class="icon-btn" title="Show or hide the navigation pane"><svg><use href="#i-menu"/></svg></button>
-    <div class="brand"><svg><use href="#i-mail"/></svg><span>Quillbox</span></div>
+    <div class="brand"><svg><use href="#i-mail"/></svg><span>QuillPost</span></div>
     <div class="search" id="searchBox">
       <svg><use href="#i-search"/></svg>
       <input id="searchInput" type="search" placeholder="Search (press /)" autocomplete="off" />
@@ -234,6 +248,7 @@
         <div class="ribbon-tabs">
           <button data-rtab="home" class="active">Home</button>
           <button data-rtab="view">View</button>
+          <button data-rtab="ai">AI</button>
           <button data-rtab="help">Help</button>
         </div>
         <div class="ribbon-bar" data-rbar="home">
@@ -282,12 +297,13 @@
           <button id="vwDark" class="rb" title="Dark mode"><svg><use href="#i-moon"/></svg><span class="lbl">Dark mode</span></button>
           <button id="vwTheme" class="rb" title="Colour theme"><svg><use href="#i-sparkle"/></svg><span class="lbl">Theme</span><svg class="chev"><use href="#i-chev-down"/></svg></button>
         </div>
+        <div class="ribbon-bar hidden" data-rbar="ai"><!-- filled by ai/commands.js --></div>
         <div class="ribbon-bar hidden" data-rbar="help">
           <button id="hlpShortcuts" class="rb"><svg><use href="#i-keyboard"/></svg><span class="lbl">Keyboard shortcuts</span></button>
           <button id="hlpHelp" class="rb"><svg><use href="#i-help"/></svg><span class="lbl">Help</span></button>
           <button id="hlpWhatsNew" class="rb"><svg><use href="#i-sparkle"/></svg><span class="lbl">What's new</span></button>
           <button id="hlpReport" class="rb"><svg><use href="#i-warning"/></svg><span class="lbl">Report a problem</span></button>
-          <button id="hlpAbout" class="rb"><svg><use href="#i-info"/></svg><span class="lbl">About Quillbox</span></button>
+          <button id="hlpAbout" class="rb"><svg><use href="#i-info"/></svg><span class="lbl">About QuillPost</span></button>
         </div>
       </div>
       <div id="workspace" class="workspace">
@@ -414,6 +430,7 @@
     <button data-ctab="insert">Insert</button>
     <button data-ctab="format">Format text</button>
     <button data-ctab="options">Options</button>
+    <button data-ctab="ai">AI</button>
   </div>
   <div class="fmt-bar" data-cbar="message">
     <select id="cFontFamily" title="Font"><option value="">Font</option><option value="Segoe UI, system-ui, sans-serif">Sans serif</option><option value="Georgia, 'Times New Roman', serif">Serif</option><option value="Consolas, 'Courier New', monospace">Fixed width</option><option value="Arial, Helvetica, sans-serif">Arial</option><option value="Calibri, Carlito, sans-serif">Calibri</option><option value="Cambria, Caladea, serif">Cambria</option><option value="Garamond, 'EB Garamond', serif">Garamond</option><option value="Verdana, sans-serif">Verdana</option><option value="Tahoma, sans-serif">Tahoma</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option></select>
@@ -464,6 +481,7 @@
     <button class="icon-btn" data-cmd="removeFormat" title="Clear formatting"><svg><use href="#i-clear-fmt"/></svg></button>
     <button class="btn subtle sm" id="cPlainText" title="Switch to plain text">Plain text</button>
   </div>
+  <div class="fmt-bar hidden" data-cbar="ai"><!-- filled by ai/commands.js --></div>
   <div class="fmt-bar hidden" data-cbar="options">
     <label class="opt">Importance <select id="cImportance"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></label>
     <label class="opt"><input id="cReadReceipt" type="checkbox" /> Request a read receipt</label>
@@ -607,5 +625,43 @@
 <script src="todo.js"></script>
 <script src="mailplus.js"></script>
 <script src="app.js"></script>
+<!-- AI tab: providers, client, prompts and UI (see docs/AI.md) -->
+<script src="ai/providers.js"></script>
+<script src="ai/apply.js"></script>
+<script src="ai/store.js"></script>
+<script src="ai/ensemble.js"></script>
+<script src="ai/client.js"></script>
+<script src="ai/local.js"></script>
+<script src="ai/prompts.js"></script>
+<script src="ai/pane.js"></script>
+<script src="ai/wizard.js"></script>
+<script src="ai/commands.js"></script>
+<!-- Command registry, Quick Access Toolbar and the command set (load after app.js). -->
+<script src="commands.js"></script>
+<script src="mailtools.js"></script>
+<script src="mailcommands.js"></script>
+<script src="mailextra.js"></script>
+<script src="fileopen.js"></script><!-- Open file: messages, contacts, calendars, office files -->
+<script src="mailimport.js"></script>
+<script src="qat.js"></script>
+<script src="ai-bridge.js"></script>
+<script src="embed.js"></script>
+<script src="safearea.js"></script>
+<script type="module">
+  // Scroll cues on every menu, dialog, settings page and choice list (long content lists get the
+  // thin scrollbar only, see scrollcue-app.css).
+  import { installScrollCues } from "./scrollcue.js";
+  installScrollCues({
+    selector: [
+      ".ctx-menu", ".ac-popup", "dialog:not(.compose):not(.reader-dialog)", ".dlg-body:not(#composeDialog > .dlg-body)",
+      ".settings-nav", ".settings-body", ".folder-tree", ".side-pane", ".provider-grid", ".preview-list",
+      ".my-day .md-body", ".agenda", ".setup", ".peek .notes",
+      // Command chooser lists, the import folder tree, the open-file lists and the AI pane in
+      // short windows (it scrolls as a whole there, see ai.css).
+      ".qb-cmdlist", ".qb-import-tree", ".qp-file-list", ".ai-pane",
+    ].join(", "),
+    label: "More",
+  });
+</script>
 </body>
 </html>

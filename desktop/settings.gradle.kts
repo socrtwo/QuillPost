@@ -15,4 +15,4 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "quillbox-desktop"
+rootProject.name = "quillpost-desktop"

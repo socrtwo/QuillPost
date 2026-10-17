@@ -1,0 +1,58 @@
+<!doctype html>
+<!--
+  Fake QuillPen for tests: implements QuillPen's side of the embed protocol (the suite's EMBED.md)
+  with a contenteditable instead of the real editor. Used by web/src/test/e2e/embed.mjs.
+  It records every message it receives in window.__received.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuillPen (test double)</title>
+<style>
+  html, body { margin: 0; height: 100%; font: 14px system-ui, sans-serif; }
+  body { display: flex; flex-direction: column; }
+  body.dark { background: #1e1e1e; color: #eee; }
+  .bar { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid #ccc; }
+  .bar b { flex: 1; }
+  #doc { flex: 1; padding: 12px; outline: none; overflow: auto; }
+</style>
+</head>
+<body>
+<div class="bar"><b>QuillPen <span id="meta"></span></b><button id="done">Done</button><button id="cancel">Cancel</button></div>
+<div id="doc" contenteditable="true"></div>
+<script>
+  "use strict";
+  const P = "quill-embed:";
+  const host = window.parent;
+  window.__received = [];
+  const send = (m) => host.postMessage(Object.assign({ v: 1 }, m), "*");
+  const doc = document.getElementById("doc");
+  let timer = null, last = 0;
+  doc.addEventListener("input", () => {
+    // Debounced "changed" (the real editor sends it at most every 2 s).
+    clearTimeout(timer);
+    timer = setTimeout(() => { last = Date.now(); send({ type: P + "changed", dirty: true }); }, 400);
+  });
+  addEventListener("message", (e) => {
+    if (e.source !== host) return;
+    const m = e.data;
+    if (!m || typeof m.type !== "string" || !m.type.startsWith(P) || m.v !== 1) return;
+    window.__received.push(m);
+    switch (m.type.slice(P.length)) {
+      case "load":
+        doc.innerHTML = m.html || "";
+        document.body.classList.toggle("dark", m.theme === "dark");
+        document.getElementById("meta").textContent = `(${m.lang || ""}) ${m.subject || ""}`;
+        break;
+      case "request":
+        send({ type: P + "content", id: m.id, html: doc.innerHTML, text: doc.innerText });
+        break;
+    }
+  });
+  document.getElementById("done").onclick = () => send({ type: P + "done", html: doc.innerHTML, text: doc.innerText });
+  document.getElementById("cancel").onclick = () => send({ type: P + "cancel" });
+  send({ type: P + "ready", app: "QuillPen", version: "test" });
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Matches the web UI's dark palette (styles.css): the dark top bar and the bg-elev token. -->
-    <color name="quillbox_topbar">#0F0F0F</color>
-    <color name="quillbox_background">#292929</color>
+    <color name="quillpost_topbar">#0F0F0F</color>
+    <color name="quillpost_background">#292929</color>
 </resources>

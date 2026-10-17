@@ -1,15 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- QuillPost adaptive-icon foreground: the suite's icon-foreground.svg (white letter card with
+     the envelope flap and the white quill), converted path for path. The SVG draws the 512-unit
+     artwork scaled by 0.6 around the centre, which keeps the quill tip inside the 66dp safe
+     circle; the group below does the same. The tile colour is the background layer
+     (@color/ic_launcher_background). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <!-- Simple envelope glyph centered in the adaptive-icon safe zone. -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M30,40h48a3,3 0,0 1,3 3v22a3,3 0,0 1,-3 3h-48a3,3 0,0 1,-3 -3v-22a3,3 0,0 1,3 -3z" />
-    <path
-        android:strokeColor="#2E5D9F"
-        android:strokeWidth="2.5"
-        android:fillColor="#00000000"
-        android:pathData="M28,43l26,16l26,-16" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group
+        android:pivotX="256"
+        android:pivotY="256"
+        android:scaleX="0.6"
+        android:scaleY="0.6">
+        <!-- <rect x="88" y="168" width="280" height="200" rx="24" fill="#fff"/> -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M112,168H344A24,24 0,0 1,368 192V344A24,24 0,0 1,344 368H112A24,24 0,0 1,88 344V192A24,24 0,0 1,112 168Z" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#0D7C86"
+            android:strokeWidth="22"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M104,188L228,286L352,188" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#0D7C86"
+            android:strokeAlpha="0.55"
+            android:strokeWidth="14"
+            android:strokeLineCap="round"
+            android:pathData="M104,352L190,280M352,352L266,280" />
+        <!-- The quill. -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:strokeColor="#075961"
+            android:strokeWidth="8"
+            android:strokeLineJoin="round"
+            android:pathData="M436,70C376,84 316,140 290,214C274,260 268,300 270,338C300,300 330,280 360,262C330,262 312,262 300,258C336,240 368,218 392,188C368,190 350,190 336,186C378,160 410,120 436,70Z" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#075961"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:pathData="M430,78C360,150 300,250 262,380" />
+        <path
+            android:fillColor="#075961"
+            android:pathData="M262,380L252,420L276,392Z" />
+    </group>
 </vector>

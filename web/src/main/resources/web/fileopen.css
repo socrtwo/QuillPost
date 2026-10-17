@@ -1,0 +1,34 @@
+/* QuillPost — "Open file" window (fileopen.js). */
+.qp-file-dialog .dlg-head h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qp-file-dialog .dlg-head .badge { flex: none; }
+.qp-file-history { width: auto; max-width: 260px; margin-left: auto; }
+.qp-file-icon { display: inline-flex; color: var(--accent); }
+.qp-file-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 20px; border-bottom: 1px solid var(--border); background: var(--bg-sub); }
+.qp-file-body { max-height: 74vh; }
+.qp-file-msg .sender-card { margin-bottom: 4px; }
+.qp-file-msg .sender-address.qp-none { font-size: 15px; font-weight: 400; color: var(--text-3); }
+.qp-file-doc { display: flex; gap: 18px; align-items: flex-start; padding: 12px 4px; }
+.qp-file-doc > svg { width: 48px; height: 48px; flex: none; color: var(--accent); }
+.qp-file-doc h2 { margin: 0 0 4px; font-size: 18px; overflow-wrap: anywhere; }
+.qp-file-doc p { margin: 6px 0; max-width: 60ch; }
+.qp-file-list { display: flex; flex-direction: column; gap: 2px; margin: 10px 0; border: 1px solid var(--border); border-radius: var(--radius); max-height: 50vh; overflow: auto; }
+.qp-file-row { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.qp-file-row:last-child { border-bottom: 0; }
+.qp-file-row .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.qp-file-row > svg { width: 18px; height: 18px; color: var(--accent); flex: none; }
+.qp-file-row .avatar { width: 32px; height: 32px; font-size: 12px; flex: none; }
+.qp-file-headers { border-collapse: collapse; width: 100%; font-size: 12px; }
+.qp-file-headers th { text-align: left; vertical-align: top; padding: 3px 10px 3px 0; white-space: nowrap; color: var(--text-2); }
+.qp-file-headers td { padding: 3px 0; overflow-wrap: anywhere; font-family: var(--mono, monospace); }
+.qp-drop-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: rgba(15, 108, 189, .18); border: 3px dashed var(--accent); pointer-events: none; }
+.qp-drop-overlay > div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 24px 32px; border-radius: var(--radius-lg); background: var(--bg-elev); box-shadow: var(--shadow-4); text-align: center; max-width: 90vw; }
+.qp-drop-overlay svg { width: 40px; height: 40px; color: var(--accent); }
+@media (max-width: 700px) {
+  .qp-file-dialog .dlg-head { padding: 10px 12px; }
+  .qp-file-dialog .dlg-head .badge { display: none; }
+  .qp-file-history { max-width: 100%; flex: 1 1 100%; margin-left: 0; }
+  .qp-file-bar { padding: 8px 12px; }
+  .qp-file-bar .btn { flex: 1 1 auto; }
+  .qp-file-doc { flex-direction: column; }
+  .qp-file-body { max-height: none; }
+}
