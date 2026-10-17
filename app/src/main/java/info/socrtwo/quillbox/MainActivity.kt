@@ -70,6 +70,8 @@ class MainActivity : ComponentActivity() {
     private var loadedUrl: String? = null
     /** False until the web UI has rendered once (or start-up failed): keeps the launch splash on screen. */
     private var uiReady = false
+    /** The WebView shows the local Quillbox page (the AI key bridge answers only then). */
+    @Volatile private var pageIsLocal = false
 
     private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val cb = fileCallback ?: return@registerForActivityResult
@@ -235,7 +237,11 @@ class MainActivity : ComponentActivity() {
             // QuillPen embedded editor: https://quillpen.embed/<path> is answered from QuillPen's ContentProvider.
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
                 QuillPenAndroid.intercept(this@MainActivity, request)
+            override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
+                pageIsLocal = url != null && isLocal(Uri.parse(url))
+            }
             override fun onPageFinished(view: WebView, url: String?) {
+                pageIsLocal = url != null && isLocal(Uri.parse(url))
                 if (url != null && isLocal(Uri.parse(url))) {
                     uiReady = true
                     splash.visibility = View.GONE
@@ -363,5 +369,12 @@ class MainActivity : ComponentActivity() {
         /** True when QuillPen is installed and its embed provider answers (compose "QuillPen" button). */
         @JavascriptInterface fun quillPenAvailable(): Boolean = QuillPenAndroid.isAvailable(this@MainActivity)
         @JavascriptInterface fun toast(text: String) { runOnUiThread { Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show() } }
+
+        // AI tab API keys, encrypted with an Android Keystore key (AiSecureStore). "" = none.
+        @JavascriptInterface fun secureGet(name: String): String =
+            if (!pageIsLocal) "" else runCatching { AiSecureStore.get(this@MainActivity, name) }.getOrNull() ?: ""
+        @JavascriptInterface fun secureSet(name: String, value: String): Boolean =
+            pageIsLocal && runCatching { AiSecureStore.put(this@MainActivity, name, value); true }.getOrDefault(false)
+        @JavascriptInterface fun secureRemove(name: String) { if (pageIsLocal) runCatching { AiSecureStore.remove(this@MainActivity, name) } }
     }
 }

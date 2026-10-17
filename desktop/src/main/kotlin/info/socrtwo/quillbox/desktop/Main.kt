@@ -50,6 +50,8 @@ fun main() {
     // QuillPen embedded editor: serve an installed QuillPen's resources/embed folder at /quillpen-embed/.
     QuillPenEmbed.desktop = true
     if (!GraphicsEnvironment.isHeadless()) QuillPenEmbed.folderChooser = ::chooseQuillPenFolder
+    // Single-user app on 127.0.0.1: the backend may keep the AI tab's API keys in its private data folder.
+    System.setProperty("quillbox.desktop", "true")
     val server = embeddedServer(Netty, port = port, host = "127.0.0.1") { module() }
     server.start(wait = false)
     val url = "http://127.0.0.1:$port/"

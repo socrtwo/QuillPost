@@ -67,3 +67,20 @@ java {
 application {
     mainClass.set("info.socrtwo.quillbox.web.ApplicationKt")
 }
+
+// The web UI's AI modules (src/main/resources/web/ai) are plain JavaScript with Node unit tests
+// in src/test/js. `check` runs them with `node --test` when Node.js (18+) is on the PATH — no npm,
+// no packages. Without Node the task is skipped with a warning. Run alone: ./gradlew jsTest
+val jsTest by tasks.registering(Exec::class) {
+    group = "verification"
+    description = "Runs the web UI's JavaScript unit tests with node --test (no npm needed)."
+    val nodeOnPath = System.getenv("PATH").orEmpty().split(File.pathSeparator)
+        .any { File(it, "node").canExecute() || File(it, "node.exe").canExecute() }
+    onlyIf { nodeOnPath.also { if (!it) logger.warn("jsTest skipped: Node.js is not on the PATH") } }
+    workingDir = projectDir
+    commandLine(listOf("node", "--test") + fileTree("src/test/js") { include("*.test.js") }.files.map { it.relativeTo(projectDir).path }.sorted())
+    inputs.dir("src/test/js")
+    inputs.dir("src/main/resources/web/ai")
+    outputs.upToDateWhen { false }
+}
+tasks.named("check") { dependsOn(jsTest) }
