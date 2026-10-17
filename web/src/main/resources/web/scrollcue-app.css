@@ -1,0 +1,52 @@
+/* Quillbox mapping of the suite scroll cues (scrollcue.css / scrollcue.js, installed in index.html). */
+.sc-scroll, .sc-thin, .sc-chip {
+  --sc-bg: var(--bg-elev);
+  --sc-accent: var(--accent);
+  --sc-thumb: rgba(96, 104, 116, .5);
+  --sc-thumb-hover: rgba(80, 88, 100, .8);
+}
+:root[data-theme="dark"] .sc-scroll, :root[data-theme="dark"] .sc-thin, :root[data-theme="dark"] .sc-chip {
+  --sc-thumb: rgba(200, 200, 200, .38);
+  --sc-thumb-hover: rgba(225, 225, 225, .7);
+}
+/* Containers that sit on the page background rather than on a card. */
+.folder-tree.sc-scroll, .side-pane.sc-scroll, .settings-nav.sc-scroll { --sc-bg: var(--bg); }
+/* The setup screen keeps its gradient on wide screens (on phones it is a plain card colour). */
+@media (min-width: 701px) {
+  .setup.sc-scroll { background: linear-gradient(135deg, #0c3b5e 0%, #0f6cbd 55%, #2b88d8 100%); }
+}
+.sc-chip { font-family: var(--font, "Segoe UI", system-ui, sans-serif); border-color: rgba(255, 255, 255, .35); }
+:root[data-theme="dark"] .sc-chip { --sc-on-accent: #111; }
+
+/* Long content lists (messages, contacts, tasks, the reading pane, editors, the calendar grid):
+   the thin, widen-on-hover scrollbar without the "More" chip, which would sit on top of the list
+   all the time. */
+.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sc-thumb, rgba(96, 104, 116, .5)) transparent;
+}
+.message-list:hover, .reading-scroll:hover, .editor:hover, .html-editor:hover, .tg-body:hover, .reader-page:hover {
+  scrollbar-color: var(--sc-thumb-hover, rgba(80, 88, 100, .8)) transparent;
+}
+.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page { --sc-thumb: rgba(96, 104, 116, .5); --sc-thumb-hover: rgba(80, 88, 100, .8); }
+:root[data-theme="dark"] :is(.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page) { --sc-thumb: rgba(200, 200, 200, .38); --sc-thumb-hover: rgba(225, 225, 225, .7); }
+
+/* Bars that scroll sideways (ribbon, compose tabs and formatting bars, the settings tabs on
+   phones): a soft shadow at the edge that has more choices, drawn the same way as the vertical
+   edge shadows of scrollcue.css. */
+.ribbon-bar, .compose-tabs, .fmt-bar, .settings-nav, .cal-bar {
+  scrollbar-width: thin;
+  --sc-hbg: var(--bg-elev);
+}
+@media (max-width: 1000px) {
+  .ribbon-bar, .compose-tabs, .fmt-bar, .settings-nav {
+    background:
+      linear-gradient(to right, var(--sc-hbg) 30%, transparent) left center / 28px 100% no-repeat local,
+      linear-gradient(to left, var(--sc-hbg) 30%, transparent) right center / 28px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, .22), transparent) left center / 12px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, .22), transparent) right center / 12px 100% no-repeat scroll;
+    background-color: var(--sc-hbg);
+  }
+  .settings-nav { --sc-hbg: var(--bg); }
+}
+@media print { .sc-chip { display: none !important; } }

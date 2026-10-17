@@ -26,11 +26,13 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberTrayState
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.ui.res.painterResource
+import info.socrtwo.quillbox.web.QuillPenEmbed
 import info.socrtwo.quillbox.web.module
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import java.awt.Desktop
+import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import java.net.ServerSocket
@@ -45,6 +47,9 @@ import java.util.prefs.Preferences
 fun main() {
     val prefs = Preferences.userRoot().node("info/socrtwo/quillbox/desktop")
     val port = System.getenv("PORT")?.toIntOrNull() ?: prefs.getInt("port", 8642).let { if (isFree(it)) it else freePort() }
+    // QuillPen embedded editor: serve an installed QuillPen's resources/embed folder at /quillpen-embed/.
+    QuillPenEmbed.desktop = true
+    if (!GraphicsEnvironment.isHeadless()) QuillPenEmbed.folderChooser = ::chooseQuillPenFolder
     val server = embeddedServer(Netty, port = port, host = "127.0.0.1") { module() }
     server.start(wait = false)
     val url = "http://127.0.0.1:$port/"
@@ -121,3 +126,17 @@ private fun stop(server: EmbeddedServer<*, *>) {
 private fun isFree(port: Int): Boolean = runCatching { ServerSocket(port, 1, java.net.InetAddress.getByName("127.0.0.1")).use { true } }.getOrDefault(false)
 
 private fun freePort(): Int = ServerSocket(0).use { it.localPort }
+
+/** Native folder picker for Settings > Compose > QuillPen folder (runs on the Swing thread). */
+private suspend fun chooseQuillPenFolder(): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    var chosen: String? = null
+    javax.swing.SwingUtilities.invokeAndWait {
+        val chooser = javax.swing.JFileChooser().apply {
+            dialogTitle = "Choose QuillPen's resources/embed folder"
+            fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
+            isAcceptAllFileFilterUsed = false
+        }
+        if (chooser.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) chosen = chooser.selectedFile?.absolutePath
+    }
+    chosen
+}

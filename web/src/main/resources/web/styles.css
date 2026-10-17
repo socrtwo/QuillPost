@@ -258,8 +258,12 @@ button.avatar { cursor: pointer; margin-left: 4px; box-shadow: 0 0 0 2px rgba(25
 .workspace.pane-off .reading-pane { display: none; }
 .workspace.pane-off.show-reading .list-pane { display: none; }
 .workspace.pane-off.show-reading .reading-pane { display: flex; }
-.workspace.nav-collapsed { grid-template-columns: 0 minmax(340px, 440px) 1fr; column-gap: 0; }
-.workspace.nav-collapsed.with-myday { grid-template-columns: 0 minmax(320px, 400px) 1fr 300px; }
+.workspace.nav-collapsed { grid-template-columns: minmax(340px, 440px) 1fr; }
+.workspace.nav-collapsed.with-myday { grid-template-columns: minmax(320px, 400px) 1fr 300px; }
+/* The hidden folder pane takes no grid column, so the other panes move one column left. */
+.workspace.nav-collapsed.pane-bottom, .workspace.nav-collapsed.pane-off { grid-template-columns: 1fr; }
+.workspace.nav-collapsed.pane-bottom.with-myday, .workspace.nav-collapsed.pane-off.with-myday { grid-template-columns: 1fr 300px; }
+.workspace.nav-collapsed.pane-bottom.with-myday .my-day { grid-column: 2; }
 .workspace.nav-collapsed .folders { display: none; }
 .workspace.nav-collapsed .list-pane { margin-left: 0; }
 
@@ -643,6 +647,8 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 .splash.fade { opacity: 0; pointer-events: none; }
 .splash-mark { width: 96px; height: 96px; border-radius: 26px; background: rgba(255,255,255,.14); box-shadow: 0 10px 30px rgba(0,0,0,.25); display: flex; align-items: center; justify-content: center; margin-bottom: 8px; animation: splash-pop .5s ease-out; }
 .splash-mark svg { width: 56px; height: 56px; }
+.splash-mark:has(img) { background: none; border-radius: 22%; }
+.splash-mark img { width: 96px; height: 96px; display: block; }
 .splash-name { font-size: 34px; font-weight: 800; letter-spacing: .3px; }
 .splash-tag { font-size: 14px; opacity: .85; }
 .splash-spin { margin-top: 22px; width: 22px; height: 22px; border-color: rgba(255,255,255,.35); border-top-color: #fff; }
@@ -713,8 +719,8 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 /* immersive reader */
 .reader-dialog { max-width: 100vw; width: 100vw; height: 100vh; max-height: 100vh; margin: 0; border-radius: 0; }
 .reader-dialog[open] { display: flex; flex-direction: column; }
-.reader-bar { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-bottom: 1px solid var(--border); flex: none; }
-.reader-bar select { width: auto; }
+.reader-bar { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-bottom: 1px solid var(--border); flex: none; flex-wrap: wrap; }
+.reader-bar select { width: auto; min-width: 0; max-width: 100%; }
 .reader-bar .grow { flex: 1; }
 .reader-page { flex: 1; overflow: auto; padding: 32px max(24px, calc((100vw - 760px) / 2)); font-size: var(--rdr-size, 22px); line-height: var(--rdr-spacing, 1.5); font-family: Georgia, "Times New Roman", serif; }
 .reader-page.sans { font-family: var(--font); }
@@ -742,6 +748,7 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 /* Tablets and small windows: the reading pane replaces the list. */
 @media (max-width: 1000px) {
   .workspace, .workspace.pane-bottom, .workspace.pane-off, .workspace.with-myday { grid-template-columns: 210px 1fr; grid-template-rows: 1fr; }
+  .workspace.nav-collapsed, .workspace.nav-collapsed.pane-bottom, .workspace.nav-collapsed.pane-off, .workspace.nav-collapsed.with-myday { grid-template-columns: 1fr; }
   .workspace .reading-pane { display: none; }
   .workspace.show-reading .list-pane { display: none; }
   .workspace.show-reading .reading-pane { display: flex; }

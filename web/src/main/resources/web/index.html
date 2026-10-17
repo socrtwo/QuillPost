@@ -2,12 +2,19 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="color-scheme" content="light dark" />
   <title>Quillbox Mail</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f6cbd' stroke-width='2'%3E%3Cpath d='M3 6h18v12H3z'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="commands.css" />
+  <!-- Suite scroll cues (more choices below the fold) and the QuillPen embedded editor. -->
+  <link rel="stylesheet" href="scrollcue.css" />
+  <link rel="stylesheet" href="scrollcue-app.css" />
+  <link rel="stylesheet" href="embed.css" />
+  <!-- Clear of system bars, cut-outs and the keyboard (keep last). -->
+  <link rel="stylesheet" href="safearea.css" />
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -136,7 +143,7 @@
 
 <!-- ============================ Splash ============================ -->
 <div id="splash" class="splash" aria-hidden="true">
-  <div class="splash-mark"><svg><use href="#i-mail"/></svg></div>
+  <div class="splash-mark"><img src="favicon.svg" alt="" width="96" height="96" /></div>
   <div class="splash-name">Quillbox</div>
   <div class="splash-tag">Mail with built-in junk protection</div>
   <span class="spinner splash-spin"></span>
@@ -614,5 +621,20 @@
 <script src="mailcommands.js"></script>
 <script src="mailextra.js"></script>
 <script src="qat.js"></script>
+<script src="embed.js"></script>
+<script src="safearea.js"></script>
+<script type="module">
+  // Scroll cues on every menu, dialog, settings page and choice list (long content lists get the
+  // thin scrollbar only, see scrollcue-app.css).
+  import { installScrollCues } from "./scrollcue.js";
+  installScrollCues({
+    selector: [
+      ".ctx-menu", ".ac-popup", "dialog:not(.compose):not(.reader-dialog)", ".dlg-body:not(#composeDialog > .dlg-body)",
+      ".settings-nav", ".settings-body", ".folder-tree", ".side-pane", ".provider-grid", ".preview-list",
+      ".my-day .md-body", ".agenda", ".setup", ".peek .notes",
+    ].join(", "),
+    label: "More",
+  });
+</script>
 </body>
 </html>

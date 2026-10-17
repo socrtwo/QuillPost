@@ -104,6 +104,13 @@ cd web
 then sign in as `demo@quillbox.test` / `demo` and, under *Server settings*, use IMAP
 `127.0.0.1:3143` (security *None*) and SMTP `127.0.0.1:3025` (*None*).
 
+Browser tests (Playwright with Chromium, run against demo servers; each script's header has the
+exact commands): `node src/test/e2e/embed.mjs` tests the QuillPen embedded editor against a fake
+QuillPen page (`src/test/quillpen-fake/`), and `node src/test/e2e/layout.mjs` opens every
+dialog, menu and overlay on emulated phones (412×915, 360×640, 915×412 landscape, with system-bar
+insets and the keyboard) and checks that nothing sits under the bars or keyboard, overlaps or
+scrolls sideways. `node scripts/gen-icons.mjs` regenerates the icons from `branding/QuillPost/`.
+
 ### Setting up an account
 
 A three-step wizard, as in Outlook:
@@ -186,6 +193,17 @@ read and delivery receipts, Reply-To, aliases (send from another address), recip
 autocomplete from contacts, contact lists, recent recipients and people who have written to you,
 undo send (0–30 seconds), schedule send, drafts with autosave, forward as attachment, edit as new.
 
+Editing in QuillPen: when QuillPen, the suite's word processor, is installed, the message window
+gets a **QuillPen** button that opens the message body in a complete embedded copy of QuillPen
+(ribbon and all) inside the message window; *Done* brings the text back, *Cancel* keeps the old
+body, and *Send* while QuillPen is open asks it for the latest text first. *Settings ▸ Compose and
+reply ▸ Edit messages in QuillPen* chooses Off, Ask (offered in every new message) or Always. On
+Android QuillPen is found automatically (it shares its editor through a content provider); the
+desktop app looks in QuillPen's install folder (`resources/embed`) or a folder you choose; the web
+version takes the address of a QuillPen web deployment. Not available on iOS. The protocol is the
+suite's EMBED.md; QuillPost's side is `web/src/main/resources/web/embed.js`,
+`web/src/main/kotlin/.../QuillPenEmbed.kt` and `app/src/main/java/.../QuillPenAndroid.kt`.
+
 Reading: meeting invitations with Accept/Tentative/Decline (with or without a response),
 read-receipt requests, importance banners, remote-image blocking, attachment preview, download
 all as .zip, immersive reader with read-aloud, translation through a local Ollama model, print,
@@ -217,6 +235,10 @@ reading-pane layouts, zoom, Outlook-style keyboard shortcuts (`Ctrl+N`, `Ctrl+R`
 `Ctrl+Shift+F`, `Ctrl+Q`, `Ctrl+U`, `Ctrl+Shift+V`, `Insert`, `Del`, `Ctrl+1`–`Ctrl+4` to switch
 apps, `F9`, `/`, `?`), swipe actions on phones, desktop notifications
 and reminders.
+Menus, dialogs, settings pages and lists that have more below show it: a thin scrollbar that
+widens when used, a shadow at the edge with more, and a *More* chip on menus and dialogs (the
+suite's shared scroll cues, `scrollcue.js`). On phones every dialog, menu, drawer, toast and
+floating button stays clear of the status bar, navigation bar, cut-outs and keyboard.
 
 ### Commands, Quick Access Toolbar and keyboard
 

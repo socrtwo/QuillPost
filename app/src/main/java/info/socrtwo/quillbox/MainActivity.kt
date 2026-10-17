@@ -24,6 +24,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -117,6 +118,7 @@ class MainActivity : ComponentActivity() {
         // The process may have been kept alive while the server died (or vice versa); make
         // sure a backend is running and the page points at it.
         if (loadedUrl != null && LocalServer.url == null) startBackend()
+        QuillPenAndroid.forget() // QuillPen may have been installed or removed meanwhile.
     }
 
     override fun onDestroy() {
@@ -224,10 +226,15 @@ class MainActivity : ComponentActivity() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url = request.url
                 if (isLocal(url)) return false
+                // The embedded QuillPen editor (compose iframe) stays inside the app.
+                if (QuillPenAndroid.isEmbedUrl(url) && !request.isForMainFrame) return false
                 if (url.scheme == "mailto") { deliverMailto(url.toString()); return true }
                 openExternal(url.toString())
                 return true
             }
+            // QuillPen embedded editor: https://quillpen.embed/<path> is answered from QuillPen's ContentProvider.
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+                QuillPenAndroid.intercept(this@MainActivity, request)
             override fun onPageFinished(view: WebView, url: String?) {
                 if (url != null && isLocal(Uri.parse(url))) {
                     uiReady = true
@@ -353,6 +360,8 @@ class MainActivity : ComponentActivity() {
                 pm.print(name, webView.createPrintDocumentAdapter(name), PrintAttributes.Builder().build())
             }
         }
+        /** True when QuillPen is installed and its embed provider answers (compose "QuillPen" button). */
+        @JavascriptInterface fun quillPenAvailable(): Boolean = QuillPenAndroid.isAvailable(this@MainActivity)
         @JavascriptInterface fun toast(text: String) { runOnUiThread { Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show() } }
     }
 }

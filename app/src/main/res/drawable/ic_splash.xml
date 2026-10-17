@@ -1,16 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Splash icon: the Quillbox envelope inside the 2/3 safe circle the SplashScreen API masks to. -->
+<!-- Splash icon: the full QuillPost tile (the suite's icon.svg) inside the 2/3 circle the
+     SplashScreen API masks to. The 512-unit artwork is scaled to 56dp and centred in the 108dp
+     canvas; its rounded corners stay inside the 72dp circle. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M33,42h42a3,3 0,0 1,3 3v20a3,3 0,0 1,-3 3h-42a3,3 0,0 1,-3 -3v-20a3,3 0,0 1,3 -3z" />
-    <path
-        android:strokeColor="#0F6CBD"
-        android:strokeWidth="2.5"
-        android:fillColor="#00000000"
-        android:pathData="M31,45l23,14l23,-14" />
+    <group
+        android:scaleX="0.109375"
+        android:scaleY="0.109375"
+        android:translateX="26"
+        android:translateY="26">
+        <!-- <rect width="512" height="512" rx="116" fill="url(#gquillpost)"/>, #1A9BA6 to #075961 top to bottom -->
+        <path android:pathData="M116,0H396A116,116 0,0 1,512 116V396A116,116 0,0 1,396 512H116A116,116 0,0 1,0 396V116A116,116 0,0 1,116 0Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="0"
+                    android:startY="0"
+                    android:endX="0"
+                    android:endY="512">
+                    <item android:offset="0" android:color="#FF1A9BA6" />
+                    <item android:offset="1" android:color="#FF075961" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M112,168H344A24,24 0,0 1,368 192V344A24,24 0,0 1,344 368H112A24,24 0,0 1,88 344V192A24,24 0,0 1,112 168Z" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#0D7C86"
+            android:strokeWidth="22"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M104,188L228,286L352,188" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#0D7C86"
+            android:strokeAlpha="0.55"
+            android:strokeWidth="14"
+            android:strokeLineCap="round"
+            android:pathData="M104,352L190,280M352,352L266,280" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:strokeColor="#075961"
+            android:strokeWidth="8"
+            android:strokeLineJoin="round"
+            android:pathData="M436,70C376,84 316,140 290,214C274,260 268,300 270,338C300,300 330,280 360,262C330,262 312,262 300,258C336,240 368,218 392,188C368,190 350,190 336,186C378,160 410,120 436,70Z" />
+        <path
+            android:fillColor="#00000000"
+            android:strokeColor="#075961"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:pathData="M430,78C360,150 300,250 262,380" />
+        <path
+            android:fillColor="#075961"
+            android:pathData="M262,380L252,420L276,392Z" />
+    </group>
 </vector>
