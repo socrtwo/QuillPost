@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Dark theme: same structure as values/themes.xml with the dark palette of the web UI. -->
-    <style name="Theme.Quillbox" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/quillbox_background</item>
+    <style name="Theme.QuillPost" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/quillpost_background</item>
     </style>
-    <style name="Theme.Quillbox.Starting" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/quillbox_topbar</item>
+    <style name="Theme.QuillPost.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/quillpost_topbar</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
         <item name="windowSplashScreenAnimationDuration">400</item>
-        <item name="postSplashScreenTheme">@style/Theme.Quillbox</item>
+        <item name="postSplashScreenTheme">@style/Theme.QuillPost</item>
     </style>
 </resources>

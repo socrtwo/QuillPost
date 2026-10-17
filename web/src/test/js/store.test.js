@@ -24,7 +24,7 @@ test("API keys go to the key store, never into settings, localStorage or the exp
   assert.ok(!exported.includes(KEY), "export holds no key");
   assert.ok(!/sk-proj-/.test(exported));
   const ex = S.exportSettings();
-  assert.equal(ex.format, "quillbox-ai-settings");
+  assert.equal(ex.format, "quillpost-ai-settings");
   assert.equal(ex.settings.providers.openai.model, "m");
   assert.equal(ex.settings.prompts[0].name, "Mine");
   assert.equal(ex.settings.usage, undefined);
@@ -41,11 +41,11 @@ test("key fields smuggled into settings or an import are dropped", () => {
   S.setStorage(storage);
   assert.equal(S.settings().providers.groq.key, undefined);
   assert.equal(S.settings().providers.groq.apiKey, undefined);
-  S.importSettings({ format: "quillbox-ai-settings", settings: { providers: { mistral: { model: "x", key: "leak3" }, bogus: { model: "y" } }, prompts: [{ name: "P", prompt: "Q" }] } });
+  S.importSettings({ format: "quillpost-ai-settings", settings: { providers: { mistral: { model: "x", key: "leak3" }, bogus: { model: "y" } }, prompts: [{ name: "P", prompt: "Q" }] } });
   assert.ok(!storage.dump().includes("leak"), "nothing key-like persisted");
   assert.equal(S.settings().providers.mistral.model, "x");
   assert.equal(S.settings().providers.bogus, undefined, "unknown providers ignored");
-  assert.throws(() => S.importSettings({ hello: 1 }), /not a Quillbox AI settings file/);
+  assert.throws(() => S.importSettings({ hello: 1 }), /not a QuillPost AI settings file/);
 });
 
 test("Android bridge backend: encrypted store is used, never web storage", async () => {
@@ -72,7 +72,7 @@ test("an Android app without the secure bridge refuses to store keys instead of 
   const path = require.resolve("../../main/resources/web/ai/store.js");
   delete require.cache[path];
   const g = globalThis;
-  g.QuillboxAndroid = { platform: () => "android" };
+  g.QuillPostAndroid = { platform: () => "android" };
   g.indexedDB = { open() { throw new Error("must not be used"); } };
   try {
     const S2 = require(path);
@@ -80,7 +80,7 @@ test("an Android app without the secure bridge refuses to store keys instead of 
     assert.equal(S2.keyBackend().kind, "unavailable");
     await assert.rejects(S2.setApiKey("openai", KEY), /cannot store API keys securely/);
   } finally {
-    delete g.QuillboxAndroid; delete g.indexedDB;
+    delete g.QuillPostAndroid; delete g.indexedDB;
     delete require.cache[path];
   }
 });
@@ -92,7 +92,7 @@ test("desktop backend talks to the local key endpoint with the session token", a
   assert.equal(await b.get("ai.key.groq"), "k1");
   assert.equal(calls[0].url, "/api/ai/keys/ai.key.groq");
   assert.equal(calls[0].init.headers.Authorization, "Bearer tok");
-  assert.equal(calls[0].init.headers["X-Quillbox-AI"], "1");
+  assert.equal(calls[0].init.headers["X-QuillPost-AI"], "1");
   await b.set("ai.key.groq", "v2");
   assert.equal(calls[1].init.method, "PUT");
   assert.deepEqual(JSON.parse(calls[1].init.body), { value: "v2" });

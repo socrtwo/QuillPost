@@ -77,7 +77,7 @@ jobs:
       - name: Upload app image
         uses: actions/upload-artifact@v4
         with:
-          name: quillbox-desktop-${{ matrix.label }}-app
+          name: quillpost-desktop-${{ matrix.label }}-app
           path: desktop/build/compose/binaries/main/app
           if-no-files-found: error
 
@@ -90,7 +90,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: quillbox-desktop-${{ matrix.label }}-${{ matrix.installer }}
+          name: quillpost-desktop-${{ matrix.label }}-${{ matrix.installer }}
           path: desktop/build/compose/binaries/main/${{ matrix.installer }}/*
           if-no-files-found: ignore
 
@@ -102,12 +102,12 @@ jobs:
           mkdir -p release-assets
           for f in build/compose/binaries/main/${{ matrix.installer }}/*; do
             [ -e "$f" ] || continue
-            cp "$f" "release-assets/quillbox-desktop-${RELEASE_TAG}-${{ matrix.label }}.${f##*.}"
+            cp "$f" "release-assets/quillpost-desktop-${RELEASE_TAG}-${{ matrix.label }}.${f##*.}"
           done
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            7z a -tzip "release-assets/quillbox-desktop-${RELEASE_TAG}-${{ matrix.label }}-portable.zip" ./build/compose/binaries/main/app/* > /dev/null
+            7z a -tzip "release-assets/quillpost-desktop-${RELEASE_TAG}-${{ matrix.label }}-portable.zip" ./build/compose/binaries/main/app/* > /dev/null
           else
-            tar -C build/compose/binaries/main/app -czf "release-assets/quillbox-desktop-${RELEASE_TAG}-${{ matrix.label }}-portable.tar.gz" .
+            tar -C build/compose/binaries/main/app -czf "release-assets/quillpost-desktop-${RELEASE_TAG}-${{ matrix.label }}-portable.tar.gz" .
           fi
           ls -la release-assets
       - name: Publish to GitHub Release
@@ -116,5 +116,5 @@ jobs:
         with:
           tag_name: ${{ steps.rel.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Quillbox ${{ steps.rel.outputs.tag }}
+          name: QuillPost ${{ steps.rel.outputs.tag }}
           files: desktop/release-assets/*

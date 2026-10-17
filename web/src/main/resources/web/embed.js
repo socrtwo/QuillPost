@@ -7,7 +7,7 @@
  *
  * Where QuillPen comes from (detect()):
  *   Android  the WebView shell answers https://quillpen.embed/<path> from QuillPen's ContentProvider
- *            and reports availability through QuillboxAndroid.quillPenAvailable();
+ *            and reports availability through QuillPostAndroid.quillPenAvailable();
  *   desktop  the local server serves QuillPen's resources/embed folder at /quillpen-embed/<path>
  *            (GET /api/quillpen reports platform "desktop" and whether it was found);
  *   web      a QuillPen web deployment URL entered in Settings ▸ Compose (stored in this browser);
@@ -81,7 +81,7 @@ const quillPen = (() => {
       if (shell === "ios") next = { platform: "ios", available: false, base: null, status: null };
       else if (shell === "android") {
         let ok = false;
-        try { ok = typeof window.QuillboxAndroid.quillPenAvailable === "function" && !!window.QuillboxAndroid.quillPenAvailable(); } catch {}
+        try { ok = typeof window.QuillPostAndroid.quillPenAvailable === "function" && !!window.QuillPostAndroid.quillPenAvailable(); } catch {}
         next = { platform: "android", available: ok, base: "https://quillpen.embed/", status: null };
       } else {
         let status = null;

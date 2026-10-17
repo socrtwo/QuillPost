@@ -1,4 +1,4 @@
-/* Quillbox — shared calendar/contacts/tasks client: dates and time zones, recurrence
+/* QuillPost — shared calendar/contacts/tasks client: dates and time zones, recurrence
  * expansion, holiday and birthday calendars, the data cache and reminders.
  * Loaded before app.js; everything here only touches app.js globals (api, prefs, state, el,
  * icon, toast) inside functions, never at load time.
@@ -397,7 +397,7 @@ function notify(title, body, onclick) {
   if (!prefs.get("notifyDesktop", true)) return;
   try {
     if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
-      const n = new Notification(title, { body, tag: "quillbox-" + title, icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f6cbd' stroke-width='2'%3E%3Cpath d='M3 6h18v12H3z'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E" });
+      const n = new Notification(title, { body, tag: "quillpost-" + title, icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f6cbd' stroke-width='2'%3E%3Cpath d='M3 6h18v12H3z'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E" });
       n.onclick = () => { window.focus(); onclick && onclick(); n.close(); };
       return;
     }

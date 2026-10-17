@@ -58,7 +58,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: quillbox-debug-apk
+          name: quillpost-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -83,10 +83,10 @@ jobs:
       - name: Build release APK
         env:
           # app/build.gradle.kts reads these; blank values mean "no signing config".
-          QUILLBOX_RELEASE_STORE_FILE: ${{ steps.keystore.outputs.configured == 'true' && format('{0}/release.jks', runner.temp) || '' }}
-          QUILLBOX_RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          QUILLBOX_RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          QUILLBOX_RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          QUILLPOST_RELEASE_STORE_FILE: ${{ steps.keystore.outputs.configured == 'true' && format('{0}/release.jks', runner.temp) || '' }}
+          QUILLPOST_RELEASE_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          QUILLPOST_RELEASE_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          QUILLPOST_RELEASE_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease --stacktrace
 
       # Captures whichever the build produced: app-release.apk (signed) or
@@ -94,7 +94,7 @@ jobs:
       - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: quillbox-release-apk
+          name: quillpost-release-apk
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
@@ -105,8 +105,8 @@ jobs:
           mkdir -p release-assets
           SRC=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
           case "$SRC" in *unsigned*) SUFFIX="-unsigned";; *) SUFFIX="";; esac
-          cp "$SRC" "release-assets/quillbox-${RELEASE_TAG}${SUFFIX}.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "release-assets/quillbox-${RELEASE_TAG}-debug.apk"
+          cp "$SRC" "release-assets/quillpost-${RELEASE_TAG}${SUFFIX}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "release-assets/quillpost-${RELEASE_TAG}-debug.apk"
 
       # Publishes a numbered GitHub Release (shown in the repo's Releases section)
       # whenever a tag like v1.0.0 is pushed, attaching the built APKs.
@@ -116,15 +116,15 @@ jobs:
         with:
           tag_name: ${{ steps.rel.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Quillbox ${{ steps.rel.outputs.tag }}
+          name: QuillPost ${{ steps.rel.outputs.tag }}
           generate_release_notes: true
           body: |
             Downloads (built by GitHub Actions from this tag; assets from the other workflows are attached as they finish):
-            - **Android / ChromeOS**: `quillbox-<tag>.apk` (signed when the repository has signing secrets, otherwise `-unsigned`) plus a debug APK. The app embeds the same Outlook-style client and junk engine as the desktop and web versions.
-            - **Windows**: `quillbox-desktop-<tag>-windows-x64.msi`, or the portable zip.
-            - **macOS**: `quillbox-desktop-<tag>-macos-arm64.dmg` (unsigned: right-click → Open, or `xattr -dr com.apple.quarantine`).
-            - **Linux x64**: `quillbox-desktop-<tag>-linux-x64.deb`, or the portable tar.gz.
-            - **Raspberry Pi OS (64-bit) / Linux arm64**: `quillbox-desktop-<tag>-linux-arm64.deb`, or the portable tar.gz.
-            - **Web / any JVM (servers, Termux, ChromeOS Linux)**: `quillbox-web-<tag>-any-jvm.zip` — unzip and run `bin/quillbox-web`.
-            - **iOS**: `Quillbox-iOS-simulator.app.zip` (unsigned simulator build; a device build needs an Apple Developer account). Shows the same client, served by a Quillbox server on your network.
+            - **Android / ChromeOS**: `quillpost-<tag>.apk` (signed when the repository has signing secrets, otherwise `-unsigned`) plus a debug APK. The app embeds the same Outlook-style client and junk engine as the desktop and web versions.
+            - **Windows**: `quillpost-desktop-<tag>-windows-x64.msi`, or the portable zip.
+            - **macOS**: `quillpost-desktop-<tag>-macos-arm64.dmg` (unsigned: right-click → Open, or `xattr -dr com.apple.quarantine`).
+            - **Linux x64**: `quillpost-desktop-<tag>-linux-x64.deb`, or the portable tar.gz.
+            - **Raspberry Pi OS (64-bit) / Linux arm64**: `quillpost-desktop-<tag>-linux-arm64.deb`, or the portable tar.gz.
+            - **Web / any JVM (servers, Termux, ChromeOS Linux)**: `quillpost-web-<tag>-any-jvm.zip` — unzip and run `bin/quillpost-web`.
+            - **iOS**: `QuillPost-iOS-simulator.app.zip` (unsigned simulator build; a device build needs an Apple Developer account). Shows the same client, served by a QuillPost server on your network.
           files: release-assets/*.apk

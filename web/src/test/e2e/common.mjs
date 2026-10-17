@@ -19,10 +19,10 @@ export function chromiumPath() {
 /** The demo mailbox account (`./gradlew demo`, see README); ports from DEMO_IMAP_PORT / DEMO_SMTP_PORT. */
 export function demoAccount(imapPort = Number(process.env.DEMO_IMAP_PORT || 3143), smtpPort = Number(process.env.DEMO_SMTP_PORT || 3025)) {
   return {
-    displayName: "Demo User", email: "demo@quillbox.test",
+    displayName: "Demo User", email: "demo@quillpost.test",
     incomingHost: "127.0.0.1", incomingPort: imapPort, protocol: "IMAP", incomingSecurity: "NONE",
     smtpHost: "127.0.0.1", smtpPort, smtpSecurity: "NONE",
-    username: "demo@quillbox.test", password: "demo",
+    username: "demo@quillpost.test", password: "demo",
   };
 }
 

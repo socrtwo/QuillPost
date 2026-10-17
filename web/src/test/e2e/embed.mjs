@@ -7,9 +7,9 @@
 //
 //   ./gradlew testClasses
 //   # desktop-mode server on 8120 (IMAP 13143, SMTP 13025) and web-mode server on 8121 (13144, 13026):
-//   PORT=8120 DEMO_IMAP_PORT=13143 DEMO_SMTP_PORT=13025 QUILLBOX_DATA_DIR=/tmp/qbA \
+//   PORT=8120 DEMO_IMAP_PORT=13143 DEMO_SMTP_PORT=13025 QUILLPOST_DATA_DIR=/tmp/qbA \
 //     JAVA_TOOL_OPTIONS=-Dquillpost.desktop=true ./gradlew demo &
-//   PORT=8121 DEMO_IMAP_PORT=13144 DEMO_SMTP_PORT=13026 QUILLBOX_DATA_DIR=/tmp/qbB ./gradlew demo &
+//   PORT=8121 DEMO_IMAP_PORT=13144 DEMO_SMTP_PORT=13026 QUILLPOST_DATA_DIR=/tmp/qbB ./gradlew demo &
 //   node src/test/e2e/embed.mjs
 //
 // Environment: DESKTOP_URL (default http://127.0.0.1:8120/), WEB_URL (http://127.0.0.1:8121/),
@@ -53,7 +53,7 @@ function serveFake() {
 const editorHtml = (page) => page.evaluate(() => document.getElementById("cEditor").innerHTML);
 const penOpen = (page) => page.evaluate(() => !!document.querySelector("#composeDialog .qp-pen-frame"));
 async function openCompose(page, html = "<p>Hello <b>world</b></p>") {
-  await page.evaluate((html) => compose.open({ mode: "new", to: "demo@quillbox.test", subject: "Embed test", html }), html);
+  await page.evaluate((html) => compose.open({ mode: "new", to: "demo@quillpost.test", subject: "Embed test", html }), html);
   await page.waitForSelector("#composeDialog[open]");
 }
 async function waitReady(page) {
@@ -247,7 +247,7 @@ async function main() {
     {
       const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
       await signIn(ctx, webAccount, { quillpenMode: "ask" });
-      await ctx.addInitScript(() => { window.QuillboxAndroid = { platform: () => "android", version: () => "test", openExternal() {}, print() {}, toast() {}, quillPenAvailable: () => true }; });
+      await ctx.addInitScript(() => { window.QuillPostAndroid = { platform: () => "android", version: () => "test", openExternal() {}, print() {}, toast() {}, quillPenAvailable: () => true }; });
       // What MainActivity.shouldInterceptRequest does with QuillPen's ContentProvider.
       await ctx.route("https://quillpen.embed/**", (route) => {
         const p = new URL(route.request().url()).pathname;
@@ -273,7 +273,7 @@ async function main() {
 
     // ---------------------------------------------------------------- iOS shell (simulated)
     {
-      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: "Mozilla/5.0 (iPhone) AppleWebKit/605.1.15 QuillboxApp/1.4.0 (iOS)" });
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: "Mozilla/5.0 (iPhone) AppleWebKit/605.1.15 QuillPostApp/1.4.0 (iOS)" });
       await signIn(ctx, webAccount, { quillpenMode: "always", quillpenUrl: fakeBase });
       const page = await ctx.newPage(); watch(page, "ios");
       await page.goto(WEB_URL);

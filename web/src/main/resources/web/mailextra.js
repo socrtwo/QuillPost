@@ -1,4 +1,4 @@
-/* Quillbox — the mail command set, part 2: commands from other mail programs (Eudora, Pine/Alpine,
+/* QuillPost — the mail command set, part 2: commands from other mail programs (Eudora, Pine/Alpine,
  * mutt, Pegasus Mail, Lotus Notes, Netscape/Thunderbird, Outlook Express, Gmail, Apple Mail, Spark,
  * Superhuman, Hey, Claris Emailer, Opera M2) and new commands original to this client, plus the
  * hooks that give them their behaviour in the list and reading pane (tags, screener, split inbox,

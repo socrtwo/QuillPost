@@ -1,6 +1,6 @@
 # Commands, Quick Access Toolbar and keyboard
 
-Every action in Quillbox Mail is a **command** in one registry
+Every action in QuillPost Mail is a **command** in one registry
 (`web/src/main/resources/web/commands.js`): `{ id, label, icon, tab, group, tip, keys, kind
 (button / toggle / menu), scope (mail / compose / global), run, menu, isEnabled, isActive,
 origin }`. The ribbon, the Quick Access Toolbar (QAT), the right-click menus, the keyboard and
@@ -11,7 +11,7 @@ command search all run the same commands by id, so any command can be put anywhe
 | `commands.js` | Registry, key names and keymaps, the QAT model (standard choices, *Add All*, sanitising) |
 | `mailtools.js` | Pure helpers: quoted-text folding, thread digest, mutt patterns, pipe filters, MoodWatch, tracker detection, free time slots, pre-send checks… |
 | `mailcommands.js` | The desktop mail client's own commands (File, Home, Send / Receive, Folder, View, Help, and the message window's Message, Insert, Options, Format Text, Review and Draw tabs), Undo/Redo, ribbon bindings |
-| `mailextra.js` | Commands from other mail programs, commands original to Quillbox, and their list / reading-pane behaviour |
+| `mailextra.js` | Commands from other mail programs, commands original to QuillPost, and their list / reading-pane behaviour |
 | `qat.js`, `commands.css` | The QAT, its drop-down, *More Commands…*, command search, keyboard customisation, command reference, File backstage, the extra ribbon and compose tabs, and the keyboard dispatcher |
 | `CommandFeatures.kt`, `CommandRoutes.kt` | Server side: `/api/x/…` endpoints (below) |
 
@@ -75,7 +75,7 @@ to load the client keeps working as before.
 | **Claris Emailer, Opera M2** | *Unified Inbox* (every signed-in account), *Mailing Lists* (grouped by List-Id), *Attachments by Type*, *Low Bandwidth Mode* |
 | **Outlook** (desktop) | Everything that makes sense for IMAP/POP3/SMTP: see the File, Home, Send / Receive, Folder, View, Help, Message, Insert, Options, Format Text, Review and Draw tables below — e.g. Send/Receive All, Update Folder, Send All, Work Offline, Clean Up Conversation/Folder, Ignore, Never Block Sender/Domain/List, Reply with Meeting, Always Move Messages in This Conversation, Follow Up (Today…Custom, Add Reminder), Search Folders, Copy Folder, Recover Deleted Items, Folder Properties, Mailbox Cleanup, Save As (.eml/.txt/.html), Edit Message, Business Card, Attach Item, Calendar, Sensitivity, Follow Up for recipients, Delay Delivery, Format Painter, Change Case, Accessibility checker, Word Count, Draw, Screenshot, Undo/Redo of mail actions |
 
-## Commands original to Quillbox (origin "QuillPost")
+## Commands original to QuillPost (origin "QuillPost")
 
 *Reply with Time Slots* / *Insert Free Time Slots* (free times from the built-in Calendar),
 *Thread Digest* (per-person new text, open questions, requests, dates and links — no AI, quoted
@@ -112,10 +112,10 @@ is marked for deletion).
   Editor grammar, Smart Lookup / Researcher, Thesaurus and Online Pictures (Microsoft/Bing
   services); Fastmail Masked Email, Apple Hide My Email and Mail Drop, Gmail Confidential Mode,
   Spark shared links (provider accounts). The browser's own spell checker is used for *Spelling*.
-* **Read tracking** (Superhuman/Spark "read statuses"): deliberately not offered — Quillbox blocks
+* **Read tracking** (Superhuman/Spark "read statuses"): deliberately not offered — QuillPost blocks
   tracking pixels instead.
 * **S/MIME and PGP** signing/encryption, Pegasus noticeboards, Outlook Download Headers / Mark to
-  Download (POP3 offline-store features; Quillbox reads mail online), *Cancel All* (requests are
+  Download (POP3 offline-store features; QuillPost reads mail online), *Cancel All* (requests are
   not batched), *Ignore Subthread*.
 
 ## Tests
@@ -334,7 +334,7 @@ is marked for deletion).
 | Keyboard Scheme | `help.keySchemes` | Help |  | Outlook |
 | What's New | `help.whatsNew` | Help |  | Outlook |
 | Report a Problem | `help.feedback` | Help |  | Outlook |
-| About Quillbox | `help.about` | Help |  | Outlook |
+| About QuillPost | `help.about` | Help |  | Outlook |
 
 ### Message (35)
 

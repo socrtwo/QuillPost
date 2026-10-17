@@ -79,7 +79,7 @@ test("OpenAI-compatible request: bearer key, streaming usage, completion-token n
 
 test("OpenRouter sends attribution headers; Groq uses max_tokens; retry options adjust parameters", () => {
   const r = C.buildChatRequest(rp("openrouter"), "openrouter/free", { messages: msgs, maxTokens: 50 }, { stream: false });
-  assert.equal(r.headers["X-Title"], "Quillbox");
+  assert.equal(r.headers["X-Title"], "QuillPost");
   assert.equal(r.body.stream, false);
   assert.equal(r.body.stream_options, undefined);
   const g = C.buildChatRequest(rp("groq"), "x", { messages: msgs, maxTokens: 50, temperature: 0.5 }, {});
@@ -193,7 +193,7 @@ test("a 400 naming temperature is retried without it", async () => {
   assert.equal(bodies[1].temperature, undefined);
 });
 
-test("providers that refuse web pages go through the Quillbox relay with the session token", async () => {
+test("providers that refuse web pages go through the QuillPost relay with the session token", async () => {
   await setupProvider("perplexity");
   const calls = [];
   C.configure({ token: () => "session-tok", fetch: async (url, init) => { calls.push({ url, init }); return new Response(JSON.stringify({ choices: [{ message: { content: "relayed" } }] }), { status: 200, headers: { "content-type": "application/json" } }); } });
@@ -202,7 +202,7 @@ test("providers that refuse web pages go through the Quillbox relay with the ses
   assert.equal(r.route, "proxy");
   assert.equal(calls[0].url, "/api/ai/proxy");
   assert.equal(calls[0].init.headers.Authorization, "Bearer session-tok");
-  assert.equal(calls[0].init.headers["X-Quillbox-AI"], "1");
+  assert.equal(calls[0].init.headers["X-QuillPost-AI"], "1");
   const env = JSON.parse(calls[0].init.body);
   assert.equal(env.url, "https://api.perplexity.ai/chat/completions");
   assert.equal(env.headers.Authorization, "Bearer sk-secret-value-123456");
@@ -220,7 +220,7 @@ test("a direct call blocked by the browser falls back to the relay", async () =>
 
 test("a refusal by the relay itself is reported as such", async () => {
   await setupProvider("perplexity");
-  C.configure({ fetch: async () => new Response('{"error":"x"}', { status: 403, headers: { "X-Quillbox-Proxy-Error": encodeURIComponent("host is not allowed") } }) });
+  C.configure({ fetch: async () => new Response('{"error":"x"}', { status: 403, headers: { "X-QuillPost-Proxy-Error": encodeURIComponent("host is not allowed") } }) });
   await assert.rejects(C.chat({ messages: msgs }), (e) => e.code === "proxy" && /host is not allowed/.test(e.message));
 });
 

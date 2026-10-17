@@ -14,7 +14,7 @@
 // interactive-widget=resizes-content do).
 //
 // Run against the demo server (see README "Run it"; from web/):
-//   PORT=8121 DEMO_IMAP_PORT=13144 DEMO_SMTP_PORT=13026 QUILLBOX_DATA_DIR=/tmp/qbB ./gradlew demo &
+//   PORT=8121 DEMO_IMAP_PORT=13144 DEMO_SMTP_PORT=13026 QUILLPOST_DATA_DIR=/tmp/qbB ./gradlew demo &
 //   node src/test/e2e/layout.mjs
 // Environment: BASE_URL (default http://127.0.0.1:8121/), IMAP_PORT / SMTP_PORT (13144 / 13026),
 // CHROMIUM (browser executable), SHOTS=<folder> to save a screenshot of every state, ONLY=<text>

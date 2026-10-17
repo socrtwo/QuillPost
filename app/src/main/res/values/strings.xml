@@ -1,9 +1,9 @@
 <resources>
-    <string name="app_name">Quillbox</string>
-    <string name="starting">Starting Quillbox…</string>
-    <string name="start_failed">Quillbox could not start its mail engine.</string>
+    <string name="app_name">QuillPost</string>
+    <string name="starting">Starting QuillPost…</string>
+    <string name="start_failed">QuillPost could not start its mail engine.</string>
     <string name="retry">Retry</string>
-    <string name="saved_to">Saved to Downloads/Quillbox/%1$s</string>
+    <string name="saved_to">Saved to Downloads/QuillPost/%1$s</string>
     <string name="no_viewer">No app can open this file type.</string>
     <string name="download_failed">Could not save the attachment: %1$s</string>
     <string name="no_browser">No browser is available to open this link.</string>

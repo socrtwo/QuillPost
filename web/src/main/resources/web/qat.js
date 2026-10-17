@@ -1,4 +1,4 @@
-/* Quillbox — Quick Access Toolbar and the command UI: the QAT (above or below the ribbon, or at the
+/* QuillPost — Quick Access Toolbar and the command UI: the QAT (above or below the ribbon, or at the
  * bottom near the keyboard), its drop-down checklist, the "More Commands…" chooser, command search
  * (Alt+Q), keyboard customisation, the command reference, the File backstage, the extra ribbon and
  * compose tabs, and the keyboard dispatcher that runs registered commands. Loaded after app.js.
@@ -343,7 +343,7 @@ const qatUI = {
     body.append(el("div", { class: "qb-cust" }, left, mid, right),
       el("div", { class: "qb-cust-opts" }, el("label", { class: "opt" }, "Position ", pos), el("label", { class: "check" }, labels, el("span", { text: "Show command labels" })), el("label", { class: "check" }, touch, el("span", { text: "Touch mode (more space between commands)" })), el("label", { class: "check" }, hidden, el("span", { text: "Hide the Quick Access Toolbar" }))));
     foot.append(
-      el("button", { class: "btn", onclick: () => MC.saveBlob("quillbox-quick-access.json", JSON.stringify({ qat: { items, position: pos.value, labels: labels.checked, hidden: hidden.checked, touch: touch.checked }, keymap: Commands.keymap, keyScheme: Commands.scheme }, null, 2), "application/json") }, icon("download"), "Export…"),
+      el("button", { class: "btn", onclick: () => MC.saveBlob("quillpost-quick-access.json", JSON.stringify({ qat: { items, position: pos.value, labels: labels.checked, hidden: hidden.checked, touch: touch.checked }, keymap: Commands.keymap, keyScheme: Commands.scheme }, null, 2), "application/json") }, icon("download"), "Export…"),
       el("button", { class: "btn", onclick: async () => { const [f] = await pickFiles({ accept: ".json,application/json" }); if (!f) return; try { const j = JSON.parse(await readFileText(f)); const q = Qat.sanitizeQatPrefs(j.qat || j); items = q.items; pos.value = q.position; labels.checked = q.labels; hidden.checked = q.hidden; touch.checked = q.touch; if (j.keymap && typeof j.keymap === "object") { Commands.keymap = Object.fromEntries(Object.entries(j.keymap).filter(([, v]) => typeof v === "string")); prefs.set("keymap", Commands.keymap); } draw(); toast("Imported — choose OK to keep it."); } catch { toast("That file is not a Quick Access Toolbar layout.", { danger: true }); } } }, icon("upload"), "Import…"),
       el("span", { class: "grow" }),
       el("button", { class: "btn", onclick: () => d.close() }, "Cancel"),
@@ -501,7 +501,7 @@ function commandsMarkdown() {
   const rows = Commands.all();
   const tabs = [...new Set(rows.map((c) => c.tab))];
   const cell = (s) => String(s || "").replace(/\|/g, "\\|");
-  const out = [`# Quillbox commands`, "", `${rows.length} commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).`, ""];
+  const out = [`# QuillPost commands`, "", `${rows.length} commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).`, ""];
   for (const t of tabs) {
     const list2 = rows.filter((c) => c.tab === t);
     out.push(`## ${t} (${list2.length})`, "", "| Command | Id | Group | Keys | Origin |", "|---|---|---|---|---|");

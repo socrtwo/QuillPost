@@ -55,7 +55,7 @@ jobs:
       - name: Upload server distribution
         uses: actions/upload-artifact@v4
         with:
-          name: quillbox-web-server
+          name: quillpost-web-server
           path: web/build/distributions/*.zip
           if-no-files-found: error
 
@@ -66,12 +66,12 @@ jobs:
         if: steps.rel.outputs.tag != ''
         run: |
           mkdir -p release-assets
-          cp build/distributions/*.zip "release-assets/quillbox-web-${RELEASE_TAG}-any-jvm.zip"
+          cp build/distributions/*.zip "release-assets/quillpost-web-${RELEASE_TAG}-any-jvm.zip"
       - name: Publish to GitHub Release
         if: steps.rel.outputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.rel.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Quillbox ${{ steps.rel.outputs.tag }}
+          name: QuillPost ${{ steps.rel.outputs.tag }}
           files: web/release-assets/*

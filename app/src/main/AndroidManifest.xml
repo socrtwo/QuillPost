@@ -18,7 +18,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:theme="@style/Theme.Quillbox">
+        android:theme="@style/Theme.QuillPost">
 
         <!-- The UI is the embedded web client; keep the Activity (and its WebView) alive across
              rotation and keyboard changes so the mail session is not reloaded. -->
@@ -29,12 +29,12 @@
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.Quillbox.Starting">
+            android:theme="@style/Theme.QuillPost.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Let Quillbox be chosen for mailto: links from other apps. -->
+            <!-- Let QuillPost be chosen for mailto: links from other apps. -->
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
                 <category android:name="android.intent.category.DEFAULT" />

@@ -5,8 +5,8 @@
 //
 // Needs Playwright with Chromium (CHROMIUM=/path/to/chrome to choose the browser) and Python 3
 // with Pillow (for the .ico and .icns containers). Writes:
-//   ios/Quillbox/Assets.xcassets/AppIcon.appiconset/icon-1024.png   full-bleed, no alpha (iOS masks it)
-//   ios/Quillbox/Assets.xcassets/LaunchLogo.imageset/launch-logo.svg
+//   ios/QuillPost/Assets.xcassets/AppIcon.appiconset/icon-1024.png   full-bleed, no alpha (iOS masks it)
+//   ios/QuillPost/Assets.xcassets/LaunchLogo.imageset/launch-logo.svg
 //   desktop/icons/QuillPost.png / .ico / .icns                       installers (Compose nativeDistributions)
 //   desktop/src/main/resources/tray.svg                              window and tray icon
 //   web/src/main/resources/web/favicon.svg, apple-touch-icon.png     browser tab, home-screen icon
@@ -43,7 +43,7 @@ async function render(svg, size, file, { opaque = false } = {}) {
 }
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "qp-icons-"));
-await render(fullBleed, 1024, out("ios/Quillbox/Assets.xcassets/AppIcon.appiconset/icon-1024.png"), { opaque: true });
+await render(fullBleed, 1024, out("ios/QuillPost/Assets.xcassets/AppIcon.appiconset/icon-1024.png"), { opaque: true });
 await render(fullBleed, 180, out("web/src/main/resources/web/apple-touch-icon.png"), { opaque: true });
 await render(tile, 512, out("desktop/icons/QuillPost.png"));
 for (const s of [16, 24, 32, 48, 64, 128, 256, 512, 1024]) await render(tile, s, path.join(tmp, `t${s}.png`));
@@ -51,7 +51,7 @@ await browser.close();
 
 fs.writeFileSync(out("web/src/main/resources/web/favicon.svg"), tile);
 fs.writeFileSync(out("desktop/src/main/resources/tray.svg"), tile);
-fs.writeFileSync(out("ios/Quillbox/Assets.xcassets/LaunchLogo.imageset/launch-logo.svg"), tile.replace(/width="512" height="512"/, 'width="160" height="160"'));
+fs.writeFileSync(out("ios/QuillPost/Assets.xcassets/LaunchLogo.imageset/launch-logo.svg"), tile.replace(/width="512" height="512"/, 'width="160" height="160"'));
 
 // .ico (Windows) and .icns (macOS) from the renders; the iOS icon must not have an alpha channel.
 execFileSync("python3", ["-I", "-c", `
@@ -62,6 +62,6 @@ big = Image.open(f"{tmp}/t256.png").convert("RGBA")
 big.save(ico, format="ICO", sizes=[(16,16),(24,24),(32,32),(48,48),(64,64),(128,128),(256,256)])
 Image.open(f"{tmp}/t1024.png").convert("RGBA").save(icns, format="ICNS")
 Image.open(ios).convert("RGB").save(ios, format="PNG", optimize=True)
-`, tmp, out("desktop/icons/QuillPost.ico"), out("desktop/icons/QuillPost.icns"), out("ios/Quillbox/Assets.xcassets/AppIcon.appiconset/icon-1024.png")], { stdio: "inherit" });
+`, tmp, out("desktop/icons/QuillPost.ico"), out("desktop/icons/QuillPost.icns"), out("ios/QuillPost/Assets.xcassets/AppIcon.appiconset/icon-1024.png")], { stdio: "inherit" });
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log("icons written");

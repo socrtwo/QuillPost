@@ -1,4 +1,4 @@
-/* Quillbox AI — text helpers shared by the commands and the tests: cleaning model output,
+/* QuillPost AI — text helpers shared by the commands and the tests: cleaning model output,
  * lenient JSON, safe Markdown-lite rendering, HTML <-> text, List-Unsubscribe parsing and the
  * checks applied to extracted tasks, events and contacts before they are offered.
  *

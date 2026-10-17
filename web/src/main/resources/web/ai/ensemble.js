@@ -1,4 +1,4 @@
-/* Quillbox AI — ensembles: one request answered by several AI services.
+/* QuillPost AI — ensembles: one request answered by several AI services.
  *
  * Two ways to combine the answers:
  *   master     every member answers independently; one AI (the master) reads the anonymized,

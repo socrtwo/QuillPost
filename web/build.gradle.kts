@@ -4,7 +4,7 @@ plugins {
     application
 }
 
-group = "info.socrtwo.quillbox"
+group = "info.socrtwo.quillpost"
 version = "1.4.0"
 
 repositories {
@@ -44,13 +44,13 @@ tasks.test {
 }
 
 // `./gradlew demo` starts a throw-away IMAP/SMTP server seeded with sample mail (including
-// spoofed and blacklisted messages) and then Quillbox itself, so the UI can be tried without
-// touching a real mailbox. Sign in with demo@quillbox.test / demo.
+// spoofed and blacklisted messages) and then QuillPost itself, so the UI can be tried without
+// touching a real mailbox. Sign in with demo@quillpost.test / demo.
 tasks.register<JavaExec>("demo") {
     group = "application"
-    description = "Run Quillbox against an in-memory demo mailbox (demo@quillbox.test / demo)."
+    description = "Run QuillPost against an in-memory demo mailbox (demo@quillpost.test / demo)."
     classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("info.socrtwo.quillbox.web.demo.DemoServerKt")
+    mainClass.set("info.socrtwo.quillpost.web.demo.DemoServerKt")
 }
 
 kotlin {
@@ -65,7 +65,7 @@ java {
 }
 
 application {
-    mainClass.set("info.socrtwo.quillbox.web.ApplicationKt")
+    mainClass.set("info.socrtwo.quillpost.web.ApplicationKt")
 }
 
 // The web UI's AI modules (src/main/resources/web/ai) are plain JavaScript with Node unit tests

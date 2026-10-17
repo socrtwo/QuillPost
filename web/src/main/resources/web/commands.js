@@ -1,4 +1,4 @@
-/* Quillbox — command registry.
+/* QuillPost — command registry.
  *
  * Every user-facing action is a command: { id, label, icon, tab, group, tip, keys, kind, run,
  * menu, isEnabled, isActive, origin, popular, keywords, scope }. The ribbon, the Quick Access

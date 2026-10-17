@@ -1,4 +1,4 @@
-/* Quillbox — pure mail utilities used by the command set: quoted-text folding and thread digests,
+/* QuillPost — pure mail utilities used by the command set: quoted-text folding and thread digests,
  * mutt-style message patterns, the Pine/mutt "pipe" filters, Eudora MoodWatch scoring, tracking
  * pixel and tracking-parameter detection, free time slots from a calendar, receipt detection,
  * snippet expansion, quote-integrity checking and pre-send checks. No DOM access: also loaded by

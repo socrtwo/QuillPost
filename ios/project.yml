@@ -1,18 +1,18 @@
-name: Quillbox
+name: QuillPost
 options:
-  bundleIdPrefix: info.socrtwo
+  bundleIdPrefix: io.github.socrtwo
   deploymentTarget:
     iOS: "16.0"
 targets:
-  Quillbox:
+  QuillPost:
     type: application
     platform: iOS
     sources:
-      - Quillbox
+      - QuillPost
     info:
-      path: Quillbox/Info.plist
+      path: QuillPost/Info.plist
       properties:
-        CFBundleDisplayName: Quillbox
+        CFBundleDisplayName: QuillPost
         CFBundleShortVersionString: "1.4.0"
         CFBundleVersion: "5"
         UILaunchScreen:
@@ -30,16 +30,16 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIViewControllerBasedStatusBarAppearance: true
         ITSAppUsesNonExemptEncryption: false
-        # The app talks to the user's own Quillbox server, which on a home network is often
+        # The app talks to the user's own QuillPost server, which on a home network is often
         # plain http://192.168.x.y:8080. Allow that; HTTPS still works and is recommended
         # for servers reachable from the internet.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
           NSAllowsLocalNetworking: true
-        NSLocalNetworkUsageDescription: Quillbox connects to the Quillbox server on your own network to show your mail.
+        NSLocalNetworkUsageDescription: QuillPost connects to the QuillPost server on your own network to show your mail.
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: info.socrtwo.quillbox
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.socrtwo.quillpost
         MARKETING_VERSION: "1.4.0"
         CURRENT_PROJECT_VERSION: 5
         TARGETED_DEVICE_FAMILY: "1,2"
@@ -47,7 +47,7 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
 schemes:
-  Quillbox:
+  QuillPost:
     build:
       targets:
-        Quillbox: all
+        QuillPost: all

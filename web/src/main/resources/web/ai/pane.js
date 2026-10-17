@@ -1,4 +1,4 @@
-/* Quillbox AI — interface pieces: icons, the busy chip with Stop, the AI pane (results and
+/* QuillPost AI — interface pieces: icons, the busy chip with Stop, the AI pane (results and
  * chat), dialogs, the streaming preview used before AI text changes a draft, and the
  * "What was sent" disclosure attached to every result.
  *
@@ -93,7 +93,7 @@
   // ------------------------------------------------------------------ "What was sent"
   const hostOf = (u) => { try { return new URL(u).host; } catch { return u || ""; } };
   /** A <details> block showing the exact messages sent, where to, and how. Never shows keys. */
-  const whereText = (x) => (x.route === "device" ? `${x.providerName ? x.providerName + " · " : ""}processed on this device` : `${x.providerName || "AI service"} · ${x.model || ""} · ${hostOf(x.endpoint)}${x.route === "proxy" ? " (relayed by the Quillbox backend)" : ""}`);
+  const whereText = (x) => (x.route === "device" ? `${x.providerName ? x.providerName + " · " : ""}processed on this device` : `${x.providerName || "AI service"} · ${x.model || ""} · ${hostOf(x.endpoint)}${x.route === "proxy" ? " (relayed by the QuillPost backend)" : ""}`);
   function sentDetails(info) {
     if (!info || !info.messages) return null;
     const chars = info.messages.reduce((n, m) => n + String(m.content).length, 0);

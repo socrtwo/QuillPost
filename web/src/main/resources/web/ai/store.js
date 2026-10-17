@@ -1,10 +1,10 @@
-/* Quillbox AI — settings and API-key storage.
+/* QuillPost AI — settings and API-key storage.
  *
  * Settings (which provider is active, models, options, saved prompts, usage) live in this
  * browser's localStorage under "qb.ai.v1". API keys never do. They go to a separate key store:
- *   - Android app: the QuillboxAndroid bridge, which encrypts them with AES-GCM under a key held
+ *   - Android app: the QuillPostAndroid bridge, which encrypts them with AES-GCM under a key held
  *     in the Android Keystore and keeps only the ciphertext in private SharedPreferences;
- *   - desktop app: the Quillbox backend on this computer, which writes them to its private data
+ *   - desktop app: the QuillPost backend on this computer, which writes them to its private data
  *     folder (owner-only file permissions; not encrypted — the desktop launcher has no OS
  *     keychain bridge);
  *   - a plain browser (self-hosted web, iOS app): IndexedDB for this site, not encrypted at rest.
@@ -32,7 +32,7 @@
       mailboxPreviews: false,
       /** Ask about this mailbox: at most this many messages of the folder are described. */
       mailboxLimit: 100,
-      /** Network route for cloud requests: auto (direct, else through the Quillbox backend), direct, proxy. */
+      /** Network route for cloud requests: auto (direct, else through the QuillPost backend), direct, proxy. */
       network: "auto",
       prompts: [],
       usage: { requests: 0, tokensIn: 0, tokensOut: 0, since: Date.now() },
@@ -112,12 +112,12 @@
       const { key, apiKey, models, ...rest } = cfg || {};
       providers[id] = rest;
     }
-    return { format: "quillbox-ai-settings", version: 1, exported: new Date().toISOString(), settings: { ...s, providers, usage: undefined, privacyAck: [] } };
+    return { format: "quillpost-ai-settings", version: 1, exported: new Date().toISOString(), settings: { ...s, providers, usage: undefined, privacyAck: [] } };
   }
 
   function importSettings(obj) {
-    const src = obj && obj.format === "quillbox-ai-settings" ? obj.settings : null;
-    if (!src || typeof src !== "object") throw new Error("This is not a Quillbox AI settings file.");
+    const src = obj && obj.format === "quillpost-ai-settings" ? obj.settings : null;
+    if (!src || typeof src !== "object") throw new Error("This is not a QuillPost AI settings file.");
     saveSettings((s) => {
       for (const k of ["enabled", "language", "confirmEachSend", "mailboxPreviews", "mailboxLimit", "network"]) if (k in src) s[k] = src[k];
       if (src.providers && typeof src.providers === "object") for (const [id, cfg] of Object.entries(src.providers)) if (P.providerById(id) && cfg && typeof cfg === "object") s.providers[id] = { ...cfg, id };
@@ -135,7 +135,7 @@
       get: async (n) => (m.has(n) ? m.get(n) : null), set: async (n, v) => { m.set(n, v); }, remove: async (n) => { m.delete(n); }, _map: m };
   }
 
-  /** Android: QuillboxAndroid.secureGet/secureSet/secureRemove (Keystore-encrypted). */
+  /** Android: QuillPostAndroid.secureGet/secureSet/secureRemove (Keystore-encrypted). */
   function androidBackend(bridge) {
     return { kind: "android-keystore", label: "this phone's app storage, encrypted with a key held in the Android Keystore", encrypted: true,
       get: async (n) => { const v = bridge.secureGet(n); return v == null || v === "" ? null : String(v); },
@@ -143,19 +143,19 @@
       remove: async (n) => { bridge.secureRemove(n); } };
   }
 
-  /** Desktop app: the local Quillbox backend keeps keys in its private data folder. */
+  /** Desktop app: the local QuillPost backend keeps keys in its private data folder. */
   function desktopBackend(fetchFn, tokenFn) {
     const call = async (method, n, value) => {
-      const headers = { Accept: "application/json", "X-Quillbox-AI": "1" };
+      const headers = { Accept: "application/json", "X-QuillPost-AI": "1" };
       const tk = tokenFn && tokenFn();
       if (tk) headers.Authorization = "Bearer " + tk;
       if (value !== undefined) headers["Content-Type"] = "application/json";
       const res = await fetchFn("/api/ai/keys/" + encodeURIComponent(n), { method, headers, body: value !== undefined ? JSON.stringify({ value }) : undefined });
       if (res.status === 404 && method === "GET") return null;
-      if (!res.ok) throw new Error("The Quillbox key store answered " + res.status);
+      if (!res.ok) throw new Error("The QuillPost key store answered " + res.status);
       return method === "GET" ? ((await res.json()).value || null) : null;
     };
-    return { kind: "desktop-file", label: "the Quillbox data folder on this computer (readable only by your user account; not encrypted)", encrypted: false,
+    return { kind: "desktop-file", label: "the QuillPost data folder on this computer (readable only by your user account; not encrypted)", encrypted: false,
       get: (n) => call("GET", n), set: (n, v) => call("PUT", n, v), remove: (n) => call("DELETE", n) };
   }
 
@@ -163,7 +163,7 @@
   function indexedDbBackend(idb) {
     let dbp = null;
     const db = () => dbp || (dbp = new Promise((resolve, reject) => {
-      const r = idb.open("quillbox-ai", 1);
+      const r = idb.open("quillpost-ai", 1);
       r.onupgradeneeded = () => r.result.createObjectStore("keys");
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => reject(r.error);
@@ -184,10 +184,10 @@
 
   /** Picks the key store for this platform. The Android app never falls back to web storage. */
   function detectBackend() {
-    const bridge = root.QuillboxAndroid;
+    const bridge = root.QuillPostAndroid;
     if (bridge) {
       if (typeof bridge.secureGet === "function" && typeof bridge.secureSet === "function") return androidBackend(bridge);
-      return unavailableBackend("This version of the Android app cannot store API keys securely. Update Quillbox, or use the on-device model or a local server that needs no key.");
+      return unavailableBackend("This version of the Android app cannot store API keys securely. Update QuillPost, or use the on-device model or a local server that needs no key.");
     }
     try { if (root.indexedDB) return indexedDbBackend(root.indexedDB); } catch { /* blocked */ }
     return unavailableBackend("This browser offers no storage for API keys.");

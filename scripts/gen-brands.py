@@ -1,6 +1,6 @@
 import glob
 rows=[]
-for f in sorted(glob.glob('/home/user/quillbox/web/src/main/resources/brands/brands-*.tsv')):
+for f in sorted(glob.glob('/home/user/quillpost/web/src/main/resources/brands/brands-*.tsv')):
     for line in open(f):
         line=line.rstrip('\n')
         if not line or line.startswith('#'): continue
@@ -41,6 +41,6 @@ def kt(pkg):
     out.append("    }")
     out.append("}")
     return '\n'.join(out)+'\n'
-open('/home/user/quillbox/web/src/main/kotlin/info/socrtwo/quillbox/web/spam/BrandKnowledgeBaseExtra.kt','w').write(kt('info.socrtwo.quillbox.web.spam'))
+open('/home/user/quillpost/web/src/main/kotlin/info/socrtwo/quillpost/web/spam/BrandKnowledgeBaseExtra.kt','w').write(kt('info.socrtwo.quillpost.web.spam'))
 # The Android app compiles the web sources directly, so one generated file serves every platform.
 print('rows', len(rows), 'chunks', len(chunks), [len(c.encode()) for c in chunks])

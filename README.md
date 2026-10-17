@@ -1,4 +1,7 @@
-# quillbox
+# QuillPost
+
+*Part of the Quill suite: [QuillPen](https://github.com/socrtwo/QuillPen) (documents), [QuillGrid](https://github.com/socrtwo/QuillGrid) (spreadsheets), **QuillPost** (email) and [QuillStage](https://github.com/socrtwo/QuillStage) (presentations). Formerly named Quillbox.*
+
 Email client for Android, desktop, web and iOS: downloads IMAP/POP3 mail, composes with a
 formatting toolbar, and keeps junk out of the Inbox with open DNS blocklists, an offline
 brand-impersonation detector, a learning classifier and user rules. Besides Mail it has a
@@ -6,22 +9,22 @@ Calendar, People (contacts) and To Do, and its interface follows the familiar la
 Microsoft 365 Outlook: app bar, ribbon, folder pane, Focused/Other inbox, conversations and a
 reading pane.
 
-Quillbox is an independent open-source project. It is not affiliated with, sponsored or endorsed
+QuillPost is an independent open-source project. It is not affiliated with, sponsored or endorsed
 by Microsoft. Outlook and Microsoft 365 are trademarks of Microsoft Corporation and are named here
-only to describe the layout Quillbox users will recognise. Quillbox uses its own name, logo,
+only to describe the layout QuillPost users will recognise. QuillPost uses its own name, logo,
 icons, colours and open fonts, and contains no Microsoft code or artwork.
 
 ---
 
-## Quillbox (Android app)
+## QuillPost (Android app)
 
-Quillbox for Android is the Outlook-style client packaged as an app. The APK contains the
+QuillPost for Android is the Outlook-style client packaged as an app. The APK contains the
 same mail engine and the same interface as the web and desktop versions: at start-up the app
 launches the backend on `127.0.0.1` inside its own process and shows the UI full-screen in a
 WebView. Nothing leaves the phone except the connections to your own mail provider, the DNS
 blocklist lookups and the provider autodiscovery, exactly as on the desktop.
 
-- **Application ID:** `info.socrtwo.quillbox`
+- **Application ID:** `io.github.socrtwo.quillpost`
 - **minSdk:** 26 (Android 8.0) · **compile/target SDK:** 35 (Android 15)
 - **Also runs on ChromeOS** (install the APK) and on Android tablets, where the layout becomes
   folders + list with the reading pane sliding in, like Outlook on an iPad.
@@ -29,7 +32,7 @@ blocklist lookups and the provider autodiscovery, exactly as on the desktop.
 What the Android shell adds on top of the shared UI:
 
 - the back button closes dialogs, the folder drawer and the open message before leaving the app;
-- attachments are saved to *Downloads/Quillbox* and offered to a viewer app; compose attachments
+- attachments are saved to *Downloads/QuillPost* and offered to a viewer app; compose attachments
   use the system file picker;
 - links in messages open in the browser, `mailto:` links from other apps open the composer;
 - *Print* uses Android's print service; the theme follows the system light/dark setting;
@@ -50,7 +53,7 @@ What the Android shell adds on top of the shared UI:
 ### Project layout
 
 ```
-app/src/main/java/info/socrtwo/quillbox/
+app/src/main/java/info/socrtwo/quillpost/
 ├── MainActivity.kt     // WebView shell: back button, downloads, file picker, links, printing
 └── LocalServer.kt      // starts the shared Ktor backend on 127.0.0.1 (stable port, app data dir)
 web/src/main/kotlin/    // the backend and junk engine, compiled into the APK as-is
@@ -75,7 +78,7 @@ app/build/outputs/apk/debug/app-debug.apk
 Install it on a device with `adb install app/build/outputs/apk/debug/app-debug.apk`.
 
 > **CI:** `.github/workflows/android.yml` builds `assembleDebug` on every push and uploads
-> `app-debug.apk` as a build artifact (the `quillbox-debug-apk` artifact).
+> `app-debug.apk` as a build artifact (the `quillpost-debug-apk` artifact).
 
 ## Web client (Outlook-style, with built-in junk protection)
 
@@ -90,8 +93,8 @@ cd web
 ./gradlew run            # http://localhost:8080
 ```
 
-Environment variables: `PORT` (default 8080), `HOST` (default 0.0.0.0), `QUILLBOX_DATA_DIR`
-(default `~/.quillbox`; holds per-account rules, settings, the learned classifier and the
+Environment variables: `PORT` (default 8080), `HOST` (default 0.0.0.0), `QUILLPOST_DATA_DIR`
+(default `~/.quillpost`; holds per-account rules, settings, the learned classifier and the
 analysis cache — **never passwords**).
 
 To try it without a real mailbox:
@@ -101,7 +104,7 @@ cd web
 ./gradlew demo           # in-memory IMAP/SMTP seeded with genuine, spoofed and blacklisted mail
 ```
 
-then sign in as `demo@quillbox.test` / `demo` and, under *Server settings*, use IMAP
+then sign in as `demo@quillpost.test` / `demo` and, under *Server settings*, use IMAP
 `127.0.0.1:3143` (security *None*) and SMTP `127.0.0.1:3025` (*None*).
 
 Browser tests (Playwright with Chromium, run against demo servers; each script's header has the
@@ -263,27 +266,27 @@ Inspector*.
 The full list with ids, keys and origins, what runs on the server and what was left out (and why)
 is in [docs/COMMANDS.md](docs/COMMANDS.md). JavaScript unit tests: `node --test web/src/test/js/*.test.js`.
 
-### What Quillbox cannot do
+### What QuillPost cannot do
 
-Quillbox talks to standard IMAP, POP3 and SMTP servers. Features that depend on Microsoft
-Exchange or Microsoft 365 servers are not available, and Quillbox does not imitate them:
+QuillPost talks to standard IMAP, POP3 and SMTP servers. Features that depend on Microsoft
+Exchange or Microsoft 365 servers are not available, and QuillPost does not imitate them:
 
 - shared mailboxes, delegate access, message recall, voting buttons, reactions, Copilot and
   Microsoft Teams integration;
 - server-side free/busy look-up and room booking: invitations are sent as ordinary iCalendar
   e-mail, which Outlook, Google Calendar and Apple Calendar all understand;
-- server-side automatic replies and rules: Quillbox applies them while it is running (always, for
+- server-side automatic replies and rules: QuillPost applies them while it is running (always, for
   the server version; the desktop and phone apps must be open);
 - calendar and contact sync with CalDAV/CardDAV or Exchange: calendars, contacts and tasks are
-  stored by Quillbox per account and move between programs as `.ics`, `.vcf` and `.csv` files;
+  stored by QuillPost per account and move between programs as `.ics`, `.vcf` and `.csv` files;
   internet calendars can be subscribed to read-only;
 - Outlook `.pst`/`.ost` files: convert them first (for example with `readpst -M` from libpst) and
   import the resulting `.mbox` or `.eml` files;
 - S/MIME signing and encryption.
 
 **Where the data lives.** Each account's calendars, contacts, tasks, message categories and
-flags, scheduled messages and settings are JSON files in the data directory (`~/.quillbox`, or
-`$QUILLBOX_DATA_DIR`; inside the app's private storage on Android). Back that folder up to keep
+flags, scheduled messages and settings are JSON files in the data directory (`~/.quillpost`, or
+`$QUILLPOST_DATA_DIR`; inside the app's private storage on Android). Back that folder up to keep
 them. Settings from 1.3 and earlier are upgraded automatically the first time 1.4 starts.
 
 ### API
@@ -295,7 +298,7 @@ are unchanged, so the iOS client keeps working.
 
 ## Other platforms
 
-Quillbox started as an Android app; sibling clients live in their own folders. Each is built
+QuillPost started as an Android app; sibling clients live in their own folders. Each is built
 by its own GitHub Actions workflow.
 
 | Folder      | Target                          | Stack                                              | Build artifact |
@@ -303,7 +306,7 @@ by its own GitHub Actions workflow.
 | `app/`      | Android (and **ChromeOS**)      | WebView shell around the embedded web client (Ktor CIO backend in-process, Jakarta Mail) | `.apk`         |
 | `desktop/`  | Windows / macOS / Linux / Raspberry Pi OS | Native launcher (Compose Desktop) around the embedded web client | `.msi`/`.dmg`/`.deb` (x64 + arm64) + portable archives |
 | `web/`      | Browser (self-hosted)           | Ktor backend (JVM, Jakarta Mail) + Outlook-style web UI, junk engine | server `.zip`  |
-| `ios/`      | iPhone / iPad                   | SwiftUI + WebKit shell showing the web client served by your own Quillbox server | `.app` (simulator) |
+| `ios/`      | iPhone / iPad                   | SwiftUI + WebKit shell showing the web client served by your own QuillPost server | `.app` (simulator) |
 
 Notes on the architecture choices:
 
@@ -325,28 +328,28 @@ Notes on the architecture choices:
   mail work and serves a browser UI. See the section above.
 - **iOS**: Jakarta Mail is JVM-only and Apple does not allow a JVM on iOS, so the iPhone/iPad
   app cannot run the backend itself. It shows the same web client full-screen in WebKit, served
-  by a Quillbox server on your own network — the `quillbox-web` zip on a PC, Mac, Raspberry Pi
+  by a QuillPost server on your own network — the `quillpost-web` zip on a PC, Mac, Raspberry Pi
   or NAS (it binds to all interfaces by default), or the desktop app started with
   `HOST=0.0.0.0`. Enter the address (for example `http://192.168.1.20:8080`) on the first
   screen; *Settings → Account → Change server* changes it later. Printing, attachment saving
   (share sheet), external links and `mailto:` are handled natively. The Xcode project is
   generated from `ios/project.yml` via [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-  (`cd ios && xcodegen generate && open Quillbox.xcodeproj`).
+  (`cd ios && xcodegen generate && open QuillPost.xcodeproj`).
 
 ## Releases
 
 Pushing a tag such as `v1.4.0` makes GitHub Actions build every target and attach the files
-to one GitHub Release (`Releases → Quillbox v1.4.0`):
+to one GitHub Release (`Releases → QuillPost v1.4.0`):
 
 | Target | Release file |
 |---|---|
-| Android, ChromeOS | `quillbox-v1.4.0.apk` (signed when the signing secrets exist, else `-unsigned`) |
-| Windows | `quillbox-desktop-v1.4.0-windows-x64.msi`, or the portable `.zip` |
-| macOS | `quillbox-desktop-v1.4.0-macos-arm64.dmg`, or the portable `.tar.gz` |
-| Linux x64 | `quillbox-desktop-v1.4.0-linux-x64.deb`, or the portable `.tar.gz` |
-| Raspberry Pi OS (64-bit) / Linux arm64 | `quillbox-desktop-v1.4.0-linux-arm64.deb`, or the portable `.tar.gz` |
-| Web / any OS with Java 17+ (servers, Termux, ChromeOS Linux) | `quillbox-web-v1.4.0-any-jvm.zip` → unzip, run `bin/quillbox-web` |
-| iOS | `Quillbox-iOS-simulator.app.zip` (unsigned simulator build; a device build needs an Apple Developer account) |
+| Android, ChromeOS | `quillpost-v1.4.0.apk` (signed when the signing secrets exist, else `-unsigned`) |
+| Windows | `quillpost-desktop-v1.4.0-windows-x64.msi`, or the portable `.zip` |
+| macOS | `quillpost-desktop-v1.4.0-macos-arm64.dmg`, or the portable `.tar.gz` |
+| Linux x64 | `quillpost-desktop-v1.4.0-linux-x64.deb`, or the portable `.tar.gz` |
+| Raspberry Pi OS (64-bit) / Linux arm64 | `quillpost-desktop-v1.4.0-linux-arm64.deb`, or the portable `.tar.gz` |
+| Web / any OS with Java 17+ (servers, Termux, ChromeOS Linux) | `quillpost-web-v1.4.0-any-jvm.zip` → unzip, run `bin/quillpost-web` |
+| iOS | `QuillPost-iOS-simulator.app.zip` (unsigned simulator build; a device build needs an Apple Developer account) |
 
 ### Making a release from Termux (Android)
 
@@ -363,55 +366,55 @@ termux-setup-storage                                  # optional: reach ~/storag
 git config --global user.name  "Your Name"
 git config --global user.email "you@example.com"
 gh auth login                                         # GitHub CLI login (HTTPS + browser/token)
-git clone https://github.com/socrtwo/quillbox.git
-cd quillbox
+git clone https://github.com/socrtwo/QuillPost.git
+cd QuillPost
 mkdir -p ~/.gradle && printf 'org.gradle.jvmargs=-Xmx1536m\norg.gradle.daemon=false\n' >> ~/.gradle/gradle.properties
 ```
 
 Build and test the web/JVM server on the phone (this is the same zip the release ships):
 
 ```bash
-cd ~/quillbox/web
+cd ~/quillpost/web
 chmod +x gradlew
-./gradlew build distZip --no-daemon                   # runs the junk-engine tests, writes build/distributions/quillbox-web-1.4.0.zip
-cd build/distributions && unzip -o quillbox-web-1.4.0.zip && cd quillbox-web-1.4.0
-PORT=8080 ./bin/quillbox-web                          # open http://localhost:8080 in the phone browser
+./gradlew build distZip --no-daemon                   # runs the junk-engine tests, writes build/distributions/quillpost-web-1.4.0.zip
+cd build/distributions && unzip -o quillpost-web-1.4.0.zip && cd quillpost-web-1.4.0
+PORT=8080 ./bin/quillpost-web                          # open http://localhost:8080 in the phone browser
 ```
 
 Cut the release (all targets are built by GitHub Actions and attached to one GitHub Release):
 
 ```bash
-cd ~/quillbox
+cd ~/quillpost
 git checkout main && git pull
 # bump the version first if needed: app/build.gradle.kts (versionCode/versionName),
 #   web/build.gradle.kts (version), desktop/build.gradle.kts (version, packageVersion)
 git commit -am "Release v1.4.0"        # only if you changed something
 git push
-git tag -a v1.4.0 -m "Quillbox 1.4.0"
+git tag -a v1.4.0 -m "QuillPost 1.4.0"
 git push origin v1.4.0                 # <- this triggers the Android, Desktop, Web and iOS release builds
 
 gh run list --limit 8                  # watch the four workflows
 gh run watch                           # follow one interactively
 gh release view v1.4.0                 # list the attached files when they are done
-gh release download v1.4.0 -D ~/storage/downloads/quillbox-v1.4.0
+gh release download v1.4.0 -D ~/storage/downloads/quillpost-v1.4.0
 ```
 
 If the repository has no signing secrets, the APK arrives unsigned; sign it on the phone:
 
 ```bash
 pkg install -y apksigner
-keytool -genkeypair -v -keystore ~/quillbox-release.jks -alias quillbox -keyalg RSA -keysize 2048 -validity 10000
-apksigner sign --ks ~/quillbox-release.jks --ks-key-alias quillbox \
-  --out quillbox-v1.4.0.apk ~/storage/downloads/quillbox-v1.4.0/quillbox-v1.4.0-unsigned.apk
+keytool -genkeypair -v -keystore ~/quillpost-release.jks -alias quillpost -keyalg RSA -keysize 2048 -validity 10000
+apksigner sign --ks ~/quillpost-release.jks --ks-key-alias quillpost \
+  --out quillpost-v1.4.0.apk ~/storage/downloads/quillpost-v1.4.0/quillpost-v1.4.0-unsigned.apk
 ```
 
 To have CI sign it instead, add the secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`
 and `KEY_PASSWORD` (see *Automated signed builds in CI* above):
 
 ```bash
-base64 -w 0 ~/quillbox-release.jks | gh secret set KEYSTORE_BASE64
+base64 -w 0 ~/quillpost-release.jks | gh secret set KEYSTORE_BASE64
 gh secret set KEYSTORE_PASSWORD
-gh secret set KEY_ALIAS --body quillbox
+gh secret set KEY_ALIAS --body quillpost
 gh secret set KEY_PASSWORD
 ```
 
@@ -422,7 +425,7 @@ a signed iOS app).
 ## Security note
 
 Credentials and downloaded mail are stored locally only and are transmitted solely to the
-user's own mail servers (on the web/iOS clients, via your own Quillbox backend). Use real
+user's own mail servers (on the web/iOS clients, via your own QuillPost backend). Use real
 credentials only on your own device; the repository ships with placeholder values only.
 
 The web backend keeps passwords in memory for the life of a session. On disk it writes rules,

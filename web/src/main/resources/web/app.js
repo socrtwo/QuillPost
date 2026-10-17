@@ -1,4 +1,4 @@
-/* Quillbox web client — desktop-mail-client layout: mail with built-in junk protection,
+/* QuillPost web client — desktop-mail-client layout: mail with built-in junk protection,
  * calendar, people and to-do. Talks to the Ktor backend at the same origin; session tokens live
  * in sessionStorage, remembered accounts in localStorage.
  */
@@ -91,10 +91,10 @@ const select = (options, value, attrs = {}) => { const s = el("select", attrs); 
 // The Android and iOS apps show this page in a WebView. They identify themselves (a JS bridge
 // on Android, a user-agent token on iOS) so that pop-up windows become in-app dialogs,
 // printing goes through the platform, and wording fits a phone.
-const NATIVE = window.QuillboxAndroid ? "android" : /QuillboxApp\/[\w.]+ \(iOS\)/.test(navigator.userAgent) ? "ios" : null;
-const IOS_BRIDGE = (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.quillbox) || null;
+const NATIVE = window.QuillPostAndroid ? "android" : /QuillPostApp\/[\w.]+ \(iOS\)/.test(navigator.userAgent) ? "ios" : null;
+const IOS_BRIDGE = (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.quillpost) || null;
 function openExternal(url) {
-  if (NATIVE === "android") { try { window.QuillboxAndroid.openExternal(url); return; } catch {} }
+  if (NATIVE === "android") { try { window.QuillPostAndroid.openExternal(url); return; } catch {} }
   if (NATIVE === "ios" && IOS_BRIDGE) { try { IOS_BRIDGE.postMessage({ type: "open", url }); return; } catch {} }
   const w = window.open(url, "_blank", "noopener");
   if (!w) location.href = url;
@@ -113,14 +113,14 @@ function popup(title, { html, text, node }) {
   $("popupDialog").showModal();
 }
 function nativePrint(title) {
-  if (NATIVE === "android") { try { window.QuillboxAndroid.print(title || "Quillbox"); return true; } catch {} }
-  if (NATIVE === "ios" && IOS_BRIDGE) { try { IOS_BRIDGE.postMessage({ type: "print", title: title || "Quillbox" }); return true; } catch {} }
+  if (NATIVE === "android") { try { window.QuillPostAndroid.print(title || "QuillPost"); return true; } catch {} }
+  if (NATIVE === "ios" && IOS_BRIDGE) { try { IOS_BRIDGE.postMessage({ type: "print", title: title || "QuillPost" }); return true; } catch {} }
   return false;
 }
 /**
  * Downloads a URL (an API file). Every download endpoint answers with Content-Disposition:
  * attachment, so in the phone apps navigating to it hands the file to the native download hook
- * (Android DownloadListener → Downloads/Quillbox, iOS WKDownload → share sheet) and the page stays.
+ * (Android DownloadListener → Downloads/QuillPost, iOS WKDownload → share sheet) and the page stays.
  */
 function download(url) {
   if (NATIVE) { location.href = url; return; }
@@ -240,7 +240,7 @@ const setup = {
   /** Shows the wizard; [adding] keeps the signed-in accounts and offers Cancel, [email] pre-fills a re-sign-in. */
   show({ adding = false, email = "", name = "" } = {}) {
     $("app").classList.add("hidden"); $("setup").classList.remove("hidden");
-    $("suOrigin").textContent = NATIVE === "android" ? "the Quillbox app on this phone" : location.host;
+    $("suOrigin").textContent = NATIVE === "android" ? "the QuillPost app on this phone" : location.host;
     if (NATIVE === "android" && !this.rememberTouched) $("suRemember").checked = true;
     $("suCancelRow").classList.toggle("hidden", !(adding && state.token));
     if (adding || email) { $("suEmail").value = email || ""; $("suName").value = name || ""; $("suPassword").value = ""; }
@@ -289,7 +289,7 @@ const setup = {
     if (q) {
       const hits = all.filter((p) => p.label.toLowerCase().includes(q) || p.id.includes(q) || p.domains.some((d) => d.includes(q)) || p.regionLabel.toLowerCase().includes(q))
         .sort((a, b) => (b.popular > 0) - (a.popular > 0) || (a.popular || 99) - (b.popular || 99) || byLabel(a, b));
-      if (!hits.length) host.appendChild(el("div", { class: "provider-empty", text: `No provider matches "${q}". Choose Other and Quillbox will look the settings up from your address.` }));
+      if (!hits.length) host.appendChild(el("div", { class: "provider-empty", text: `No provider matches "${q}". Choose Other and QuillPost will look the settings up from your address.` }));
       hits.forEach((p) => host.appendChild(this.tile(p)));
       host.appendChild(this.otherTile());
       return;
@@ -325,7 +325,7 @@ const setup = {
     else {
       if (p.status) notes.push(`<div><b>${esc(p.status)}</b></div>`);
       notes.push(`<div class="small muted">IMAP ${esc(p.incomingHost)}:${p.incomingPort} · SMTP ${esc(p.smtpHost)}:${p.smtpPort}</div>`);
-      if (p.oauthOnly) notes.push(`<div class="error-box" style="margin:8px 0 0">This provider may no longer accept password sign-in for IMAP. Try an app password; if it is rejected, the provider requires OAuth, which Quillbox does not support yet.</div>`);
+      if (p.oauthOnly) notes.push(`<div class="error-box" style="margin:8px 0 0">This provider may no longer accept password sign-in for IMAP. Try an app password; if it is rejected, the provider requires OAuth, which QuillPost does not support yet.</div>`);
       if (p.notes.length) notes.push(`<ul>${p.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>`);
       if (p.appPasswordUrl) notes.push(`<div style="margin-top:6px"><a href="${esc(p.appPasswordUrl)}" target="_blank" rel="noopener">Create an app password ↗</a></div>`);
     }
@@ -337,7 +337,7 @@ const setup = {
   chooseOther() {
     this.provider = null;
     $("suChosen").classList.add("hidden"); $("suProviderNotes").classList.add("hidden");
-    $("suLead1").textContent = "Enter your address and password. Quillbox finds the server settings for you, the same way Outlook does.";
+    $("suLead1").textContent = "Enter your address and password. QuillPost finds the server settings for you, the same way Outlook does.";
     $("suEmail").placeholder = "you@example.com";
     $("suPasswordHint").innerHTML = "Gmail, Yahoo, iCloud, AOL and Fastmail require an <em>app password</em> rather than your normal password.";
     this.error(null);
@@ -386,7 +386,7 @@ const setup = {
     if (d.found) {
       $("suLead").textContent = "Check the details below, then sign in.";
       box.innerHTML = `<b>${esc(d.provider || d.domain)}</b> — settings from ${esc(d.source)}.<div class="small muted">IMAP ${esc(d.incomingHost)}:${d.incomingPort} · SMTP ${esc(d.smtpHost)}:${d.smtpPort}</div>` +
-        (d.oauthOnly ? `<div class="error-box" style="margin:8px 0 0">This provider may no longer accept password sign-in for IMAP. Try an app password; if it is rejected, the provider requires OAuth, which Quillbox does not support yet.</div>` : "") +
+        (d.oauthOnly ? `<div class="error-box" style="margin:8px 0 0">This provider may no longer accept password sign-in for IMAP. Try an app password; if it is rejected, the provider requires OAuth, which QuillPost does not support yet.</div>` : "") +
         (notes ? `<ul>${notes}</ul>` : "") +
         (d.appPasswordUrl ? `<div style="margin-top:6px"><a href="${esc(d.appPasswordUrl)}" target="_blank" rel="noopener">Create an app password ↗</a></div>` : "");
       $("suAdvanced").open = false;
@@ -638,7 +638,7 @@ const folders = {
       this.render();
       const inbox = this.byRole("inbox");
       $("railMailCount").textContent = inbox && inbox.unread > 0 ? String(inbox.unread) : "";
-      document.title = (inbox && inbox.unread > 0 ? `(${inbox.unread}) ` : "") + (this.byPath(state.folder)?.name || "Mail") + " — Quillbox";
+      document.title = (inbox && inbox.unread > 0 ? `(${inbox.unread}) ` : "") + (this.byPath(state.folder)?.name || "Mail") + " — QuillPost";
     } catch (e) { toast("Could not load folders: " + e.message, { danger: true }); }
   },
   collapsed() { return new Set(prefs.get("collapsedTree", [])); },
@@ -656,12 +656,12 @@ const folders = {
     li.onclick = () => { list.load(f.path); $("workspace").classList.remove("nav-open"); shell.setModule("mail", { silent: true }); };
     if (f.path !== SCHEDULED) {
       li.oncontextmenu = (e) => { e.preventDefault(); mailplus.folderMenu(e, f); };
-      li.addEventListener("dragover", (e) => { if (e.dataTransfer.types.includes("application/x-quillbox")) { e.preventDefault(); li.classList.add("drop-target"); } });
+      li.addEventListener("dragover", (e) => { if (e.dataTransfer.types.includes("application/x-quillpost")) { e.preventDefault(); li.classList.add("drop-target"); } });
       li.addEventListener("dragleave", () => li.classList.remove("drop-target"));
       li.addEventListener("drop", (e) => {
         e.preventDefault(); li.classList.remove("drop-target");
         try {
-          const items = JSON.parse(e.dataTransfer.getData("application/x-quillbox"));
+          const items = JSON.parse(e.dataTransfer.getData("application/x-quillpost"));
           if (!items.length || items[0].folder === f.path) return;
           if (f.role === "junk") actions.junk(items, true); else if (e.ctrlKey || e.altKey) actions.copy(items, f.path); else actions.move(items, f.path);
         } catch {}
@@ -784,7 +784,7 @@ const list = {
       if (acts.length) {
         state.lastActivity = Math.max(...acts.map((a) => a.at));
         const junk = folders.byRole("junk");
-        const label = acts.length === 1 ? `Quillbox moved "${acts[0].subject.slice(0, 50)}" to Junk` : `Quillbox moved ${acts.length} messages to Junk`;
+        const label = acts.length === 1 ? `QuillPost moved "${acts[0].subject.slice(0, 50)}" to Junk` : `QuillPost moved ${acts.length} messages to Junk`;
         toast(label, { action: "Open Junk", onAction: () => junk && list.load(junk.path), timeout: 9000 });
         folders.load();
       }
@@ -870,10 +870,10 @@ const list = {
     if (isJunk && !state.search) {
       const auto = state.messages.filter((m) => m.verdict?.autoMoved).length;
       banner.className = "banner"; banner.classList.remove("hidden");
-      banner.innerHTML = `<svg width="16" height="16"><use href="#i-junk"/></svg><span class="grow">Messages here were filed as junk${auto ? ` — Quillbox moved ${auto} of them automatically` : ""}. Use <b>Not junk</b> to restore one and teach the filter.</span>`;
+      banner.innerHTML = `<svg width="16" height="16"><use href="#i-junk"/></svg><span class="grow">Messages here were filed as junk${auto ? ` — QuillPost moved ${auto} of them automatically` : ""}. Use <b>Not junk</b> to restore one and teach the filter.</span>`;
     } else if (state.folder === SCHEDULED) {
       banner.className = "banner"; banner.classList.remove("hidden");
-      banner.innerHTML = `<svg width="16" height="16"><use href="#i-send-later"/></svg><span class="grow">These messages are sent at the scheduled time while Quillbox is running. Open one to cancel it or edit it as a draft.</span>`;
+      banner.innerHTML = `<svg width="16" height="16"><use href="#i-send-later"/></svg><span class="grow">These messages are sent at the scheduled time while QuillPost is running. Open one to cancel it or edit it as a draft.</span>`;
     } else banner.classList.add("hidden");
     const msgs = this.visible();
     $("cmdSelectAll").checked = msgs.length > 0 && msgs.every((m) => state.selected.has(mkey(m)));
@@ -967,7 +967,7 @@ const list = {
     div.oncontextmenu = (e) => { e.preventDefault(); contextMenu.show(e, m, targets()); };
     div.addEventListener("dragstart", (e) => {
       const items = state.selected.has(mkey(m)) ? this.targets() : targets();
-      e.dataTransfer.setData("application/x-quillbox", JSON.stringify(actions.refs(items)));
+      e.dataTransfer.setData("application/x-quillpost", JSON.stringify(actions.refs(items)));
       e.dataTransfer.setData("text/plain", items.map((x) => x.subject).join("\n"));
       e.dataTransfer.effectAllowed = "copyMove";
     });
@@ -1376,7 +1376,7 @@ const reading = {
     const body = el("div", { class: "v-body" }, el("div", { class: "v-title", text: `${title} ` }, el("span", { class: "small", style: { fontWeight: 400 }, text: `Junk score ${v.score}/100` })));
     const expl = b.explanation && (b.mismatch || b.verified) ? b.explanation : (v.reasons[0] ? `${v.reasons[0].title}: ${v.reasons[0].detail}` : "");
     if (expl) body.appendChild(el("div", { text: expl }));
-    if (v.autoMoved) body.appendChild(el("div", { class: "small", text: `Quillbox moved this message to ${folders.byPath(v.autoMovedTo)?.name || v.autoMovedTo || "Junk"} automatically.` }));
+    if (v.autoMoved) body.appendChild(el("div", { class: "small", text: `QuillPost moved this message to ${folders.byPath(v.autoMovedTo)?.name || v.autoMovedTo || "Junk"} automatically.` }));
     const act = el("div", { class: "v-actions" });
     if (!inJunk && v.level !== "CLEAN") act.appendChild(el("button", { class: "btn", onclick: () => actions.junk([state.openDetail], true) }, icon("junk"), "Move to Junk"));
     if (inJunk || (v.level !== "CLEAN")) act.appendChild(el("button", { class: "btn", onclick: () => inJunk ? actions.junk([state.openDetail], false) : actions.trustSender(state.openDetail) }, icon("shield-ok"), inJunk ? "Not junk" : "It's safe — trust sender"));
@@ -2090,7 +2090,7 @@ const settingsUI = {
         catch (e) { status.textContent = "Not reachable: " + e.message; }
       } }, "Test connection"),
       el("button", { class: "btn primary", onclick: async () => { await settingsSave({ ...state.settings, ollama: { enabled: state.settings.ollama?.enabled || false, url: url.value.trim(), model: model.value.trim() } }); toast("Saved"); } }, "Save"), status));
-    host.appendChild(el("p", { class: "small muted", html: "Install from <a href='https://ollama.com' target='_blank' rel='noopener'>ollama.com</a>, then run <code>ollama pull llama3.2</code> (or any other model) on the machine that hosts Quillbox." }));
+    host.appendChild(el("p", { class: "small muted", html: "Install from <a href='https://ollama.com' target='_blank' rel='noopener'>ollama.com</a>, then run <code>ollama pull llama3.2</code> (or any other model) on the machine that hosts QuillPost." }));
   },
 };
 
@@ -2283,7 +2283,7 @@ function wire() {
 
 // ============================================================================ native hooks
 /** Android back button (and the iOS shell): returns true when something was closed. */
-window.quillboxBack = function () {
+window.quillpostBack = function () {
   if (menu.isOpen()) { menu.close(); return true; }
   const dlg = qs("dialog[open]");
   if (dlg) { if (dlg.id === "composeDialog") $("cClose").onclick(); else dlg.close(); return true; }
@@ -2302,7 +2302,7 @@ window.quillboxBack = function () {
   return false;
 };
 /** mailto: links handed over by the shells (and the Android SENDTO intent). */
-window.quillboxMailto = function (url) {
+window.quillpostMailto = function (url) {
   if (!state.token) { toast("Sign in first, then the message will open."); return false; }
   let to = "", params = new URLSearchParams();
   try { const s = String(url).replace(/^mailto:/i, ""); const q = s.indexOf("?"); to = decodeURIComponent(q >= 0 ? s.slice(0, q) : s); if (q >= 0) params = new URLSearchParams(s.slice(q + 1)); } catch {}
