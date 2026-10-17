@@ -5,6 +5,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- QuillPen (the suite's word processor): detected to offer its embedded editor in compose. -->
+    <queries>
+        <package android:name="io.github.socrtwo.quillpen" />
+        <provider android:authorities="io.github.socrtwo.quillpen.embed" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

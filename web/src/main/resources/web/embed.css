@@ -1,0 +1,23 @@
+/* QuillPen embedded editor in the compose window (embed.js). */
+.qp-pen-btn { gap: 6px; margin-right: 4px; }
+.qp-pen-btn svg { width: 16px; height: 16px; color: var(--accent); }
+.qp-pen-btn.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-soft-2); }
+/* While QuillPen is open its own ribbon replaces the built-in formatting bars and editor. */
+.compose.qp-pen-open .compose-tabs,
+.compose.qp-pen-open .fmt-bar,
+.compose.qp-pen-open #cEditor { display: none !important; }
+.qp-pen-host { position: relative; flex: 1; min-height: 240px; display: flex; border-top: 1px solid var(--border); background: var(--bg-elev); }
+.qp-pen-frame { flex: 1; width: 100%; height: 100%; min-height: 0; border: 0; display: block; background: var(--bg-elev); }
+.qp-pen-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--text-2); background: var(--bg-elev); font-size: 13px; }
+.qp-pen-host.ready .qp-pen-loading { display: none; }
+.qp-pen-offer { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: none; padding: 6px 16px; font-size: 13px; background: var(--accent-soft); border-bottom: 1px solid var(--accent-soft-2); color: var(--text); }
+.qp-pen-offer svg { width: 16px; height: 16px; color: var(--accent); display: block; }
+.qp-pen-offer .grow { min-width: 12em; }
+.qp-pen-settings .qp-pen-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; width: min(100%, 420px); }
+.qp-pen-settings .qp-pen-field { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.qp-pen-settings .qp-pen-field input { flex: 1 1 200px; min-width: 0; width: auto; }
+.qp-pen-settings .danger-text { color: var(--danger); }
+@media (max-width: 700px) {
+  .qp-pen-btn span { display: none; }
+  .qp-pen-host { min-height: 0; }
+}
