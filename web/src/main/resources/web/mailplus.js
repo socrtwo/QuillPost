@@ -4,7 +4,7 @@
  * recipient autocomplete and the extra settings pages. Loaded before app.js.
  */
 "use strict";
-const QB_VERSION = "1.4.0";
+const QB_VERSION = "1.5.0";
 const QB_REPO = "https://github.com/socrtwo/QuillPost";
 
 // ============================================================================ menus

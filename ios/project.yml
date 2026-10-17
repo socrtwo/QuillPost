@@ -13,8 +13,8 @@ targets:
       path: QuillPost/Info.plist
       properties:
         CFBundleDisplayName: QuillPost
-        CFBundleShortVersionString: "1.4.0"
-        CFBundleVersion: "5"
+        CFBundleShortVersionString: "1.5.0"
+        CFBundleVersion: "6"
         UILaunchScreen:
           UIColorName: LaunchBackground
           UIImageName: LaunchLogo
@@ -81,8 +81,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.socrtwo.quillpost
-        MARKETING_VERSION: "1.4.0"
-        CURRENT_PROJECT_VERSION: 5
+        MARKETING_VERSION: "1.5.0"
+        CURRENT_PROJECT_VERSION: 6
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
