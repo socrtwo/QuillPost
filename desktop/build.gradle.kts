@@ -56,6 +56,20 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+// "Open with" / double-click for mail files: the installer registers these types, and the launcher
+// hands each file to the running mail client (Main.kt). The content decides the format, so the
+// MIME types are only what the operating system needs to list QuillPost as a handler.
+val mailFileTypes = listOf(
+    Triple("message/rfc822", "eml", "Email message"),
+    Triple("application/vnd.ms-outlook", "msg", "Outlook message"),
+    Triple("message/rfc822", "emlx", "Apple Mail message"),
+    Triple("application/mbox", "mbox", "Mailbox"),
+    Triple("application/vnd.ms-outlook-pst", "pst", "Outlook data file"),
+    Triple("application/vnd.ms-outlook-pst", "ost", "Outlook offline folders"),
+    Triple("application/x-dbx", "dbx", "Outlook Express mail folder"),
+    Triple("application/mbox", "mbx", "Eudora / Outlook Express 4 mailbox")
+)
+
 compose.desktop {
     application {
         mainClass = "info.socrtwo.quillpost.desktop.MainKt"
@@ -74,6 +88,7 @@ compose.desktop {
                 packageName = "quillpost"
                 debMaintainer = "socrtwo@gmail.com"
                 menuGroup = "Network"
+                mailFileTypes.forEach { (mime, ext, desc) -> fileAssociation(mime, ext, desc, project.file("icons/QuillPost.png")) }
             }
             windows {
                 iconFile.set(project.file("icons/QuillPost.ico"))
@@ -81,10 +96,12 @@ compose.desktop {
                 upgradeUuid = "6f0d2a8e-2f2e-4b7e-9a13-3f4d1a2b5c61"
                 shortcut = true
                 perUserInstall = true
+                mailFileTypes.forEach { (mime, ext, desc) -> fileAssociation(mime, ext, desc, project.file("icons/QuillPost.ico")) }
             }
             macOS {
                 iconFile.set(project.file("icons/QuillPost.icns"))
                 bundleID = "info.socrtwo.quillpost.desktop"
+                mailFileTypes.forEach { (mime, ext, desc) -> fileAssociation(mime, ext, desc, project.file("icons/QuillPost.icns")) }
             }
         }
     }

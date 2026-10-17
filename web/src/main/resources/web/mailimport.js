@@ -39,8 +39,11 @@ const mailImport = {
     this.injectIcons();
     this.wireDrop();
     // A file handed over by a shell before the page was ready (desktop: #open=<name>).
-    const m = /[#&]open=([^&]+)/.exec(location.hash || "");
-    if (m) { const name = decodeURIComponent(m[1]); history.replaceState(null, "", location.pathname + location.search); this.whenSignedIn(() => this.openIncoming(name)); }
+    const names = [...(location.hash || "").matchAll(/[#&]open=([^&]+)/g)].map((m) => decodeURIComponent(m[1]));
+    if (names.length) {
+      history.replaceState(null, "", location.pathname + location.search);
+      this.whenSignedIn(async () => { for (const n of names) await this.openIncoming(n); });
+    }
   },
 
   whenSignedIn(fn) {
@@ -252,7 +255,7 @@ const mailImport = {
   async open(entries, { mailboxOnly = false } = {}) {
     if (!state.token) { toast("Sign in first, then open the file again."); return; }
     const d = this.dialog("qbImport", "Open");
-    d.showModal();
+    if (!d.open) d.showModal();
     let a;
     try { a = await this.upload(entries, d); }
     catch (e) { qs(".dlg-body", d).innerHTML = ""; qs(".dlg-body", d).append(el("p", { class: "danger", text: e.message })); qs(".dlg-foot", d).append(el("button", { class: "btn", onclick: () => d.close() }, "Close")); return; }
@@ -261,7 +264,7 @@ const mailImport = {
 
   async openIncoming(name) {
     const d = this.dialog("qbImport", "Open");
-    d.showModal();
+    if (!d.open) d.showModal();
     qs(".dlg-body", d).append(el("p", { text: `Opening ${name}…` }));
     try { const a = await api("/api/mailbox/incoming", { method: "POST", query: { name } }); await this.route(a, d, [], {}); }
     catch (e) { qs(".dlg-body", d).innerHTML = ""; qs(".dlg-body", d).append(el("p", { class: "danger", text: e.message })); qs(".dlg-foot", d).append(el("button", { class: "btn", onclick: () => d.close() }, "Close")); }

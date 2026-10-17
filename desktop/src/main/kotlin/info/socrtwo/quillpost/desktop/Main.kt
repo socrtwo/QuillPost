@@ -47,7 +47,7 @@ import java.util.prefs.Preferences
  * web UI in the default browser. The window shows the address, lets you reopen or copy it,
  * and the app keeps running from the system tray.
  */
-fun main() {
+fun main(args: Array<String>) {
     val prefs = Preferences.userRoot().node("info/socrtwo/quillpost/desktop")
     val port = System.getenv("PORT")?.toIntOrNull() ?: prefs.getInt("port", 8642).let { if (isFree(it)) it else freePort() }
     // QuillPen embedded editor: serve an installed QuillPen's resources/embed folder at /quillpen-embed/.
@@ -58,7 +58,15 @@ fun main() {
     val server = embeddedServer(Netty, port = port, host = "127.0.0.1") { module() }
     server.start(wait = false)
     val url = "http://127.0.0.1:$port/"
-    if (prefs.getBoolean("openOnStart", true)) openBrowser(url)
+    // Files passed by the operating system ("Open with", double-click on an associated type).
+    val opened = stageFiles(args.map { java.io.File(it) })
+    if (opened.isNotEmpty()) openBrowser(url + "#" + opened.joinToString("&") { "open=" + java.net.URLEncoder.encode(it, "UTF-8").replace("+", "%20") })
+    else if (prefs.getBoolean("openOnStart", true)) openBrowser(url)
+    // macOS delivers files opened while the app runs as events instead of arguments.
+    runCatching {
+        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.APP_OPEN_FILE))
+            Desktop.getDesktop().setOpenFileHandler { e -> stageFiles(e.files).forEach { n -> openBrowser(url + "#open=" + java.net.URLEncoder.encode(n, "UTF-8").replace("+", "%20")) } }
+    }
 
     application {
         val windowState = rememberWindowState(width = 520.dp, height = 300.dp)
@@ -122,6 +130,14 @@ private fun openBrowser(url: String) {
             ProcessBuilder(cmd).start()
         }
     }
+}
+
+/** Copies mail files into the data folder's incoming folder; the page opens them by name (#open=). */
+private fun stageFiles(files: List<java.io.File>): List<String> {
+    val existing = files.filter { it.isFile }
+    if (existing.isEmpty()) return emptyList()
+    val root = info.socrtwo.quillpost.web.DataStore().root
+    return existing.mapNotNull { f -> runCatching { info.socrtwo.quillpost.web.Incoming.stage(root, f) }.getOrNull() }
 }
 
 private fun stop(server: EmbeddedServer<*, *>) {

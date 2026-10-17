@@ -6,9 +6,10 @@
 // Run against the demo server (from web/):
 //   QUILLPOST_FIXTURE_OUT=/tmp/qp-fixtures ./gradlew test --tests '*FixtureExport*'
 //   PORT=8160 DEMO_IMAP_PORT=13160 DEMO_SMTP_PORT=13161 QUILLPOST_DATA_DIR=/tmp/qpA ./gradlew demo &
-//   FIXTURES=/tmp/qp-fixtures node src/test/e2e/mailimport.mjs
+//   FIXTURES=/tmp/qp-fixtures DATA_DIR=/tmp/qpA node src/test/e2e/mailimport.mjs
 // Environment: BASE_URL (default http://127.0.0.1:8160/), IMAP_PORT / SMTP_PORT (13160 / 13161),
-// FIXTURES (folder written by FixtureExport), CHROMIUM, SHOTS=<folder> for screenshots.
+// FIXTURES (folder written by FixtureExport), DATA_DIR (the demo's QUILLPOST_DATA_DIR, to test files handed
+// over by the shells), CHROMIUM, SHOTS=<folder> for screenshots.
 import fs from "node:fs";
 import path from "node:path";
 import { loadPlaywright, chromiumPath, demoAccount, signIn, waitSignedIn, checker } from "./common.mjs";
@@ -74,19 +75,20 @@ await page.waitForSelector("#qbImport[open] .qb-import-tree", { timeout: 20000 }
 t.ok((await page.textContent("#qbImport .qb-import-head")).includes("Outlook data file"), "detected PST");
 t.eq(await page.locator("#qbImport .qb-import-row").count(), 6, "PST folder tree rows");
 await page.check("#qbImport input[value=imap]");
-await page.fill("#qbImport input[aria-label='New folder name']", "From Outlook");
+const DEST = "From Outlook " + Date.now().toString(36);
+await page.fill("#qbImport input[aria-label='New folder name']", DEST);
 await shot("6-import-dialog-pst");
 await page.click("#qbImport .dlg-foot button:has-text('Import')");
 await page.waitForFunction("document.querySelector('#qbImport .qb-dlg-title')?.textContent === 'Import finished'", null, { timeout: 30000 });
 await shot("7-import-finished-pst");
 await page.click("#qbImport button:has-text('Close')");
-await page.waitForFunction("state.folders.some((f) => /From Outlook.Inbox$/.test(f.path))", null, { timeout: 15000 });
-const inboxPath = await page.evaluate(() => state.folders.find((f) => /From Outlook.Inbox$/.test(f.path)).path);
+await page.waitForFunction((d) => state.folders.some((f) => f.path.startsWith(d) && /.Inbox$/.test(f.path)), DEST, { timeout: 15000 });
+const inboxPath = await page.evaluate((d) => state.folders.find((f) => f.path.startsWith(d) && /.Inbox$/.test(f.path)).path, DEST);
 const imported = await page.evaluate(async (p) => (await api("/api/messages", { query: { folder: p, limit: 50 } })).messages, inboxPath);
 t.eq(imported.length, 2, "PST Inbox copied to IMAP");
 const lunch = imported.find((m) => m.subject === "Lunch menu") || {};
 t.ok(lunch.read && lunch.flagged && lunch.answered, "IMAP flags from the PST: " + JSON.stringify(lunch));
-t.ok(await page.evaluate(() => state.folders.some((f) => /From Outlook.Inbox.Projects$/.test(f.path))), "sub-folder hierarchy kept on IMAP");
+t.ok(await page.evaluate((d) => state.folders.some((f) => f.path.startsWith(d) && /.Inbox.Projects$/.test(f.path)), DEST), "sub-folder hierarchy kept on IMAP");
 await page.evaluate((p) => list.load(p), inboxPath);
 await page.waitForFunction("state.messages.length === 2");
 await page.evaluate(() => reading.open(state.messages.find((m) => m.subject === "Quarterly figures")));
@@ -131,7 +133,19 @@ t.ok(await page.locator("#qbImport button:has-text('Attach to new email')").coun
 await shot("10-word-handoff");
 await page.click("#qbImport .dlg-foot button:has-text('Close')");
 
-// 7. Local Archives command and phone width.
+// 7. A file handed over by a shell ("Open with"): copied into <data>/incoming, opened by name (#open=).
+if (process.env.DATA_DIR) {
+  fs.mkdirSync(path.join(process.env.DATA_DIR, "incoming"), { recursive: true });
+  fs.writeFileSync(path.join(process.env.DATA_DIR, "incoming", "handed over.eml"), "From: Shell <shell@example.com>\r\nTo: you@example.org\r\nSubject: Opened with QuillPost\r\nDate: Thu, 24 Sep 2026 09:12:00 +0000\r\n\r\nFrom the file manager.\r\n");
+  await page.goto("about:blank");
+  await page.goto(BASE + "#open=" + encodeURIComponent("handed over.eml"));
+  await waitSignedIn(page);
+  await page.waitForFunction("state.openDetail && state.openDetail.subject === 'Opened with QuillPost'", null, { timeout: 20000 });
+  t.ok(!fs.existsSync(path.join(process.env.DATA_DIR, "incoming", "handed over.eml")), "incoming file consumed");
+  await shot("11-open-with");
+}
+
+// 8. Local Archives command and phone width.
 await page.evaluate(() => Commands.run("mail.localArchives"));
 await page.waitForFunction("state.folder.startsWith('@archive/')");
 await page.setViewportSize({ width: 412, height: 915 });
@@ -139,7 +153,7 @@ await page.evaluate(() => Commands.run("mail.importMailbox"));
 await page.waitForSelector("#qbImportSource[open]");
 const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
 t.ok(!overflow, "no sideways scrolling on a phone");
-await shot("11-phone-import-source");
+await shot("12-phone-import-source");
 
 await browser.close();
 t.done();
