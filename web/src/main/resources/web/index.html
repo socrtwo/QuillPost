@@ -7,6 +7,7 @@
   <title>Quillbox Mail</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f6cbd' stroke-width='2'%3E%3Cpath d='M3 6h18v12H3z'/%3E%3Cpath d='m3 7 9 6 9-6'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="ai.css" /><!-- AI tab (ai/*.js) -->
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -234,6 +235,7 @@
         <div class="ribbon-tabs">
           <button data-rtab="home" class="active">Home</button>
           <button data-rtab="view">View</button>
+          <button data-rtab="ai">AI</button>
           <button data-rtab="help">Help</button>
         </div>
         <div class="ribbon-bar" data-rbar="home">
@@ -282,6 +284,7 @@
           <button id="vwDark" class="rb" title="Dark mode"><svg><use href="#i-moon"/></svg><span class="lbl">Dark mode</span></button>
           <button id="vwTheme" class="rb" title="Colour theme"><svg><use href="#i-sparkle"/></svg><span class="lbl">Theme</span><svg class="chev"><use href="#i-chev-down"/></svg></button>
         </div>
+        <div class="ribbon-bar hidden" data-rbar="ai"><!-- filled by ai/commands.js --></div>
         <div class="ribbon-bar hidden" data-rbar="help">
           <button id="hlpShortcuts" class="rb"><svg><use href="#i-keyboard"/></svg><span class="lbl">Keyboard shortcuts</span></button>
           <button id="hlpHelp" class="rb"><svg><use href="#i-help"/></svg><span class="lbl">Help</span></button>
@@ -414,6 +417,7 @@
     <button data-ctab="insert">Insert</button>
     <button data-ctab="format">Format text</button>
     <button data-ctab="options">Options</button>
+    <button data-ctab="ai">AI</button>
   </div>
   <div class="fmt-bar" data-cbar="message">
     <select id="cFontFamily" title="Font"><option value="">Font</option><option value="Segoe UI, system-ui, sans-serif">Sans serif</option><option value="Georgia, 'Times New Roman', serif">Serif</option><option value="Consolas, 'Courier New', monospace">Fixed width</option><option value="Arial, Helvetica, sans-serif">Arial</option><option value="Calibri, Carlito, sans-serif">Calibri</option><option value="Cambria, Caladea, serif">Cambria</option><option value="Garamond, 'EB Garamond', serif">Garamond</option><option value="Verdana, sans-serif">Verdana</option><option value="Tahoma, sans-serif">Tahoma</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option></select>
@@ -464,6 +468,7 @@
     <button class="icon-btn" data-cmd="removeFormat" title="Clear formatting"><svg><use href="#i-clear-fmt"/></svg></button>
     <button class="btn subtle sm" id="cPlainText" title="Switch to plain text">Plain text</button>
   </div>
+  <div class="fmt-bar hidden" data-cbar="ai"><!-- filled by ai/commands.js --></div>
   <div class="fmt-bar hidden" data-cbar="options">
     <label class="opt">Importance <select id="cImportance"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></label>
     <label class="opt"><input id="cReadReceipt" type="checkbox" /> Request a read receipt</label>
@@ -607,5 +612,15 @@
 <script src="todo.js"></script>
 <script src="mailplus.js"></script>
 <script src="app.js"></script>
+<!-- AI tab: providers, client, prompts and UI (see docs/AI.md) -->
+<script src="ai/providers.js"></script>
+<script src="ai/apply.js"></script>
+<script src="ai/store.js"></script>
+<script src="ai/client.js"></script>
+<script src="ai/local.js"></script>
+<script src="ai/prompts.js"></script>
+<script src="ai/pane.js"></script>
+<script src="ai/wizard.js"></script>
+<script src="ai/commands.js"></script>
 </body>
 </html>

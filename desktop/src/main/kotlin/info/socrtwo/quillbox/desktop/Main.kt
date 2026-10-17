@@ -45,6 +45,8 @@ import java.util.prefs.Preferences
 fun main() {
     val prefs = Preferences.userRoot().node("info/socrtwo/quillbox/desktop")
     val port = System.getenv("PORT")?.toIntOrNull() ?: prefs.getInt("port", 8642).let { if (isFree(it)) it else freePort() }
+    // Single-user app on 127.0.0.1: the backend may keep the AI tab's API keys in its private data folder.
+    System.setProperty("quillbox.desktop", "true")
     val server = embeddedServer(Netty, port = port, host = "127.0.0.1") { module() }
     server.start(wait = false)
     val url = "http://127.0.0.1:$port/"
