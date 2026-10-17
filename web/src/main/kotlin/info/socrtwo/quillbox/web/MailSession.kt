@@ -289,7 +289,7 @@ class MailSession(val account: AccountDto) {
             seen = runCatching { m.isSet(Flags.Flag.SEEN) }.getOrDefault(false),
             flagged = runCatching { m.isSet(Flags.Flag.FLAGGED) }.getOrDefault(false),
             answered = runCatching { m.isSet(Flags.Flag.ANSWERED) }.getOrDefault(false),
-            keywords = runCatching { m.flags.userFlags.toSet() }.getOrDefault(emptySet()),
+            keywords = runCatching { m.flags.let { fl -> fl.userFlags.toSet() + (if (fl.contains(Flags.Flag.DELETED)) setOf("\\Deleted") else emptySet()) } }.getOrDefault(emptySet()),
             size = runCatching { m.size.toLong() }.getOrDefault(0L),
             hasAttachments = ct.startsWith("multipart/mixed") || ct.startsWith("application/") || ct.startsWith("multipart/report"),
             headers = headers

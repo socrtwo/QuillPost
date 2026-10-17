@@ -1,0 +1,151 @@
+/* Quillbox — Quick Access Toolbar, command dialogs and the extra list/reading decorations used by
+   the command set (commands.js, mailcommands.js, mailextra.js, qat.js). Uses the theme variables
+   from styles.css, so light/dark mode and accent colours apply. */
+
+/* ---------- Quick Access Toolbar ---------- */
+.qb-qat { display: flex; align-items: center; gap: 1px; flex: none; }
+.qb-qat-btn { display: inline-flex; align-items: center; gap: 4px; height: 30px; min-width: 30px; padding: 0 6px; border: 0; border-radius: var(--radius); background: transparent; color: var(--text); cursor: pointer; justify-content: center; }
+.qb-qat-btn svg { width: 16px; height: 16px; flex: none; }
+.qb-qat-btn:hover { background: var(--bg-hover); }
+.qb-qat-btn.active { background: var(--accent-soft); color: var(--accent); }
+.qb-qat-btn.qb-disabled { opacity: .45; }
+.qb-qat-btn .lbl { font-size: 12px; white-space: nowrap; }
+.qb-qat-more { min-width: 22px; padding: 0 3px; }
+.qb-qat-sep { width: 1px; height: 18px; background: var(--border-strong); margin: 0 4px; }
+.qb-qat-top { margin-right: 6px; }
+.topbar .qb-qat-btn { color: #fff; }
+.topbar .qb-qat-btn:hover, .topbar .qb-qat-btn.active { background: rgba(255, 255, 255, .16); color: #fff; }
+.topbar .qb-qat-sep { background: rgba(255, 255, 255, .4); }
+.qb-qat-below { padding: 2px 6px 4px; }
+.qb-qat-bottom { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 40; background: var(--bg-elev); box-shadow: var(--shadow-3); border-radius: 22px; padding: 4px 10px; max-width: calc(100vw - 24px); overflow-x: auto; }
+@media (max-width: 700px) {
+  .qb-qat-top { max-width: 34vw; overflow-x: auto; scrollbar-width: none; }
+  .qb-qat-top .lbl { display: none; }
+  .qb-qat-top .qb-qat-btn:nth-child(n+3):not(.qb-qat-more), .qb-qat-top .qb-qat-sep { display: none; }
+  :root[data-qat="top"] .topbar .brand span { display: none; }
+  .qb-qat-bottom { bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
+/* Touch/Mouse Mode: more room between commands. */
+:root[data-touch="on"] .rb, :root[data-touch="on"] .qb-qat-btn { height: 42px; min-width: 42px; padding: 0 10px; }
+:root[data-touch="on"] .ribbon-tabs button { height: 38px; }
+:root[data-touch="on"] .ctx-menu button { min-height: 40px; }
+:root[data-touch="on"] .fmt-bar .icon-btn, :root[data-touch="on"] .fmt-bar .btn { min-height: 38px; min-width: 38px; }
+
+/* ---------- ribbon additions ---------- */
+.ribbon-tabs .qb-file-tab { color: #fff; background: var(--accent); }
+.ribbon-tabs .qb-file-tab:hover { background: var(--accent-hover); }
+#ribbon.qb-collapsed:not(.qb-peek) .ribbon-bar { display: none; }
+.rb[data-cmd].active { background: var(--accent-soft); }
+.qb-bar .rb.qb-disabled, .qb-cbtn.qb-disabled { opacity: .5; }
+.qb-cbtn svg { width: 15px; height: 15px; }
+
+/* Message preview lines (View → Message Preview). */
+:root[data-preview-lines="2"] .msg-preview, :root[data-preview-lines="3"] .msg-preview { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+:root[data-preview-lines="2"] .msg-preview { -webkit-line-clamp: 2; }
+:root[data-preview-lines="3"] .msg-preview { -webkit-line-clamp: 3; }
+
+/* ---------- list decorations ---------- */
+.qb-listbar { display: flex; flex-direction: column; gap: 4px; padding: 4px 8px; }
+.qb-listbar.hidden { display: none; }
+.qb-split { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.qb-split button { border: 1px solid var(--border); background: var(--bg-elev); color: var(--text-2); border-radius: 14px; height: 26px; padding: 0 10px; cursor: pointer; white-space: nowrap; font-size: 12px; }
+.qb-split button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.qb-split .n { margin-left: 5px; font-weight: 700; }
+.qb-quickfilter { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.qb-quickfilter input { flex: 1; min-width: 140px; height: 28px; }
+.qb-chip { border: 1px solid var(--border); background: var(--bg-elev); border-radius: 14px; height: 26px; padding: 0 9px; font-size: 12px; cursor: pointer; color: var(--text-2); }
+.qb-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.qb-notice { display: flex; align-items: center; gap: 8px; font-size: 12px; background: var(--info-bg); border-radius: var(--radius); padding: 4px 8px; }
+.qb-tag { display: inline-block; color: #fff; font-size: 10px; font-weight: 600; border-radius: 8px; padding: 0 6px; line-height: 16px; margin-left: 4px; white-space: nowrap; }
+.qb-kw { font-size: 10px; color: var(--text-3); margin-left: 4px; white-space: nowrap; }
+.qb-vip { color: #c19c00; }
+.msg.qb-watched { box-shadow: inset 3px 0 0 #8764b8; }
+.msg.qb-deleted .msg-subject, .msg.qb-deleted .msg-from { text-decoration: line-through; opacity: .6; }
+
+/* ---------- dialogs ---------- */
+.qb-dialog .dlg-body { min-height: 0; }
+.qb-cust { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; min-height: 340px; }
+.qb-cust-keys { grid-template-columns: 1fr 1fr; }
+.qb-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.qb-col > label { font-weight: 600; font-size: 12px; }
+.qb-mid { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.qb-mid .btn { justify-content: flex-start; }
+.qb-listhost { flex: 1; min-height: 0; display: flex; }
+.qb-cmdlist { border: 1px solid var(--border); border-radius: var(--radius); overflow: auto; flex: 1; max-height: 52vh; min-height: 220px; background: var(--bg-elev); outline: none; }
+.qb-cmdrow { display: flex; align-items: center; gap: 8px; padding: 5px 8px; cursor: pointer; font-size: 13px; }
+.qb-cmdrow svg { width: 16px; height: 16px; flex: none; color: var(--accent); }
+.qb-cmdrow:hover { background: var(--bg-hover); }
+.qb-cmdrow.sel { background: var(--bg-selected); }
+.qb-cmdrow.sep { color: var(--text-3); font-style: italic; }
+.qb-cmdrow.qb-disabled { opacity: .55; }
+.qb-cmdrow .grow { flex: 1; min-width: 0; }
+.qb-origin { font-size: 10px; color: var(--text-4); white-space: nowrap; max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
+.qb-cust-opts { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-top: 12px; }
+.qb-cust-opts .check { margin: 0; }
+.qb-keys { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.qb-keychip { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); padding: 0 2px 0 6px; }
+.qb-capture { font-family: var(--mono); }
+.qb-palette { width: min(640px, calc(100vw - 24px)); }
+.qb-palette .dlg-body input { width: 100%; height: 36px; font-size: 15px; margin-bottom: 8px; }
+.qb-palette-list { max-height: 60vh; }
+.qb-pal-head { padding: 4px 8px; }
+.qb-ref h4 { margin: 14px 0 6px; }
+.qb-ref .table svg { width: 14px; height: 14px; vertical-align: -2px; color: var(--accent); }
+.qb-backstage { width: min(980px, calc(100vw - 24px)); }
+.qb-bs { display: grid; grid-template-columns: 180px 1fr; gap: 16px; min-height: 380px; }
+.qb-bs-nav { display: flex; flex-direction: column; gap: 2px; background: var(--accent); border-radius: var(--radius-lg); padding: 8px; }
+.qb-bs-nav button { text-align: left; border: 0; background: transparent; color: #fff; padding: 8px 10px; border-radius: var(--radius); cursor: pointer; font-weight: 600; display: flex; gap: 6px; align-items: center; }
+.qb-bs-nav button:hover, .qb-bs-nav button.active { background: rgba(255, 255, 255, .18); }
+.qb-bs-nav .qb-bs-back { margin-top: auto; }
+.qb-bs-nav svg { width: 16px; height: 16px; }
+.qb-bs-main { display: flex; flex-direction: column; gap: 6px; }
+.qb-bs-main h2 { margin: 0 0 6px; }
+.qb-bs-item { display: flex; gap: 12px; align-items: center; text-align: left; border: 1px solid var(--border); background: var(--bg-elev); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; color: var(--text); }
+.qb-bs-item:hover { background: var(--bg-hover); }
+.qb-bs-item svg { color: var(--accent); flex: none; }
+@media (max-width: 700px) {
+  .qb-cust { grid-template-columns: 1fr; }
+  .qb-mid { flex-direction: row; flex-wrap: wrap; }
+  .qb-hide-phone { display: none; }
+  .qb-bs { grid-template-columns: 1fr; }
+  .qb-bs-nav { flex-direction: row; flex-wrap: wrap; }
+}
+
+/* ---------- panels shown by commands ---------- */
+.qb-msglist { display: flex; flex-direction: column; gap: 4px; }
+.qb-msgrow { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.qb-msgrow.unread b { color: var(--accent); }
+.qb-msgrow .grow { flex: 1; min-width: 0; }
+.qb-msgrow .grow b, .qb-msgrow .grow div { overflow: hidden; text-overflow: ellipsis; }
+.qb-msgrow.check { margin: 0; cursor: pointer; }
+.qb-swatches { display: grid; grid-template-columns: repeat(7, 26px); gap: 4px; padding: 6px; }
+.qb-swatch { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--border-strong); cursor: pointer; padding: 0; }
+.qb-drawpad { width: 100%; max-width: 640px; aspect-ratio: 2 / 1; border: 1px solid var(--border-strong); border-radius: var(--radius); touch-action: none; background: #fff; cursor: crosshair; }
+.qb-pattern-help { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 2px 12px; margin-top: 8px; }
+.qb-pipe-out { max-height: 40vh; overflow: auto; margin-top: 8px; }
+.qb-digest h4 { margin: 12px 0 4px; }
+.qb-digest-item { margin: 3px 0; }
+.qb-digest pre { white-space: pre-wrap; }
+.qb-peppers { font-size: 32px; margin: 0; }
+.qb-diff-add { background: var(--warn-bg); border-left: 3px solid var(--warn); padding: 3px 8px; margin: 3px 0; }
+.qb-diff-del { background: var(--danger-bg); border-left: 3px solid var(--danger); padding: 3px 8px; margin: 3px 0; text-decoration: line-through; }
+.qb-preview2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.qb-preview2 pre { max-height: 260px; overflow: auto; border: 1px solid var(--border); padding: 8px; }
+@media (max-width: 800px) { .qb-preview2 { grid-template-columns: 1fr; } }
+.qb-triage { outline: none; }
+.qb-triage h3 { margin: 6px 0 2px; }
+.qb-triage-preview { margin: 12px 0; color: var(--text-2); }
+.qb-triage-done { font-size: 18px; font-weight: 600; color: var(--ok); }
+.qb-triage kbd { font-size: 10px; }
+.qb-inspector .table td { vertical-align: top; }
+.qb-headers summary { cursor: pointer; font-weight: 600; }
+.qb-headers pre { max-height: 300px; overflow: auto; }
+.small.ok, p.ok { color: var(--ok); }
+p.danger, li.danger { color: var(--danger); }
+
+/* Show/Hide ¶ in the compose editor. */
+#cEditor.qb-marks p::after, #cEditor.qb-marks div:not(:has(div))::after { content: "¶"; color: var(--text-4); margin-left: 2px; }
+#cEditor.qb-marks br::after { content: "↵"; color: var(--text-4); }
+.qb-qat-btn { flex: none; }
+.qb-qat-below { overflow-x: auto; scrollbar-width: thin; }

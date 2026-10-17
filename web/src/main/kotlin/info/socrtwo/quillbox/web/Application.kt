@@ -49,6 +49,7 @@ fun Application.module() {
 
     routing {
         extraRoutes(sessions)
+        commandRoutes(sessions)
         // The UI (index.html, styles.css, app.js) is read straight from the class path. This
         // deliberately avoids Ktor's file/jar resource resolution so it also works when the
         // resources live inside an Android APK.

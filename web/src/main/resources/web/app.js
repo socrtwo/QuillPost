@@ -1047,6 +1047,7 @@ const actions = {
         back ? { action: "Undo", onAction: () => this.junk(back, !junk) } : {});
       if (r.errors?.length) toast(r.errors[0], { danger: true });
       folders.load(); refreshBayesStatus();
+      return r;
     } catch (e) { toast("Junk action failed: " + e.message, { danger: true }); }
   },
   async delete(items, permanent = false) {
@@ -1059,6 +1060,7 @@ const actions = {
       toast(`Deleted ${plural(r.ok, "message")}`, r.moved?.length ? { action: "Undo", onAction: () => this.move(r.moved, from) } : {});
       if (r.errors?.length) toast(r.errors[0], { danger: true });
       folders.load();
+      return r;
     } catch (e) { toast("Delete failed: " + e.message, { danger: true }); }
   },
   async move(items, to, { quiet = false } = {}) {

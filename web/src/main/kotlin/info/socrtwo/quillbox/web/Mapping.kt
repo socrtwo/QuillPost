@@ -101,7 +101,8 @@ object Mapping {
         hasAttachments = hasAttachments, size = size, verdict = cached?.verdict,
         cc = cc, inReplyTo = headers["In-Reply-To"]?.firstOrNull()?.let { messageIds(it).lastOrNull() },
         references = headers["References"]?.joinToString(" ")?.let { messageIds(it) } ?: emptyList(),
-        importance = importanceOf(headers), forwarded = forwarded
+        importance = importanceOf(headers), forwarded = forwarded,
+        keywords = keywords.toList()
     )
 
     /** All <message-id> tokens in a References / In-Reply-To header, in order. */

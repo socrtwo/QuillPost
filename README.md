@@ -218,6 +218,29 @@ reading-pane layouts, zoom, Outlook-style keyboard shortcuts (`Ctrl+N`, `Ctrl+R`
 apps, `F9`, `/`, `?`), swipe actions on phones, desktop notifications
 and reminders.
 
+### Commands, Quick Access Toolbar and keyboard
+
+Every action is a command in one registry (367 of them): the desktop mail client's full Mail set
+(File backstage, Home, Send / Receive, Folder, View, Help and the message window's Message,
+Insert, Options, Format Text, Review and Draw tabs), commands from other mail programs — Eudora
+(Redirect, Send Again, MoodWatch, Personalities…), Pine/Alpine and mutt (tag and limit by pattern,
+pipe, bounce, j/k keys), Pegasus Mail, Lotus Notes, Thunderbird (tags as IMAP keywords, Quick
+Filter, Watch Thread, Archive by year, Compact…), Gmail (Mute, Labels, Undo Send), Apple Mail
+(VIPs, Remind Me, tracker blocking), Hey/Superhuman/Spark (Screener, Split Inbox, Reply Later,
+Snippets), Claris Emailer and Opera M2 — and new ones such as *Reply with Time Slots*, *Thread
+Digest*, *Waiting for Reply*, *Unsubscribe Everywhere* (RFC 8058 one-click) and the *Header
+Inspector*.
+
+* **Quick Access Toolbar** above or below the ribbon, or at the bottom near the keyboard; the ▾
+  checklist starts with Send/Receive All Folders, Reply, Reply All, Forward, Delete, Undo, Redo,
+  Print and Touch/Mouse Mode; *More Commands…* adds any command; *Add All Choices* puts Save and
+  Print first and the rest A–Z; layouts import and export as JSON.
+* **Alt+Q** searches all commands; **Help → Customize Keyboard Shortcuts** rebinds any of them;
+  Gmail-style and Mutt/Pine-style key schemes are built in.
+
+The full list with ids, keys and origins, what runs on the server and what was left out (and why)
+is in [docs/COMMANDS.md](docs/COMMANDS.md). JavaScript unit tests: `node --test web/src/test/js/*.test.js`.
+
 ### What Quillbox cannot do
 
 Quillbox talks to standard IMAP, POP3 and SMTP servers. Features that depend on Microsoft

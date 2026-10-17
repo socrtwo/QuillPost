@@ -210,7 +210,9 @@ data class MessageSummaryDto(
     val pinned: Boolean = false,
     val flagDue: String? = null,
     val flagCompleted: Boolean = false,
-    val snoozeUntil: Long? = null
+    val snoozeUntil: Long? = null,
+    /** IMAP keywords (tags such as \$label1 or To_Do) on the message. */
+    val keywords: List<String> = emptyList()
 )
 
 @Serializable
