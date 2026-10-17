@@ -38,6 +38,33 @@
       usage: { requests: 0, tokensIn: 0, tokensOut: 0, since: Date.now() },
       /** Providers whose "data goes to this service" notice the user has accepted. */
       privacyAck: [],
+      /** Several AIs on one request (AI settings ▸ Use several AIs; see ensemble.js). Never holds keys. */
+      ensemble: defaultEnsemble(),
+    };
+  }
+
+  function defaultEnsemble() {
+    return { mode: "single", members: [], master: null, maxRounds: 3, showDeliberation: true, memberTimeoutMs: 90000 };
+  }
+
+  /** A valid ensemble setting from whatever was stored or imported (provider ids and models only). */
+  function normalizeEnsemble(e) {
+    const d = defaultEnsemble();
+    if (!e || typeof e !== "object") return d;
+    const members = [];
+    for (const m of Array.isArray(e.members) ? e.members : []) {
+      if (!m || typeof m.provider !== "string" || !P.providerById(m.provider) || members.some((x) => x.provider === m.provider)) continue;
+      members.push(typeof m.model === "string" && m.model ? { provider: m.provider, model: m.model } : { provider: m.provider });
+    }
+    const rounds = Math.round(Number(e.maxRounds));
+    const timeout = Math.round(Number(e.memberTimeoutMs));
+    return {
+      mode: ["single", "master", "consensus"].includes(e.mode) ? e.mode : d.mode,
+      members: members.slice(0, 6),
+      master: typeof e.master === "string" && P.providerById(e.master) ? e.master : null,
+      maxRounds: rounds >= 1 && rounds <= 5 ? rounds : d.maxRounds,
+      showDeliberation: e.showDeliberation !== false,
+      memberTimeoutMs: timeout >= 5000 && timeout <= 600000 ? timeout : d.memberTimeoutMs,
     };
   }
 
@@ -58,6 +85,7 @@
     s.prompts = s.prompts.filter((p) => p && typeof p.name === "string" && typeof p.prompt === "string");
     if (!Array.isArray(s.privacyAck)) s.privacyAck = [];
     if (!s.usage || typeof s.usage !== "object") s.usage = defaultSettings().usage;
+    s.ensemble = normalizeEnsemble(s.ensemble);
     // Never keep anything key-shaped in settings, even if an older version or an import put it there.
     for (const cfg of Object.values(s.providers)) if (cfg && typeof cfg === "object") { delete cfg.key; delete cfg.apiKey; }
     cache = s;
@@ -67,6 +95,7 @@
   function saveSettings(mut) {
     const s = settings();
     if (mut) mut(s);
+    s.ensemble = normalizeEnsemble(s.ensemble);
     for (const cfg of Object.values(s.providers)) if (cfg && typeof cfg === "object") { delete cfg.key; delete cfg.apiKey; }
     try { storage && storage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch { /* quota */ }
     listeners.forEach((f) => { try { f(); } catch (e) { console.error(e); } });
@@ -94,6 +123,7 @@
       if (src.providers && typeof src.providers === "object") for (const [id, cfg] of Object.entries(src.providers)) if (P.providerById(id) && cfg && typeof cfg === "object") s.providers[id] = { ...cfg, id };
       if (Array.isArray(src.prompts)) for (const p of src.prompts) if (p && typeof p.name === "string" && typeof p.prompt === "string" && !s.prompts.some((q) => q.name === p.name)) s.prompts.push({ ...p, id: p.id || "p" + Math.random().toString(36).slice(2, 9) });
       if (src.active && s.providers[src.active]) s.active = src.active;
+      if (src.ensemble && typeof src.ensemble === "object") s.ensemble = normalizeEnsemble(src.ensemble);
     });
   }
 
@@ -215,7 +245,7 @@
   }
 
   return {
-    SETTINGS_KEY, KEY_PREFIX, defaultSettings, setStorage, settings, saveSettings, onChange, reload, exportSettings, importSettings,
+    SETTINGS_KEY, KEY_PREFIX, defaultSettings, defaultEnsemble, normalizeEnsemble, setStorage, settings, saveSettings, onChange, reload, exportSettings, importSettings,
     memoryBackend, androidBackend, desktopBackend, indexedDbBackend, keyBackend, setKeyBackend,
     getApiKey, setApiKey, deleteApiKey, maskKey, resolveBaseUrl, resolveProvider, activeProviderDef, isCloud, recordUsage,
   };

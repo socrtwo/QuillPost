@@ -22,6 +22,9 @@
     "ai-library": '<path d="M4 4h4v16H4zM10 4h4v16h-4z"/><path d="m16 5 3.8-1 3 15.5-3.8 1z"/>',
     "ai-setup": '<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="4"/><path d="m12 10 .6 1.4L14 12l-1.4.6L12 14l-.6-1.4L10 12l1.4-.6z"/>',
     "ai-switch": '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+    "ai-ensemble": '<circle cx="12" cy="6" r="3"/><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M10.5 8.6 7 14.4M13.5 8.6 17 14.4M8.5 17h7"/>',
+    "ai-members": '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.4c1.8.9 3 2.9 3 5.6"/>',
+    "ai-discuss": '<path d="M3 5h11v7H7l-4 3z"/><path d="M10 15v1h7l4 3V9h-4"/>',
   };
   function injectIcons() {
     if (document.getElementById("qb-ai-icons")) return;
@@ -90,14 +93,65 @@
   // ------------------------------------------------------------------ "What was sent"
   const hostOf = (u) => { try { return new URL(u).host; } catch { return u || ""; } };
   /** A <details> block showing the exact messages sent, where to, and how. Never shows keys. */
+  const whereText = (x) => (x.route === "device" ? `${x.providerName ? x.providerName + " · " : ""}processed on this device` : `${x.providerName || "AI service"} · ${x.model || ""} · ${hostOf(x.endpoint)}${x.route === "proxy" ? " (relayed by the Quillbox backend)" : ""}`);
   function sentDetails(info) {
     if (!info || !info.messages) return null;
-    const where = info.route === "device" ? "processed on this device" : `${info.providerName || "AI service"} · ${info.model || ""} · ${hostOf(info.endpoint)}${info.route === "proxy" ? " (relayed by the Quillbox backend)" : ""}`;
     const chars = info.messages.reduce((n, m) => n + String(m.content).length, 0);
+    // Several AIs: every service that received the text (each member, and the master or clerk).
+    const where = info.services && info.services.length
+      ? [el("div", { class: "small muted", text: `Sent to ${info.services.length} AI services (${info.ensembleMode === "consensus" ? "Quaker consensus" : "one AI combines the answers"}); in consensus mode the discussion messages also carry the other AIs' answers:` }),
+        ...info.services.map((x) => el("div", { class: "small muted ai-sent-svc", text: "• " + whereText(x) + (x.role ? ` — ${x.role}` : "") }))]
+      : [el("div", { class: "small muted", text: whereText(info) })];
     return el("details", { class: "ai-sent" },
       el("summary", { text: `What was sent (${chars.toLocaleString()} characters)` }),
-      el("div", { class: "small muted", text: where }),
+      ...where,
       ...info.messages.map((m) => el("div", { class: "ai-sent-msg" }, el("div", { class: "ai-sent-role", text: m.role }), el("pre", { text: String(m.content) }))));
+  }
+
+  // ------------------------------------------------------------------ "How the AIs answered"
+  const E = window.QbAiEnsemble;
+  const nameOf = (id) => (P.providerById(id) || { name: id || "AI" }).name;
+  const STANCE = { unite: "Unites", "stand-aside": "Stands aside", block: "Blocks" };
+  const secs = (ms) => `${(Math.max(0, ms || 0) / 1000).toFixed(1)} s`;
+  /**
+   * Shown below an answer that several AIs produced: "The AIs did not reach unity" with each
+   * block (always), and when "Show the discussion" is on, a collapsible section with each
+   * member's answer, the rounds of the discussion and the outcome. Display only: commands that
+   * change a draft or create items use the final answer alone.
+   */
+  function deliberation(ens) {
+    if (!ens || !ens.members) return null;
+    const show = (S.settings().ensemble || {}).showDeliberation !== false;
+    const wrap = el("div", { class: "ai-ens" });
+    if (ens.outcome === "no-unity" && ens.blocks && ens.blocks.length) {
+      wrap.appendChild(el("div", { class: "ai-ens-warn", role: "note" },
+        el("b", { text: "The AIs did not reach unity" }), el("span", { text: " — this is the clerk's last minute. Objections:" }),
+        el("ul", {}, ...ens.blocks.map((b) => el("li", {}, el("b", { text: nameOf(b.provider) + ": " }), b.reason)))));
+    }
+    if (ens.note) wrap.appendChild(el("div", { class: "small muted", text: ens.note }));
+    if (show) {
+      const outcome = E ? E.outcomeText(ens, nameOf) : ens.outcome;
+      const memberEls = ens.members.map((m) => el("div", { class: "ai-ens-member" + (m.error ? " failed" : "") },
+        el("div", { class: "ai-ens-head", text: `${nameOf(m.provider)} · ${m.model || ""} · ${secs(m.ms)}` }),
+        m.error ? el("div", { class: "ai-ens-error", text: `Left out: ${m.error}` }) : el("div", { class: "ai-ens-text", html: A.mdToHtml(m.text || "") })));
+      const roundEls = (ens.rounds || []).map((r, i) => el("div", { class: "ai-ens-round" },
+        el("div", { class: "ai-ens-head", text: `Round ${i + 1}` }),
+        el("details", { class: "ai-ens-minute" }, el("summary", { text: i === 0 ? "The clerk's draft minute" : "The clerk's revised minute" }), el("div", { class: "ai-ens-text", html: A.mdToHtml(r.minute || "") })),
+        el("ul", { class: "ai-ens-stances" }, ...r.responses.map((x) => el("li", { class: "ai-stance-" + x.stance },
+          el("b", { text: `${nameOf(x.provider)}: ${STANCE[x.stance] || x.stance}` }),
+          x.reason ? el("span", { text: " — " + x.reason }) : null,
+          x.suggestedChange ? el("div", { class: "small muted", text: "Suggested change: " + x.suggestedChange }) : null,
+          x.note ? el("div", { class: "small muted", text: x.note }) : null)),
+        ...(r.missing || []).map((x) => el("li", { class: "ai-stance-missing" }, el("b", { text: nameOf(x.provider) + ": " }), "left out of this round (" + x.error + ")")))));
+      wrap.appendChild(el("details", { class: "ai-ens-details" },
+        el("summary", {}, "How the AIs answered", outcome ? el("span", { class: "ai-ens-outcome", text: " · " + outcome }) : null),
+        el("div", { class: "ai-ens-section", text: ens.mode === "consensus" ? "Independent answers" : "The answers the master combined" }),
+        ...memberEls,
+        roundEls.length ? el("div", { class: "ai-ens-section", text: "The discussion" }) : null,
+        ...roundEls,
+        outcome ? el("div", { class: "ai-ens-outcome-line", text: outcome }) : null));
+    }
+    return wrap.childNodes.length ? wrap : null;
   }
 
   // ------------------------------------------------------------------ the AI pane
@@ -132,7 +186,13 @@
       if (!this.head) return;
       const s = S.settings();
       const p = s.active ? P.providerById(s.active) : null;
+      const plan = window.QbAiClient && window.QbAiClient.ensemblePlan ? window.QbAiClient.ensemblePlan() : null;
       this.head.innerHTML = "";
+      if (plan) {
+        this.head.append(`${plan.members.length} AIs · ${plan.mode === "consensus" ? `Quaker consensus, clerk ${plan.master.name}` : `master ${plan.master.name}`}`, " ",
+          el("button", { class: "link", onclick: () => qbAi.settings && qbAi.settings({ section: "ensemble" }) }, "Change"));
+        return;
+      }
       this.head.append(p ? `${p.name} · ${s.providers[s.active]?.model || ""}` : "No AI provider set up", " ",
         el("button", { class: "link", onclick: () => qbAi.providers && qbAi.providers() }, p ? "Change" : "Set up AI"));
     },
@@ -159,9 +219,11 @@
       return {
         turn,
         update: (t) => { turn.text = t; this.drawText(turn); },
-        done: (t, { actions = [], sent = null, html = null, note = null } = {}) => { Object.assign(turn, { text: t, actions, sent, html, note, pending: false }); this.render(); },
-        fail: (msg, sent = null) => { Object.assign(turn, { text: msg, error: true, sent, pending: false }); this.render(); },
-        stopped: (sent = null) => { Object.assign(turn, { note: "Stopped.", sent, pending: false }); this.render(); },
+        /** A progress line while several AIs work ("Round 2 of 3: 1 objection"). */
+        status: (t) => { turn.status = t; const n = this.log && this.log.querySelector(`[data-turn="${this.history.indexOf(turn)}"] .ai-msg-status`); if (n) n.textContent = t; },
+        done: (t, { actions = [], sent = null, html = null, note = null, ensemble = null } = {}) => { Object.assign(turn, { text: t, actions, sent, html, note, ensemble, status: null, pending: false }); this.render(); },
+        fail: (msg, sent = null, ensemble = null) => { Object.assign(turn, { text: msg, error: true, sent, ensemble, status: null, pending: false }); this.render(); },
+        stopped: (sent = null) => { Object.assign(turn, { note: "Stopped.", sent, status: null, pending: false }); this.render(); },
       };
     },
     drawText(turn) {
@@ -190,7 +252,10 @@
         }
         this.log.appendChild(el("div", { class: `ai-msg ai-${t.role}`, "data-turn": String(i) },
           t.title ? el("div", { class: "ai-msg-title", text: t.title }) : null, body,
+          t.pending && t.status ? el("div", { class: "small muted ai-msg-status", role: "status", text: t.status }) : null,
+          t.pending && !t.status ? el("div", { class: "small muted ai-msg-status" }) : null,
           t.note ? el("div", { class: "small muted", text: t.note }) : null,
+          t.ensemble ? deliberation(t.ensemble) : null,
           actions.childNodes.length ? actions : null, sentDetails(t.sent)));
       });
       this.log.scrollTop = this.log.scrollHeight;
@@ -200,7 +265,8 @@
   // ------------------------------------------------------------------ streaming preview
   /**
    * Shows generated text as it streams, lets the user edit it, and offers explicit actions
-   * (Insert / Replace / Copy…). generate(onToken, signal) resolves {text, sent}.
+   * (Insert / Replace / Copy…). generate(onToken, signal, onStatus) resolves {text, sent, ensemble?};
+   * when several AIs answered, "How the AIs answered" is shown under the text (never inserted).
    * Resolves when the dialog closes.
    */
   function preview({ title, original = "", originalLabel = "Original", generate, actions, note = "" }) {
@@ -209,16 +275,19 @@
     out.value = "…";
     const status = el("div", { class: "small muted ai-preview-status" });
     const sentHost = el("div");
+    const ensHost = el("div");
     const actionBtns = [];
     const setReady = (ready) => actionBtns.forEach((b) => (b.disabled = !ready));
     const run = async () => {
       ctl = new AbortController();
       setReady(false);
-      out.readOnly = true; out.value = ""; status.textContent = "Writing…"; sentHost.innerHTML = "";
+      out.readOnly = true; out.value = ""; status.textContent = "Writing…"; sentHost.innerHTML = ""; ensHost.innerHTML = "";
       try {
-        const r = await generate((full) => { out.value = full; out.scrollTop = out.scrollHeight; }, ctl.signal);
+        const r = await generate((full) => { out.value = full; out.scrollTop = out.scrollHeight; }, ctl.signal, (t) => { status.textContent = t; });
         out.value = A.cleanOutput(r.text);
         sent = r.sent;
+        const d = deliberation(r.ensemble);
+        if (d) ensHost.appendChild(d);
         status.textContent = r.truncated ? "The answer was cut short (length limit). Review before using it." : "Review and edit the text, then choose what to do with it.";
         setReady(true);
       } catch (e) {
@@ -233,7 +302,7 @@
     const body = el("div", { class: "ai-preview" },
       note ? el("p", { class: "small muted", text: note }) : null,
       original ? el("details", { class: "ai-original" }, el("summary", { text: originalLabel }), el("pre", { text: original })) : null,
-      out, status, sentHost);
+      out, status, ensHost, sentHost);
     const buttons = [
       { label: "Stop", icon: "stop", run: () => ctl && ctl.abort() },
       { label: "Try again", icon: "refresh", run: () => { if (!ctl) run(); } },
@@ -253,6 +322,6 @@
     return p.then((v) => { if (ctl) ctl.abort(); return v; });
   }
 
-  Object.assign(qbAi, { injectIcons, busy, stop, running, dialog, confirmDialog, sentDetails, pane, preview, hostOf });
+  Object.assign(qbAi, { injectIcons, busy, stop, running, dialog, confirmDialog, sentDetails, deliberation, pane, preview, hostOf });
   qbAi.paneRefreshHead = () => pane.refreshHead();
 })();

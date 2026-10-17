@@ -17,6 +17,7 @@
   "use strict";
   const P = root.QbAiProviders || (typeof require === "function" ? require("./providers.js") : null);
   const S = root.QbAiStore || (typeof require === "function" ? require("./store.js") : null);
+  const E = root.QbAiEnsemble || (typeof require === "function" ? require("./ensemble.js") : null);
 
   class AiError extends Error {
     /** code: no-provider · auth · quota · model · network · cors · aborted · unsupported · proxy · other */
@@ -348,11 +349,59 @@
 
   // ------------------------------------------------------------------ public API
   /**
+   * The ensemble to use for normal commands ("Use several AIs" in AI settings), or null for a
+   * single AI: mode is not "single" and at least two chosen providers are still set up.
+   * Members and the master/clerk come with their model and display name; the on-device and
+   * browser models are marked serial (one worker: they take turns).
+   */
+  function ensemblePlan() {
+    const s = S.settings();
+    const e = s.ensemble;
+    if (!E || !e || (e.mode !== "master" && e.mode !== "consensus")) return null;
+    const entry = (id, model) => {
+      const def = P.providerById(id), cfg = s.providers[id];
+      if (!def || !cfg) return null;
+      return { provider: id, model: model || cfg.model || def.models.quality, name: def.name, serial: P.isOnDevice(def) };
+    };
+    const seen = new Set();
+    const members = [];
+    for (const m of e.members || []) {
+      if (!m || seen.has(m.provider)) continue;
+      const x = entry(m.provider, m.model);
+      if (x) { seen.add(m.provider); members.push(x); }
+    }
+    if (members.length < 2) return null;
+    const asMember = members.find((m) => m.provider === e.master);
+    const master = asMember || entry(e.master) || members[0];
+    return { mode: e.mode, members: members.slice(0, 6), master, maxRounds: e.maxRounds, memberTimeoutMs: e.memberTimeoutMs, showDeliberation: e.showDeliberation !== false };
+  }
+
+  /**
    * One chat request. req: {messages, tier ('fast'|'quality'), model, temperature, maxTokens,
-   * signal, onToken(delta, full), provider}. Resolves {text, model, provider, providerName,
-   * route, usage, truncated}.
+   * signal, onToken(delta, full), onStatus(text), provider}. Resolves {text, model, provider,
+   * providerName, route, usage, truncated}, plus `ensemble` when several AIs answered.
+   *
+   * A request that names its provider (key tests, the wizard's "Try it") always goes to that
+   * provider alone; other requests use the ensemble when one is set up (AI settings ▸ Use several AIs).
    */
   async function chat(req) {
+    if (!req.provider) {
+      const plan = ensemblePlan();
+      if (plan) return chatEnsemble(req, plan);
+    }
+    return chatOne(req);
+  }
+
+  /** Several AIs on one request: master or consensus (ensemble.js); each member call is an ordinary chatOne. */
+  async function chatEnsemble(req, plan = ensemblePlan()) {
+    if (!plan) return chatOne(req);
+    if (req.signal && req.signal.aborted) throw new AiError("Stopped", "aborted");
+    const res = await E.run(req, { ...plan, call: (provider, model, r) => chatOne({ ...r, provider, model }), makeError: (m, c) => new AiError(m, c) });
+    if (req.signal && req.signal.aborted) throw new AiError("Stopped", "aborted");
+    return res;
+  }
+
+  async function chatOne(req) {
     const rp = await S.resolveProvider(req.provider);
     if (!rp) throw new AiError("No AI provider is set up yet.", "no-provider");
     const { def, cfg } = rp;
@@ -391,5 +440,5 @@
     return parseModelList(def, j);
   }
 
-  return { AiError, buildChatRequest, buildModelsRequest, parseModelList, pickModels, takeSseBlocks, parseSseBlock, streamDelta, parseCompletion, adjustForRetry, httpError, routeFor, configure, chat, listModels };
+  return { AiError, buildChatRequest, buildModelsRequest, parseModelList, pickModels, takeSseBlocks, parseSseBlock, streamDelta, parseCompletion, adjustForRetry, httpError, routeFor, configure, chat, chatEnsemble, ensemblePlan, listModels };
 });

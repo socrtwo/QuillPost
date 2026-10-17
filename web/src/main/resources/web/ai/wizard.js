@@ -288,8 +288,106 @@
     qbAi.refreshRibbon && qbAi.refreshRibbon();
   }
 
+  // ------------------------------------------------------------------ AI settings ▸ Use several AIs
+  const MODES = [
+    ["single", "Only the active AI (Single AI)"],
+    ["master", "One AI combines the answers (master)"],
+    ["consensus", "The AIs deliberate until they agree (Quaker consensus)"],
+  ];
+  /** Every service a request would reach with the ensemble settings [e]: members, then the master/clerk. */
+  function ensembleServices(s, e) {
+    const members = e.members.filter((m) => s.providers[m.provider] && P.providerById(m.provider));
+    const out = members.map((m) => ({ id: m.provider, model: m.model || s.providers[m.provider].model, role: "member" }));
+    const masterId = e.master && s.providers[e.master] ? e.master : members[0] && members[0].provider;
+    const hit = out.find((x) => x.id === masterId);
+    if (hit) hit.role = "member and " + (e.mode === "consensus" ? "clerk" : "master");
+    else if (masterId) out.push({ id: masterId, model: s.providers[masterId].model, role: e.mode === "consensus" ? "clerk" : "master" });
+    return { members, masterId, services: out };
+  }
+  const where = (s, id) => { const def = P.providerById(id); return P.isOnDevice(def) ? "stays on this device" : qbAi.hostOf(S.resolveBaseUrl(def, s.providers[id] || {})); };
+
+  /** The "Use several AIs" section: members (with models), mode, master/clerk, rounds, display, cost and privacy. */
+  function ensembleSection() {
+    const box = el("section", { class: "ai-ens-settings", id: "aiEnsembleSettings" });
+    const draw = () => {
+      box.innerHTML = "";
+      const s = S.settings();
+      const e = s.ensemble;
+      const ids = Object.keys(s.providers).filter((id) => P.providerById(id));
+      box.append(el("h4", { text: "Use several AIs" }),
+        el("p", { class: "small muted", text: "Send each request to several AI services and combine their answers: one AI can combine them (master), or the AIs can discuss the answer until they agree, like a Quaker business meeting (consensus). Tick at least two." }));
+      if (ids.length < 2) box.append(el("p", { class: "small", text: "Set up at least two AI providers first." }), el("div", { class: "btn-row" }, el("button", { class: "btn sm", onclick: async () => { await setup(); draw(); } }, icon("plus"), "Add a provider")));
+      const list = el("div", { class: "ai-ens-members" });
+      for (const id of ids) {
+        const def = P.providerById(id), cfg = s.providers[id];
+        const mem = e.members.find((m) => m.provider === id);
+        const cb = el("input", { type: "checkbox", "data-member": id });
+        cb.checked = !!mem;
+        const models = cfg.models && cfg.models.length ? cfg.models : [cfg.model || def.models.quality];
+        const cur = (mem && mem.model) || cfg.model || def.models.quality;
+        const sel = el("select", { class: "ai-model-select", "aria-label": `Model for ${def.name}`, "data-member-model": id });
+        if (!models.includes(cur)) sel.appendChild(el("option", { value: cur, text: cur }));
+        for (const m of models) sel.appendChild(el("option", { value: m, text: m }));
+        sel.value = cur;
+        sel.disabled = !mem;
+        cb.onchange = () => {
+          S.saveSettings((x) => {
+            const ms = x.ensemble.members.filter((m) => m.provider !== id);
+            if (cb.checked) ms.push({ provider: id, model: sel.value });
+            x.ensemble.members = ms.slice(0, 6);
+          });
+          draw();
+        };
+        sel.onchange = () => { S.saveSettings((x) => { const m = x.ensemble.members.find((q) => q.provider === id); if (m) m.model = sel.value; }); draw(); };
+        list.appendChild(el("div", { class: "ai-ens-row" }, el("label", { class: "check" }, cb, el("span", { text: def.name })), sel));
+      }
+      box.appendChild(list);
+      const { members, masterId, services } = ensembleServices(s, e);
+      const n = members.length;
+      const enough = n >= 2;
+      if (e.members.length >= 6) box.appendChild(el("p", { class: "small muted", text: "At most six AIs." }));
+
+      const radios = MODES.map(([val, label]) => {
+        const r = el("input", { type: "radio", name: "aiEnsMode", value: val, "data-mode": val });
+        r.checked = (enough ? e.mode : "single") === val;
+        r.disabled = val !== "single" && !enough;
+        r.onchange = () => { S.saveSettings((x) => { x.ensemble.mode = val; }); draw(); };
+        return el("label", { class: "check" }, r, el("span", { text: label }));
+      });
+      box.appendChild(el("div", { class: "field" }, el("label", { text: "When several AIs answer" }), ...radios,
+        !enough ? el("span", { class: "hint", text: "Tick at least two AIs above to turn this on." }) : null));
+
+      const masterSel = select(ids.map((id) => [id, P.providerById(id).name]), masterId || ids[0] || "");
+      masterSel.setAttribute("data-field", "master");
+      masterSel.disabled = !ids.length;
+      masterSel.onchange = () => { S.saveSettings((x) => { x.ensemble.master = masterSel.value; }); draw(); };
+      box.appendChild(el("div", { class: "field" }, el("label", { text: "Master / clerk" }), masterSel,
+        el("span", { class: "hint", text: "In master mode it writes the combined answer; in consensus mode it is the clerk who words the sense of the meeting. It may also be one of the AIs above." })));
+
+      const rounds = select([1, 2, 3, 4, 5].map((r) => [String(r), String(r)]), String(e.maxRounds));
+      rounds.setAttribute("data-field", "rounds");
+      rounds.onchange = () => { S.saveSettings((x) => { x.ensemble.maxRounds = Number(rounds.value); }); draw(); };
+      box.appendChild(el("div", { class: "field" }, el("label", { text: "Rounds of discussion" }), rounds, el("span", { class: "hint", text: "Consensus only: how many times the AIs may object and the clerk revise before the clerk's last minute is used." })));
+
+      const show = el("input", { type: "checkbox", "data-field": "showDeliberation" });
+      show.checked = e.showDeliberation !== false;
+      show.onchange = () => S.saveSettings((x) => { x.ensemble.showDeliberation = show.checked; });
+      box.appendChild(el("label", { class: "check" }, show, el("span", {}, "Show the discussion", el("span", { class: "desc", text: " Below each answer, \"How the AIs answered\": every AI's answer and, for consensus, each round. Only the final answer is ever put into a draft." }))));
+
+      if (enough) {
+        const c = window.QbAiEnsemble.requestCounts(n, e.maxRounds);
+        box.appendChild(el("p", { class: "ai-ens-cost", "data-role": "cost" }, el("b", { text: "Cost: " }), `Each request is sent to ${services.length} services (about ${c.master} requests for master mode, up to ${c.consensus} for consensus). Paid services charge for each.`));
+        box.appendChild(el("div", { class: "ai-ens-privacy", "data-role": "privacy" }, el("b", { text: "Privacy: " }), "the text of each request (the email, draft or question) will be sent to every one of these services:",
+          el("ul", {}, ...services.map((x) => el("li", {}, el("b", { text: P.providerById(x.id).name }), ` · ${x.model} · ${where(s, x.id)} — ${x.role}`))),
+          el("span", { class: "small muted", text: "Each service's terms and privacy policy apply; free tiers may use what you send to improve their models." })));
+      }
+    };
+    draw();
+    return box;
+  }
+
   // ------------------------------------------------------------------ AI settings
-  async function settingsDialog() {
+  async function settingsDialog({ section = null } = {}) {
     const s = S.settings();
     const root = el("div", { class: "ai-settings" });
     const check = (key, label, hint) => { const cb = el("input", { type: "checkbox" }); cb.checked = !!s[key]; cb.onchange = () => S.saveSettings((x) => { x[key] = cb.checked; }); return el("label", { class: "check" }, cb, el("span", {}, label, hint ? el("span", { class: "desc", text: " " + hint }) : null)); };
@@ -304,6 +402,7 @@
       check("enabled", "AI features are on", "When off, AI commands do nothing and nothing is sent."),
       check("confirmEachSend", "Show what will be sent and ask before every request to a cloud service"),
       el("div", { class: "field" }, el("label", { text: "Language for generated text" }), lang),
+      ensembleSection(),
       el("h4", { text: "Ask about this mailbox" }),
       check("mailboxPreviews", "Include the first words of each message, not only date, sender, subject and flags"),
       el("div", { class: "field" }, el("label", { text: "Describe at most this many messages of the folder" }), limit),
@@ -324,7 +423,9 @@
           if (!f) return;
           try { S.importSettings(JSON.parse(await readFileText(f))); toast("AI settings imported. Add the API keys again in Providers & models."); } catch (e) { toast(e.message, { danger: true }); }
         } }, icon("upload"), "Import")));
-    await qbAi.dialog({ title: "AI settings", body: root, wide: false });
+    await qbAi.dialog({ title: "AI settings", body: root, wide: false, onOpen: () => {
+      if (section === "ensemble") { const n = root.querySelector("#aiEnsembleSettings"); if (n) { n.classList.add("focus"); n.scrollIntoView({ block: "start" }); } }
+    } });
     qbAi.refreshRibbon && qbAi.refreshRibbon();
   }
 
@@ -337,6 +438,15 @@
     mailbox: "the folder's message list: date, sender, subject and flags (first words only if you turn that on), at most the number set in AI settings",
     none: "only what you type",
   };
+  /** AI & privacy with several AIs: every service that receives the text. */
+  function ensembleNow(s) {
+    if (!C.ensemblePlan()) return null;
+    const { services } = ensembleServices(s, s.ensemble);
+    return el("div", {},
+      el("p", {}, el("b", { text: "Several AIs: " }), s.ensemble.mode === "consensus" ? "the AIs deliberate until they agree (Quaker consensus)." : "one AI combines the answers (master).", " What a command needs is sent to each of these services, and the master or the AIs in the discussion also receive the other AIs' answers:"),
+      el("ul", {}, ...services.map((x) => el("li", {}, el("b", { text: P.providerById(x.id).name }), ` · ${where(s, x.id)} — ${x.role}`))));
+  }
+
   async function privacy() {
     const s = S.settings();
     const p = s.active ? P.providerById(s.active) : null;
@@ -344,7 +454,7 @@
     const backend = S.keyBackend();
     const body = el("div", { class: "ai-privacy" },
       el("p", {}, el("b", { text: "Quillbox has no AI service of its own. " }), "AI requests go from your device to the provider you choose, with your own key, or to a model on this device. Nothing is sent until you run an AI command or ask in the AI pane, and every answer has a \"What was sent\" section showing the exact text."),
-      el("p", {}, el("b", { text: "Active provider: " }), p ? p.name : "none",
+      ensembleNow(s) || el("p", {}, el("b", { text: "Active provider: " }), p ? p.name : "none",
         p ? (P.isOnDevice(p) ? " — runs on this device; your mail does not leave it." : ` — what a command needs is sent to ${qbAi.hostOf(S.resolveBaseUrl(p, s.providers[p.id] || {}))}; its terms and privacy policy apply.`) : ""),
       el("h4", { text: "What each command sends" }),
       el("table", { class: "ai-table" }, el("tbody", {}, ...rows)),

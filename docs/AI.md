@@ -29,7 +29,8 @@ its format), and **Test & save** lists the provider's models with that key befor
 stored. You then choose a model for writing and one for quick tasks. Free-tier terms are set by
 each provider and change; the wizard shows a short note and links to the provider's own page.
 
-You can add several providers and switch with **Active AI**; **Providers & models** tests,
+You can add several providers and switch with **Active AI**, or let several answer together
+(see [Using several AIs](#using-several-ais)); **Providers & models** tests,
 re-keys or removes them. **AI settings** has the on/off switch, the language for generated text,
 what *Ask mailbox* sends, the network route, usage counters (requests and the token counts the
 services report) and export/import of the AI settings (never including keys).
@@ -98,6 +99,61 @@ for a command registry or Quick Access Bar.
   and the notice offers **Undo**.
 - Model output shown in the pane is rendered from plain text with a small Markdown subset; HTML
   in an answer (or in the email it read) is never interpreted.
+
+## Using several AIs
+
+You can send each request to several AI services at once and let Quillbox combine their answers.
+Set it up in **AI settings ▸ Use several AIs** (or **AI ▸ Choose AIs…**): tick at least two of the
+providers you have set up (each with its own model; up to six), then choose what happens when
+several AIs answer:
+
+- **One AI combines the answers (master).** Every chosen AI answers the request on its own, at the
+  same time. Then the AI you picked as *Master* reads all the answers — shuffled and labelled
+  only *Response A*, *Response B*, … so it cannot favour a service by name — and writes the single
+  best answer: it keeps what is correct, fixes mistakes, settles disagreements on the merits and
+  keeps the format the command asked for. If only one AI answers, its answer is used as it is.
+- **The AIs deliberate until they agree (Quaker consensus).** This follows the way a Quaker
+  business meeting decides: there is no vote; the group looks for *unity*. A **clerk** (the AI
+  you picked as *Master / clerk*) listens to everyone and writes down the "sense of the meeting"
+  as a **minute** — here, a proposed answer drawn from every AI's own first answer. Each AI then
+  reads the minute and says whether it can **unite** with it (it is right and complete),
+  **stand aside** (it would have preferred something different, but can live with it; its concern
+  is recorded), or **block** (a principled objection: the minute is wrong or harmful, and it says
+  what must change). If nobody blocks, the minute is adopted. If someone blocks, the clerk
+  revises the minute to meet the objections that are right, and the AIs consider it again — for
+  at most the number of *Rounds of discussion* you chose (1–5, 3 by default). If a block remains
+  after the last round, Quillbox still gives you the clerk's last minute and says plainly that
+  **the AIs did not reach unity**, with each objection.
+
+**Single AI** turns this off: only the active AI answers. The AI tab's **Several AIs** menu
+switches between *Single AI*, *Master Combines Answers* and *Quaker Consensus*; **Choose AIs…**
+opens the settings; **Show AI Discussion** turns the discussion display on or off. All three are
+also in `window.QB_AI_COMMANDS` (group "Providers": `ai.ensembleMode`, `ai.ensembleMembers`,
+`ai.showDeliberation`).
+
+While the AIs work, the AI pane (and the preview of a draft) shows progress such as "Asking 3
+AIs…" or "Round 2 of 3: 1 objection". Below the answer, **How the AIs answered** (when *Show the
+discussion* is on) lists each AI's own answer with how long it took — or why it was left out —
+and, for consensus, every round's minute with each AI's stance and reason, and the outcome:
+"Synthesized by …", "United (3 of 3)", "United; 1 stood aside" or "No unity after 3 rounds: 1
+objection". Only the final answer is ever used: *Insert*, *Replace*, tasks, events and the other
+results never contain the discussion.
+
+An AI that fails or does not answer within 90 seconds is left out, and that is reported. The
+on-device model and the browser's built-in model take their requests one at a time; cloud
+services and local servers are asked in parallel. **Stop** cancels every outstanding request. Key
+tests, model lists and the wizard's *Try it* always talk to one provider.
+
+**Cost.** Each request goes to every chosen service: about N+1 requests in master mode (N answers
+and the master) and up to N×(rounds+1)+rounds in consensus mode (the answers, every AI in each
+round, the clerk's draft and revisions). With three AIs and three rounds that is 4 or up to 15
+requests. Paid services charge for each, and free tiers use up their limits faster. The usage
+counters in AI settings count every request.
+
+**Privacy.** The text a command needs goes to *every* chosen service, and the master or the AIs
+in the discussion also see the other AIs' answers. The settings section and the notice before
+the first request list every service that will receive the text; *What was sent* lists them for
+each answer. For confidential mail, choose only the on-device model and local servers.
 
 ## Privacy
 
@@ -173,12 +229,17 @@ server that needs no key, and use *AI & privacy ▸ Delete saved keys* when you 
   builders, SSE parsing, streaming chat, routing to the relay), `store.js` (settings, key stores),
   `local.js` (on-device model worker), `prompts.js` (commands and prompt construction),
   `apply.js` (output cleaning, JSON, Markdown-lite, List-Unsubscribe, validation of extracted
-  items), `pane.js`, `wizard.js`, `commands.js` (UI); styles in `web/ai.css`.
+  items), `ensemble.js` (several AIs: master and Quaker-consensus orchestration; it depends only
+  on an injected `call(provider, model, req)`, and `client.js` `chat()` uses it when an ensemble is
+  set up and the request names no provider), `pane.js`, `wizard.js`, `commands.js` (UI); styles in
+  `web/ai.css`.
 - `web/src/main/kotlin/.../AiRoutes.kt` — `/ai/*` static files, `/api/ai/info`, the relay,
   `/api/ai/endpoints`, the desktop key store; `app/.../AiSecureStore.kt` — the Android Keystore
   store.
 - Tests: `node --test web/src/test/js/*.test.js` (Node 18+, no npm packages) — request building,
   SSE splitting (`\n\n`, `\r\n\r\n`, `\r\n\n`, `\n\r\n`), streaming with Stop, relay fallback, key
-  storage (keys never in settings or exports), prompt construction. `./gradlew check` in `web/`
+  storage (keys never in settings or exports), prompt construction, and the ensemble with mock
+  providers (`ensemble.test.js`: master and consensus flows, failures and timeouts, Stop, the
+  client's dispatch and relay fallback per member). `./gradlew check` in `web/`
   runs them through the `jsTest` task (skipped with a warning when Node is not installed), along
   with `AiRoutesTest` (relay allow-list, desktop key file).

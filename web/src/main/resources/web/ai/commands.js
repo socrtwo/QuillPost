@@ -9,7 +9,8 @@
  * the items ticked in the preview, with Undo.
  *
  * Every command is also listed in window.QB_AI_COMMANDS ({id, label, icon, group, tip, run}) so a
- * command registry or Quick Access Bar can pick them up.
+ * command registry or Quick Access Bar can pick them up. Menu commands add type "menu" and
+ * items() ({id, label, checked, run}); toggles add type "toggle" and checked().
  */
 (function () {
   "use strict";
@@ -17,7 +18,12 @@
   const qbAi = window.qbAi;
 
   // ================================================================== plumbing
-  const limit = () => (P.isOnDevice(S.activeProviderDef()) ? 3500 : 24000);
+  /** The text budget: smaller when only on-device models will read it. */
+  const limit = () => {
+    const plan = C.ensemblePlan();
+    if (plan) return plan.members.every((m) => m.serial) ? 3500 : 24000;
+    return P.isOnDevice(S.activeProviderDef()) ? 3500 : 24000;
+  };
   const language = () => S.settings().language || "auto";
 
   function anySignal(signals) {
@@ -49,8 +55,30 @@
     return true;
   }
 
+  /** Where a request to one provider goes: {providerName, model, endpoint, route}; never the key. */
+  async function serviceInfo(id, model) {
+    const rp = await S.resolveProvider(id);
+    if (!rp) return null;
+    const m = model || rp.cfg.model || rp.def.models.quality;
+    if (P.isOnDevice(rp.def)) return { id: rp.def.id, def: rp.def, providerName: rp.def.name, model: m, route: "device" };
+    const url = C.buildChatRequest({ ...rp, key: "" }, m, { messages: [] }, { stream: true }).url;
+    return { id: rp.def.id, def: rp.def, providerName: rp.def.name, model: m, endpoint: url, route: C.routeFor(rp.def, url) === "proxy" ? "proxy" : "direct" };
+  }
+
+  /** Every service a normal request is sent to: the ensemble's members and master/clerk, else the active provider. */
+  async function servicesFor() {
+    const plan = C.ensemblePlan();
+    if (!plan) return null;
+    const out = [];
+    for (const m of plan.members) { const x = await serviceInfo(m.provider, m.model); if (x) out.push({ ...x, role: m.provider === plan.master.provider ? (plan.mode === "consensus" ? "member and clerk" : "member and master") : "member" }); }
+    if (!plan.members.some((m) => m.provider === plan.master.provider)) { const x = await serviceInfo(plan.master.provider, plan.master.model); if (x) out.push({ ...x, role: plan.mode === "consensus" ? "clerk" : "master" }); }
+    return { plan, services: out };
+  }
+
   /** Where a request would go, for "What was sent" (computed before sending; never includes the key). */
   async function sentInfo(messages, tier) {
+    const ens = await servicesFor();
+    if (ens) return { messages, ensembleMode: ens.plan.mode, services: ens.services.map(({ def, id, ...x }) => x), providerName: `${ens.services.length} AIs`, route: "ensemble" };
     const rp = await S.resolveProvider();
     if (!rp) return { messages };
     const model = tier === "fast" ? rp.cfg.fastModel || rp.cfg.model : rp.cfg.model;
@@ -65,6 +93,8 @@
    */
   async function confirmSend(messages, tier) {
     const s = S.settings();
+    const ens = await servicesFor();
+    if (ens) return confirmSendEnsemble(messages, ens);
     const p = S.activeProviderDef();
     if (!p || P.isOnDevice(p)) return true;
     const first = !s.privacyAck.includes(p.id);
@@ -85,15 +115,46 @@
     return !!ok;
   }
 
-  /** One chat request with the busy chip; resolves the client result plus {sent}. Errors carry .sent too. */
-  async function runChat({ messages, cmd, label, onToken, signal }) {
+  /**
+   * Several AIs: the same notice, listing every service that will receive the text (members and
+   * the master or clerk). Shown until each cloud service has been accepted once, or every time
+   * when "ask before every request" is on.
+   */
+  async function confirmSendEnsemble(messages, ens) {
+    const s = S.settings();
+    const cloud = ens.services.filter((x) => !P.isOnDevice(x.def));
+    if (!cloud.length) return true;
+    const first = cloud.some((x) => !s.privacyAck.includes(x.id));
+    if (!first && !s.confirmEachSend) return true;
+    const details = qbAi.sentDetails(await sentInfo(messages));
+    if (details && s.confirmEachSend) details.open = true;
+    const askEach = el("input", { type: "checkbox" });
+    askEach.checked = !!s.confirmEachSend;
+    const mode = ens.plan.mode === "consensus" ? "The AIs deliberate until they agree (Quaker consensus): in the discussion each one also receives the others' answers." : "One AI combines the answers: the master also receives the others' answers.";
+    const body = el("div", {},
+      el("p", { text: `Several AIs are set up for each request (AI settings ▸ Use several AIs). The text this command needs goes from this device to each of these services:` }),
+      el("ul", { class: "ai-svc-list" }, ...ens.services.map((x) => el("li", {}, el("b", { text: x.providerName }), ` · ${x.model} · `, x.route === "device" ? "stays on this device" : qbAi.hostOf(x.endpoint) + (x.route === "proxy" ? " (relayed by the Quillbox backend)" : ""), x.role ? el("span", { class: "muted", text: ` — ${x.role}` }) : null))),
+      el("p", { class: "small", text: `${mode} Quillbox keeps no copy and has no AI server of its own. Each service's terms and privacy policy apply${cloud.some((x) => x.def.free === "free") ? ", and free tiers may use what you send to improve their models" : ""}. For confidential mail, use the on-device model or a local server.` }),
+      details,
+      el("label", { class: "check" }, askEach, el("span", { text: "Show what will be sent and ask before every request" })));
+    const ok = await qbAi.dialog({ title: "Send to several AI services?", body, wide: true, buttons: [{ label: "Cancel", value: false }, { label: "Send", value: true, primary: true }] });
+    if (ok) S.saveSettings((x) => { for (const c of cloud) if (!x.privacyAck.includes(c.id)) x.privacyAck.push(c.id); x.confirmEachSend = askEach.checked; });
+    return !!ok;
+  }
+
+  /**
+   * One chat request with the busy chip; resolves the client result plus {sent}. Errors carry .sent
+   * too. onStatus receives progress lines while several AIs work (they also show on the chip).
+   */
+  async function runChat({ messages, cmd, label, onToken, onStatus, signal }) {
     const tier = (cmd && cmd.tier) || "quality";
     const sent = await sentInfo(messages, tier);
     const b = qbAi.busy(label || "AI is working…");
     try {
       const r = await C.chat({ messages, tier, temperature: cmd && cmd.temperature, maxTokens: cmd && cmd.maxTokens, signal: signal ? anySignal([signal, b.signal]) : b.signal,
+        onStatus: (t) => { b.label(t); if (onStatus) onStatus(t); },
         onToken: (d, full) => { if (!onToken) b.label(`${label || "Receiving"} ${full.length.toLocaleString()} characters…`); else onToken(d, full); } });
-      Object.assign(sent, { model: r.model, endpoint: r.endpoint || sent.endpoint, route: r.route || sent.route });
+      if (!r.ensemble) Object.assign(sent, { model: r.model, endpoint: r.endpoint || sent.endpoint, route: r.route || sent.route });
       return { ...r, sent };
     } catch (e) { if (e && typeof e === "object") e.sent = sent; throw e; }
     finally { b.done(); }
@@ -297,14 +358,14 @@
     if (!(await confirmSend(messages, cmd.tier))) return;
     const turn = qbAi.pane.result(`${cmd.label}${arg ? ` · ${arg}` : ""} — ${d.subject || "(no subject)"}`);
     try {
-      const r = await runChat({ messages, cmd, label: `${cmd.label}…`, onToken: (_d, full) => turn.update(full) });
+      const r = await runChat({ messages, cmd, label: `${cmd.label}…`, onToken: (_d, full) => turn.update(full), onStatus: turn.status });
       const out = A.cleanOutput(r.text);
       const actions = [];
       if (cmd.id === "translate" && state.openDetail === d) actions.push({ label: "Show under the message", icon: "globe", run: () => showTranslation(d, out, arg, r.providerName) });
       if (composeOpen()) actions.push({ label: "Insert into draft", icon: "plus", run: () => applyToDraft(out, "cursor", "Insert") });
-      turn.done(out, { actions, sent: r.sent, note: r.truncated ? "The answer was cut short (length limit)." : null });
+      turn.done(out, { actions, sent: r.sent, ensemble: r.ensemble, note: r.truncated ? "The answer was cut short (length limit)." : null });
     } catch (e) {
-      if (isAbort(e)) turn.stopped(e.sent); else { turn.fail(errText(e), e.sent); if (e.code === "auth" || e.code === "model") fail(e); }
+      if (isAbort(e)) turn.stopped(e.sent); else { turn.fail(errText(e), e.sent, e.ensemble); if (e.code === "auth" || e.code === "model") fail(e); }
     }
   }
 
@@ -324,10 +385,10 @@
   }
 
   /** Runs a JSON command and parses the answer (with one clear error when it is not JSON). */
-  async function jsonCommand(cmd, ctx, label, prepared = null) {
+  async function jsonCommand(cmd, ctx, label, prepared = null, onStatus = null) {
     const messages = prepared || (await prepare(cmd, ctx));
     if (!messages) return null;
-    const r = await runChat({ messages, cmd, label });
+    const r = await runChat({ messages, cmd, label, onStatus });
     const value = A.parseJsonLoose(r.text);
     if (value == null) { const e = new C.AiError("The AI did not answer in the expected format. Try again, or choose a more capable model."); e.sent = r.sent; e.raw = r.text; throw e; }
     return { value, r };
@@ -340,8 +401,8 @@
     if (!messages) return;
     let res;
     const turn = qbAi.pane.result(`Phishing check — ${d.subject || "(no subject)"}`);
-    try { res = await jsonCommand(cmd, null, "Checking for phishing signals…", messages); }
-    catch (e) { if (isAbort(e)) turn.stopped(e.sent); else turn.fail(errText(e) + (e.raw ? `\n\n${e.raw.slice(0, 1500)}` : ""), e.sent); return; }
+    try { res = await jsonCommand(cmd, null, "Checking for phishing signals…", messages, turn.status); }
+    catch (e) { if (isAbort(e)) turn.stopped(e.sent); else turn.fail(errText(e) + (e.raw ? `\n\n${e.raw.slice(0, 1500)}` : ""), e.sent, e.ensemble); return; }
     const v = res.value || {};
     const risk = ["low", "medium", "high"].includes(v.risk) ? v.risk : "medium";
     const node = el("div", { class: "ai-phish" },
@@ -352,7 +413,7 @@
       d.verdict ? el("p", { class: "small muted", text: `Built-in junk engine (no AI): ${d.verdict.level.toLowerCase()}, score ${d.verdict.score}. The AI assessment is a second opinion; it can be wrong.` }) : null);
     const actions = [];
     if (state.openDetail === d && d.uid && risk !== "low") actions.push({ label: "Report junk", icon: "junk", run: () => reportJunk(d) });
-    turn.done([v.summary, ...(v.signals || []).map((s) => `- ${s.signal}: ${s.evidence || ""}`), v.advice].filter(Boolean).join("\n"), { html: node, actions, sent: res.r.sent });
+    turn.done([v.summary, ...(v.signals || []).map((s) => `- ${s.signal}: ${s.evidence || ""}`), v.advice].filter(Boolean).join("\n"), { html: node, actions, sent: res.r.sent, ensemble: res.r.ensemble });
   }
   function reportJunk(d) { actions.junk([d], true); }
 
@@ -370,7 +431,7 @@
       el("div", { class: "field" }, el("label", { text: "Category" }), name, el("span", { class: "hint", text: existing ? "One of your categories." : "A new category; it is created when you apply it." })),
       el("p", {}, el("b", { text: "Kind: " }), String(v.kind || "—"), " · ", el("b", { text: "Priority: " }), String(v.priority || "normal"), " · ", el("b", { text: "Needs a reply: " }), v.needsReply ? "yes" : "no"),
       v.reason ? el("p", { class: "small muted", text: String(v.reason) }) : null,
-      qbAi.sentDetails(res.r.sent));
+      qbAi.deliberation(res.r.ensemble), qbAi.sentDetails(res.r.sent));
     const ok = await qbAi.dialog({ title: `Classify — ${d.subject || "(no subject)"}`, body, wide: false, buttons: [{ label: "Close", value: false }, { label: "Apply category", value: true, primary: true, disabled: !d.uid }] });
     if (!ok) return;
     const label = name.value.trim();
@@ -405,7 +466,7 @@
       it._cb = cb; it._title = title;
       return el("div", { class: "ai-extract-row" }, cb, title, extra);
     });
-    const body = el("div", { class: "ai-extract" }, el("p", { class: "small muted", text: "Tick what to add; edit before adding if needed." }), ...rows, qbAi.sentDetails(res.r.sent));
+    const body = el("div", { class: "ai-extract" }, el("p", { class: "small muted", text: "Tick what to add; edit before adding if needed." }), ...rows, qbAi.deliberation(res.r.ensemble), qbAi.sentDetails(res.r.sent));
     const target = { tasks: "To Do", events: "Calendar", contacts: "People" }[kind];
     const ok = await qbAi.dialog({ title: `${cmd.label} — ${d.subject || "(no subject)"}`, body, buttons: [{ label: "Cancel", value: false }, { label: `Add to ${target}`, value: true, primary: true }] });
     if (!ok) return;
@@ -446,7 +507,7 @@
       v.reason ? el("p", { class: "small muted", text: String(v.reason) }) : null,
       el("div", { class: "field" }, el("label", { text: "Task" }), task),
       el("div", { class: "field" }, el("label", { text: "Remind me on" }), due),
-      qbAi.sentDetails(res.r.sent));
+      qbAi.deliberation(res.r.ensemble), qbAi.sentDetails(res.r.sent));
     const choice = await qbAi.dialog({ title: `Follow-up — ${d.subject || "(no subject)"}`, body, wide: false, buttons: [{ label: "Close", value: null }, ...(d.uid ? [{ label: "Flag message", value: "flag" }] : []), { label: "Add reminder to To Do", value: "task", primary: true }] });
     if (choice === "flag") { await actions.flag([d], true, due.value); toast("Flagged for follow-up.", { action: "Undo", onAction: () => actions.flag([d], false) }); }
     if (choice === "task") {
@@ -481,7 +542,7 @@
     await qbAi.preview({
       title: `Draft reply (${PR.INTENTS[intent] ? PR.INTENTS[intent].label : "Reply"}) — ${d.subject || "(no subject)"}`,
       note: `Tone: ${tone} · Length: ${(PR.LENGTHS[length] || PR.LENGTHS.medium).label}`,
-      generate: (onToken, signal) => runChat({ messages, cmd, label: "Writing a reply…", signal, onToken: (_d, full) => onToken(full) }),
+      generate: (onToken, signal, onStatus) => runChat({ messages, cmd, label: "Writing a reply…", signal, onStatus, onToken: (_d, full) => onToken(full) }),
       actions: [
         { label: "Copy", icon: "copy", keepOpen: true, run: (t) => copy(t) },
         (fromCompose && composeOpen()) || inReply()
@@ -507,7 +568,7 @@
     await qbAi.preview({
       title: `${cmd.label}${argLabel ? ` — ${argLabel}` : ""}`,
       original: text, originalLabel: selr ? "Selected text" : "Your draft (without the quoted message and signature)",
-      generate: (onToken, signal) => runChat({ messages, cmd, label: `${cmd.label}…`, signal, onToken: (_d, full) => onToken(full) }),
+      generate: (onToken, signal, onStatus) => runChat({ messages, cmd, label: `${cmd.label}…`, signal, onStatus, onToken: (_d, full) => onToken(full) }),
       actions: [
         { label: "Copy", icon: "copy", keepOpen: true, run: (x) => copy(x) },
         { label: selr ? "Replace selection" : "Replace draft text", icon: "check", primary: true, run: (x) => { applyToDraft(x, target, cmd.label); } },
@@ -526,7 +587,7 @@
     const list = (Array.isArray(res.value) ? res.value : res.value.subjects || []).filter((x) => typeof x === "string" && x.trim()).slice(0, 5);
     if (!list.length) { toast("No suggestions came back. Try again."); return; }
     const inputs = list.map((sbj, i) => { const r = el("input", { type: "radio", name: "aiSubject", value: String(i) }); r.checked = i === 0; const t = el("input", { type: "text", value: sbj.trim() }); return { r, t, row: el("div", { class: "ai-extract-row" }, r, t) }; });
-    const ok = await qbAi.dialog({ title: "Subject line", wide: false, body: el("div", {}, ...inputs.map((x) => x.row), qbAi.sentDetails(res.r.sent)), buttons: [{ label: "Cancel", value: false }, { label: "Use subject", value: true, primary: true }] });
+    const ok = await qbAi.dialog({ title: "Subject line", wide: false, body: el("div", {}, ...inputs.map((x) => x.row), qbAi.deliberation(res.r.ensemble), qbAi.sentDetails(res.r.sent)), buttons: [{ label: "Cancel", value: false }, { label: "Use subject", value: true, primary: true }] });
     if (!ok) return;
     const pick = inputs.find((x) => x.r.checked) || inputs[0];
     if (composeOpen()) setSubject(pick.t.value.trim());
@@ -545,7 +606,7 @@
     const choice = await qbAi.dialog({ title: "Generated template", body: el("div", {},
       el("div", { class: "field" }, el("label", { text: "Template name" }), name),
       el("div", { class: "field" }, el("label", { text: "Subject" }), subject),
-      el("div", { class: "field" }, el("label", { text: "Text" }), bodyIn), qbAi.sentDetails(res.r.sent)),
+      el("div", { class: "field" }, el("label", { text: "Text" }), bodyIn), qbAi.deliberation(res.r.ensemble), qbAi.sentDetails(res.r.sent)),
     buttons: [{ label: "Cancel", value: null }, { label: "Save as template", value: "save" }, composeOpen() ? { label: "Insert into draft", value: "insert", primary: true } : { label: "New message", value: "new", primary: true }] });
     if (!choice) return;
     const html = A.textToHtml(bodyIn.value);
@@ -604,7 +665,7 @@
       if (!(await confirmSend(messages, "quality"))) return;
       if (sp.output === "pane") return savedRun(sp, messages, $("cSubject").value);
       return qbAi.preview({ title: sp.name, original: text, originalLabel: selr ? "Selected text" : "Your draft",
-        generate: (onToken, signal) => runChat({ messages, cmd: { tier: "quality", temperature: 0.4 }, label: `${sp.name}…`, signal, onToken: (_d, f) => onToken(f) }),
+        generate: (onToken, signal, onStatus) => runChat({ messages, cmd: { tier: "quality", temperature: 0.4 }, label: `${sp.name}…`, signal, onStatus, onToken: (_d, f) => onToken(f) }),
         actions: [{ label: "Copy", icon: "copy", keepOpen: true, run: (x) => copy(x) },
           sp.output === "insert" ? { label: "Insert", primary: true, icon: "plus", run: (x) => { applyToDraft(x, "cursor", sp.name); } } : { label: selr ? "Replace selection" : "Replace draft text", primary: true, icon: "check", run: (x) => { applyToDraft(x, selr ? { range: selr.range } : "user", sp.name); } }] });
     }
@@ -619,10 +680,10 @@
   async function savedRun(sp, messages, about) {
     const turn = qbAi.pane.result(`${sp.name}${about ? ` — ${about}` : ""}`);
     try {
-      const r = await runChat({ messages, cmd: { tier: "quality", temperature: 0.4 }, label: `${sp.name}…`, onToken: (_d, full) => turn.update(full) });
+      const r = await runChat({ messages, cmd: { tier: "quality", temperature: 0.4 }, label: `${sp.name}…`, onToken: (_d, full) => turn.update(full), onStatus: turn.status });
       const out = A.cleanOutput(r.text);
-      turn.done(out, { sent: r.sent, actions: composeOpen() ? [{ label: "Insert into draft", icon: "plus", run: () => applyToDraft(out, "cursor", "Insert") }] : [] });
-    } catch (e) { if (isAbort(e)) turn.stopped(e.sent); else turn.fail(errText(e), e.sent); }
+      turn.done(out, { sent: r.sent, ensemble: r.ensemble, actions: composeOpen() ? [{ label: "Insert into draft", icon: "plus", run: () => applyToDraft(out, "cursor", "Insert") }] : [] });
+    } catch (e) { if (isAbort(e)) turn.stopped(e.sent); else turn.fail(errText(e), e.sent, e.ensemble); }
   }
 
   async function managePrompts() {
@@ -677,9 +738,11 @@
   /** Before a folder's list is first sent this session: say exactly what goes (cloud only). */
   async function mailboxDisclosure(mb) {
     const p = S.activeProviderDef();
-    if (!p || P.isOnDevice(p) || disclosed.has(state.folder)) return true;
+    const ens = await servicesFor();
+    const cloud = ens ? ens.services.filter((x) => !P.isOnDevice(x.def)).map((x) => x.providerName) : p && !P.isOnDevice(p) ? [p.name] : [];
+    if (!cloud.length || disclosed.has(state.folder)) return true;
     const ok = await qbAi.dialog({ title: "Send this folder's message list?", wide: true, body: el("div", {},
-      el("p", { text: `Quillbox will send ${plural(mb.count, "line")} describing messages in "${folderName()}" — date, sender, subject and flags${S.settings().mailboxPreviews ? ", and the first words of each message" : ""} — to ${p.name}. Message bodies are not sent. Change this in AI settings.` }),
+      el("p", { text: `Quillbox will send ${plural(mb.count, "line")} describing messages in "${folderName()}" — date, sender, subject and flags${S.settings().mailboxPreviews ? ", and the first words of each message" : ""} — to ${cloud.join(", ")}. Message bodies are not sent. Change this in AI settings.` }),
       el("details", { class: "ai-sent" }, el("summary", { text: "Show the exact text" }), el("pre", { text: mb.text }))),
     buttons: [{ label: "Cancel", value: false }, { label: "Send", value: true, primary: true }] });
     if (ok) disclosed.add(state.folder);
@@ -705,10 +768,10 @@
     qbAi.pane.user(question);
     const turn = qbAi.pane.result(null);
     try {
-      const r = await runChat({ messages, cmd: { tier: "quality", temperature: 0.3 }, label: "AI is answering…", onToken: (_d, full) => turn.update(full) });
+      const r = await runChat({ messages, cmd: { tier: "quality", temperature: 0.3 }, label: "AI is answering…", onToken: (_d, full) => turn.update(full), onStatus: turn.status });
       const out = A.cleanOutput(r.text);
-      turn.done(out, { sent: r.sent, actions: composeOpen() ? [{ label: "Insert into draft", icon: "plus", run: () => applyToDraft(out, "cursor", "Insert") }] : [] });
-    } catch (e) { if (isAbort(e)) turn.stopped(e.sent); else turn.fail(errText(e), e.sent); }
+      turn.done(out, { sent: r.sent, ensemble: r.ensemble, actions: composeOpen() ? [{ label: "Insert into draft", icon: "plus", run: () => applyToDraft(out, "cursor", "Insert") }] : [] });
+    } catch (e) { if (isAbort(e)) turn.stopped(e.sent); else turn.fail(errText(e), e.sent, e.ensemble); }
   };
 
   // ================================================================== dispatch
@@ -744,6 +807,46 @@
     const s = S.settings();
     const items = Object.keys(s.providers).map((id) => ({ label: `${(P.providerById(id) || { name: id }).name} · ${s.providers[id].model}`, checked: s.active === id, onClick: () => { S.saveSettings((x) => { x.active = id; }); toast(`AI: ${P.providerById(id).name}`); } }));
     return [...items, items.length ? { sep: true } : null, { label: "Providers & models…", icon: "settings", onClick: () => qbAi.providers() }, { label: "Add a provider…", icon: "plus", onClick: () => qbAi.setup() }];
+  }
+
+  // ================================================================== several AIs (AI tab ▸ Providers)
+  const ENSEMBLE_MODES = [["single", "Single AI"], ["master", "Master Combines Answers"], ["consensus", "Quaker Consensus"]];
+  /** The mode in effect: "single" unless an ensemble is set up with at least two usable AIs. */
+  const ensembleMode = () => { const plan = C.ensemblePlan(); return plan ? plan.mode : "single"; };
+  function setEnsembleMode(mode) {
+    if (!ENSEMBLE_MODES.some(([m]) => m === mode)) return;
+    if (mode !== "single") {
+      const s = S.settings();
+      const usable = s.ensemble.members.filter((m) => s.providers[m.provider] && P.providerById(m.provider)).length;
+      if (usable < 2) {
+        S.saveSettings((x) => { x.ensemble.mode = mode; });
+        toast("Choose at least two AIs to use several at once.");
+        qbAi.settings({ section: "ensemble" });
+        return;
+      }
+    }
+    S.saveSettings((x) => { x.ensemble.mode = mode; });
+    toast(mode === "single" ? "AI: single AI" : mode === "master" ? "AI: one AI combines the answers" : "AI: the AIs deliberate until they agree");
+  }
+  const ensembleModeMenu = () => [
+    ...ENSEMBLE_MODES.map(([m, label]) => ({ label, checked: ensembleMode() === m, onClick: () => setEnsembleMode(m) })),
+    { sep: true },
+    { label: "Choose AIs…", icon: "ai-members", onClick: () => chooseAis() },
+  ];
+  const chooseAis = () => qbAi.settings({ section: "ensemble" });
+  const deliberationShown = () => S.settings().ensemble.showDeliberation !== false;
+  function toggleDeliberation() {
+    const on = !deliberationShown();
+    S.saveSettings((x) => { x.ensemble.showDeliberation = on; });
+    toast(on ? "The AIs' discussion is shown below answers." : "Only the final answer is shown.");
+    qbAi.pane.render && qbAi.pane.render();
+  }
+  /** Reflects the mode and the Show AI Discussion toggle on the ribbon buttons. */
+  function refreshEnsembleButtons() {
+    const t = qs('[data-rbar="ai"] .rb[data-ai="showDeliberation"]');
+    if (t) { const on = deliberationShown(); t.classList.toggle("active", on); t.setAttribute("aria-pressed", String(on)); }
+    const m = qs('[data-rbar="ai"] .rb[data-ai="ensembleMode"]');
+    if (m) { const mode = ensembleMode(); m.classList.toggle("active", mode !== "single"); m.title = `How several AIs answer — now: ${ENSEMBLE_MODES.find(([x]) => x === mode)[1]}`; }
   }
 
   // ================================================================== menus shared by the ribbon, compose bar and reading pane
@@ -805,6 +908,9 @@
     bar.append(
       rb({ id: "setup", label: "Set up AI", icon: "ai-setup", cls: "primary keep", tip: "Choose a free or paid AI: on this device, free cloud tiers, your own computer, or a paid key", onClick: () => qbAi.setup() }),
       rb({ id: "active", label: "Active AI", icon: "ai-switch", tip: "Switch between the AI providers you have set up", menuItems: activeMenu }),
+      rb({ id: "ensembleMode", label: "Several AIs", icon: "ai-ensemble", tip: "How several AIs answer: Single AI, Master Combines Answers, or Quaker Consensus", menuItems: ensembleModeMenu }),
+      rb({ id: "ensembleMembers", label: "Choose AIs…", icon: "ai-members", tip: "Choose which AIs answer together, the master or clerk, and the rounds of discussion", onClick: () => chooseAis() }),
+      rb({ id: "showDeliberation", label: "Show AI Discussion", icon: "ai-discuss", tip: "Show how each AI answered and the discussion below the final answer", onClick: () => toggleDeliberation() }),
       sep(),
       rb({ id: "summarize", cls: "keep", label: "Summarize", icon: "ai-summary", tip: tipOf("summarize"), onClick: () => run("summarize", null, origin()) }),
       rb({ id: "summarizeThread", label: "Summarize thread", icon: "ai-thread", tip: tipOf("summarizeThread"), onClick: () => run("summarizeThread", null, origin()) }),
@@ -839,6 +945,8 @@
         { sep: true },
         { label: "Delete downloaded models…", icon: "trash", onClick: () => clearModels() },
       ] }));
+    refreshEnsembleButtons();
+    S.onChange(refreshEnsembleButtons);
   }
 
   /** The compose window's AI tab. */
@@ -899,11 +1007,17 @@
     buildRibbon(); buildComposeBar(); buildReadingButton(); buildTopbarButton();
   }
 
-  Object.assign(qbAi, { run, clearModels, managePrompts, runSavedPrompt, refreshRibbon: () => qbAi.pane.refreshHead(), _test: { applyToDraft, userText, selectionInEditor } });
+  Object.assign(qbAi, { run, clearModels, setEnsembleMode, toggleDeliberation, managePrompts, runSavedPrompt, refreshRibbon: () => qbAi.pane.refreshHead(), _test: { applyToDraft, userText, selectionInEditor } });
   window.QB_AI_COMMANDS = PR.COMMANDS.map((c) => ({ id: "ai." + c.id, label: c.label, icon: c.icon, group: c.group, tip: c.tip, run: (arg) => run(c.id, arg, origin()) }))
     .concat([
       { id: "ai.setup", label: "Set up AI", icon: "ai-setup", group: "Setup", run: () => qbAi.setup() },
       { id: "ai.providers", label: "Providers & models", icon: "ai-switch", group: "Setup", run: () => qbAi.providers() },
+      // Several AIs (AI tab, group "Providers"). The menu command lists its choices with a checked state; run(mode) picks one.
+      { id: "ai.ensembleMode", label: "Several AIs", icon: "ai-ensemble", group: "Providers", type: "menu", tip: "How several AIs answer",
+        items: () => ENSEMBLE_MODES.map(([m, label]) => ({ id: m, label, checked: ensembleMode() === m, run: () => setEnsembleMode(m) })),
+        run: (mode) => (mode ? setEnsembleMode(mode) : chooseAis()) },
+      { id: "ai.ensembleMembers", label: "Choose AIs…", icon: "ai-members", group: "Providers", tip: "Choose which AIs answer together", run: () => chooseAis() },
+      { id: "ai.showDeliberation", label: "Show AI Discussion", icon: "ai-discuss", group: "Providers", type: "toggle", tip: "Show how each AI answered below the final answer", checked: () => deliberationShown(), run: () => toggleDeliberation() },
       { id: "ai.pane", label: "AI pane", icon: "ai-chat", group: "Assistant", run: () => qbAi.pane.toggle() },
       { id: "ai.prompts", label: "Prompt library", icon: "ai-library", group: "Assistant", run: () => managePrompts() },
       { id: "ai.stop", label: "Stop AI", icon: "stop", group: "Assistant", run: () => qbAi.stop() },
