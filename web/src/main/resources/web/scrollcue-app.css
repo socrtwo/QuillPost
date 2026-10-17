@@ -16,7 +16,7 @@
   .setup.sc-scroll { background: linear-gradient(135deg, #0c3b5e 0%, #0f6cbd 55%, #2b88d8 100%); }
 }
 .sc-chip { font-family: var(--font, "Segoe UI", system-ui, sans-serif); border-color: rgba(255, 255, 255, .35); }
-:root[data-theme="dark"] .sc-chip { color: #111; }
+:root[data-theme="dark"] .sc-chip { --sc-on-accent: #111; }
 
 /* Long content lists (messages, contacts, tasks, the reading pane, editors, the calendar grid):
    the thin, widen-on-hover scrollbar without the "More" chip, which would sit on top of the list
