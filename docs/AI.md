@@ -141,6 +141,13 @@ The relay is deliberately narrow:
   account registered while setting up a provider (stored in the account's data folder,
   `ai-endpoints.json`); URLs with credentials, dot segments, other ports or other paths are
   refused;
+- it never connects to link-local addresses (where cloud metadata services live), and connects
+  to loopback or private addresses (a local Ollama, a server on your LAN) only when the browser
+  asking is itself on loopback or a private network — so a Quillbox server reachable from the
+  internet is not a way into its own network. `QUILLBOX_AI_RELAY_PRIVATE=on` or `off` overrides
+  this; use `off` when Quillbox sits behind a reverse proxy on the same machine (every client then
+  appears to come from loopback). Addresses are checked when the request is relayed; a host whose
+  DNS answer changes between the check and the connection is not detected;
 - it forwards only the provider headers (`Authorization`, `x-api-key`, `api-key`,
   `x-goog-api-key`, `anthropic-version`, `Content-Type`, `Accept`, attribution headers), does not
   follow redirects, streams the answer back unchanged, and never logs keys or text;

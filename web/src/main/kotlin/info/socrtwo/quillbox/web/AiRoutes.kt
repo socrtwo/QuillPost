@@ -145,6 +145,34 @@ internal fun desktopMode(): Boolean =
 private fun relayEnabled(): Boolean = System.getenv("QUILLBOX_AI_RELAY")?.lowercase() != "off"
 
 /**
+ * Which networks the relay may reach. Link-local addresses (cloud metadata services live there),
+ * "any" and multicast addresses are always refused. Loopback and private addresses (a local
+ * Ollama, a server on the LAN) are allowed only when the browser asking is itself on loopback or
+ * a private network — so a Quillbox server reachable from the internet does not become a way into
+ * its own network. QUILLBOX_AI_RELAY_PRIVATE=on / off overrides that ("off" is the safe choice
+ * behind a reverse proxy on the same machine, where every client appears as loopback).
+ */
+object AiRelayNetwork {
+    private fun isPrivate(a: java.net.InetAddress): Boolean =
+        a.isLoopbackAddress || a.isSiteLocalAddress ||
+            (a is java.net.Inet6Address && (a.address[0].toInt() and 0xfe) == 0xfc) || // fc00::/7 unique local
+            (a is java.net.Inet4Address && a.address[0].toInt() and 0xff == 100 && (a.address[1].toInt() and 0xc0) == 64) // 100.64/10 shared
+    private fun isForbidden(a: java.net.InetAddress): Boolean = a.isLinkLocalAddress || a.isAnyLocalAddress || a.isMulticastAddress
+
+    /** Null when the relay may connect to [targets] for a browser at [client]; otherwise the reason. */
+    fun refusal(targets: List<java.net.InetAddress>, client: java.net.InetAddress?, mode: String? = System.getenv("QUILLBOX_AI_RELAY_PRIVATE")): String? {
+        if (targets.isEmpty()) return "the address does not resolve"
+        if (targets.any(::isForbidden)) return "link-local and broadcast addresses are never relayed"
+        if (targets.none(::isPrivate)) return null
+        return when (mode?.lowercase()) {
+            "on" -> null
+            "off" -> "this server does not relay to local or private addresses (QUILLBOX_AI_RELAY_PRIVATE=off)"
+            else -> if (client != null && isPrivate(client)) null else "a local or private address is relayed only for browsers on a local network"
+        }
+    }
+}
+
+/**
  * The desktop app's API-key store: one JSON file in the data folder, readable and writable only
  * by the user account that runs Quillbox (POSIX 0600 in a 0700 folder; on Windows the file sits
  * in the user's profile, whose default permissions already exclude other standard users). The
@@ -249,6 +277,13 @@ internal fun Routing.aiRoutes(sessions: Sessions, store: DataStore) {
             call.relayRefusal(HttpStatusCode.Forbidden, "$host is not an AI service Quillbox knows. Set it up in AI ▸ Set up AI first.")
             return@post
         }
+        val netRefusal = withContext(Dispatchers.IO) {
+            val host = runCatching { URI(req.url).host?.removePrefix("[")?.removeSuffix("]") }.getOrNull()
+            val targets = runCatching { java.net.InetAddress.getAllByName(host).toList() }.getOrDefault(emptyList())
+            val client = runCatching { java.net.InetAddress.getByName(call.request.local.remoteAddress) }.getOrNull()
+            AiRelayNetwork.refusal(targets, client)
+        }
+        if (netRefusal != null) { call.relayRefusal(HttpStatusCode.Forbidden, netRefusal); return@post }
         ctx.touch()
         val conn = try {
             withContext(Dispatchers.IO) {

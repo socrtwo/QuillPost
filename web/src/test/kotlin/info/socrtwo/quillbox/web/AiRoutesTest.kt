@@ -76,6 +76,26 @@ class AiRoutesTest {
     }
 
     @Test
+    fun `relay network rules protect a server reachable from the internet`() {
+        fun ip(s: String) = java.net.InetAddress.getByName(s)
+        val publicClient = ip("203.0.113.9")
+        val lanClient = ip("192.168.1.30")
+        val local = ip("127.0.0.1")
+        assertNull(AiRelayNetwork.refusal(listOf(ip("104.18.2.3")), publicClient, null), "public target, public client")
+        assertTrue(AiRelayNetwork.refusal(listOf(ip("169.254.169.254")), local, "on") != null, "metadata address always refused")
+        assertTrue(AiRelayNetwork.refusal(listOf(ip("0.0.0.0")), local, null) != null)
+        assertTrue(AiRelayNetwork.refusal(listOf(ip("fe80::1")), lanClient, null) != null)
+        assertTrue(AiRelayNetwork.refusal(listOf(ip("127.0.0.1")), publicClient, null) != null, "server's localhost not for internet clients")
+        assertTrue(AiRelayNetwork.refusal(listOf(ip("10.0.0.5")), publicClient, null) != null)
+        assertTrue(AiRelayNetwork.refusal(listOf(ip("fd00::5")), publicClient, null) != null)
+        assertNull(AiRelayNetwork.refusal(listOf(ip("127.0.0.1")), local, null), "desktop / Android: local Ollama")
+        assertNull(AiRelayNetwork.refusal(listOf(ip("192.168.1.20")), lanClient, null), "LAN browser to LAN server")
+        assertNull(AiRelayNetwork.refusal(listOf(ip("127.0.0.1")), publicClient, "on"))
+        assertTrue(AiRelayNetwork.refusal(listOf(ip("127.0.0.1")), local, "off") != null)
+        assertTrue(AiRelayNetwork.refusal(emptyList(), local, null) != null)
+    }
+
+    @Test
     fun `desktop key file is private to the user and round-trips`() {
         val root = Files.createTempDirectory("qb-ai").toFile()
         try {

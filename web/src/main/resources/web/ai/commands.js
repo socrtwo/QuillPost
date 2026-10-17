@@ -220,22 +220,55 @@
     return text.trim() ? { range: r.cloneRange(), text } : null;
   }
 
+  /** The top-level nodes of the user's own text (before the quoted original or signature). */
+  function userNodes() {
+    const out = [];
+    for (const n of editor().childNodes) { if (n.nodeType === 1 && (n.classList.contains("qb-quote") || n.classList.contains("qb-signature"))) break; out.push(n); }
+    return out;
+  }
+  /** A range inside the user's own nodes (not touching the block after them, which the browser would merge into). */
+  function userContentRange() {
+    const ed = editor();
+    let nodes = userNodes();
+    if (!nodes.length) { const d = document.createElement("div"); d.appendChild(document.createElement("br")); ed.insertBefore(d, boundaryNode()); nodes = [d]; }
+    const r = document.createRange();
+    const first = nodes[0], last = nodes[nodes.length - 1];
+    r.setStart(first, 0);
+    r.setEnd(last, last.nodeType === 3 ? last.length : last.childNodes.length);
+    return r;
+  }
+
   /**
    * Puts AI text into the draft as one editing step: the browser's own Undo (Ctrl+Z) reverts it,
    * and the notice offers Undo too. target: {range} | "user" (your part of the draft) | "cursor".
+   * The quoted original and the signature are checked afterwards; if the browser merged the new
+   * text into them, the draft is restored and the text is placed by hand instead.
    */
   function applyToDraft(text, target, label) {
     if (!composeOpen()) { toast("The draft is not open any more.", { danger: true }); return false; }
     const ed = editor();
     const snap = ed.innerHTML;
+    const html = A.textToHtml(text);
+    const b = boundaryNode();
+    const guard = b ? b.outerHTML : null;
     ed.focus();
     let r;
     if (target && target.range) r = target.range;
     else if (target === "cursor" && lastRange && ed.contains(lastRange.commonAncestorContainer)) { r = lastRange.cloneRange(); r.collapse(false); }
-    else r = userRange();
+    else r = userContentRange();
+    const insideBoundary = b && b.contains(r.commonAncestorContainer);
     const sel = getSelection();
     sel.removeAllRanges(); sel.addRange(r);
-    document.execCommand("insertHTML", false, A.textToHtml(text));
+    const ok = document.execCommand("insertHTML", false, html);
+    const b2 = boundaryNode();
+    if (!ok || (guard && !insideBoundary && (!b2 || b2.outerHTML !== guard))) {
+      ed.innerHTML = snap;
+      if (target && target.range) { toast("Could not put the text there; it was copied to the clipboard instead.", { danger: true }); copy(text); return false; }
+      const tpl = document.createElement("template");
+      tpl.innerHTML = html;
+      if (target === "cursor") ed.insertBefore(tpl.content, boundaryNode());
+      else { const before = boundaryNode(); userNodes().forEach((n) => n.remove()); ed.insertBefore(tpl.content, before); }
+    }
     if (state.compose) state.compose.dirty = true;
     toast(`${label}: done.`, { action: "Undo", timeout: 12000, onAction: () => { ed.innerHTML = snap; if (state.compose) state.compose.dirty = true; } });
     return true;
