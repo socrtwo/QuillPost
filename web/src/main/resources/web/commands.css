@@ -4,6 +4,10 @@
 
 /* ---------- Quick Access Toolbar ---------- */
 .qb-qat { display: flex; align-items: center; gap: 1px; flex: none; }
+/* In the title bar the toolbar shrinks and scrolls sideways when it holds more than fits; the
+   search box keeps its room. */
+.qb-qat-top { flex: 0 1 auto; min-width: 0; max-width: 40%; overflow-x: auto; scrollbar-width: none; }
+.qb-qat-top::-webkit-scrollbar { display: none; }
 .qb-qat-btn { display: inline-flex; align-items: center; gap: 4px; height: 30px; min-width: 30px; padding: 0 6px; border: 0; border-radius: var(--radius); background: transparent; color: var(--text); cursor: pointer; justify-content: center; }
 .qb-qat-btn svg { width: 16px; height: 16px; flex: none; }
 .qb-qat-btn:hover { background: var(--bg-hover); }
@@ -17,13 +21,27 @@
 .topbar .qb-qat-btn:hover, .topbar .qb-qat-btn.active { background: rgba(255, 255, 255, .16); color: #fff; }
 .topbar .qb-qat-sep { background: rgba(255, 255, 255, .4); }
 .qb-qat-below { padding: 2px 6px 4px; }
-.qb-qat-bottom { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 40; background: var(--bg-elev); box-shadow: var(--shadow-3); border-radius: 22px; padding: 4px 10px; max-width: calc(100vw - 24px); overflow-x: auto; }
+/* At the bottom the toolbar is a bar of its own under the app (above the keyboard when it is up),
+   so it never covers the message list, a docked reply's Send button or the bottom navigation.
+   --qat-b is its height: floating buttons, toasts and drawers keep above it (safearea.css). */
+:root[data-qat="bottom"] { --qat-b: 40px; }
+:root[data-qat="bottom"][data-touch="on"] { --qat-b: 50px; }
+.qb-qat-bottom { flex: none; height: var(--qat-b, 40px); padding: 0 8px; background: var(--bg-elev); border-top: 1px solid var(--border); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.qb-qat-bottom > :first-child { margin-left: auto; }
+.qb-qat-bottom > :last-child { margin-right: auto; }
 @media (max-width: 700px) {
   .qb-qat-top { max-width: 34vw; overflow-x: auto; scrollbar-width: none; }
   .qb-qat-top .lbl { display: none; }
   .qb-qat-top .qb-qat-btn:nth-child(n+3):not(.qb-qat-more), .qb-qat-top .qb-qat-sep { display: none; }
   :root[data-qat="top"] .topbar .brand span { display: none; }
-  .qb-qat-bottom { bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .search input { padding-right: 34px; }
+  .search:has(#searchClear:not(.hidden)) input { padding-right: 64px; }
+}
+
+/* Narrow phones: the title bar keeps the menu, one toolbar command, search and the app buttons. */
+@media (max-width: 420px) {
+  :root[data-qat="top"] .topbar .brand { display: none; }
+  .qb-qat-top .qb-qat-btn:nth-child(n+2):not(.qb-qat-more) { display: none; }
 }
 
 /* Touch/Mouse Mode: more room between commands. */

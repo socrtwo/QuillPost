@@ -46,9 +46,13 @@
     const text = el("span", { class: "ai-busy-label", text: label });
     const chip = el("div", { id: "aiBusy", class: "ai-busy", role: "status", "aria-live": "polite" }, el("span", { class: "spinner" }), text,
       el("button", { class: "btn sm", onclick: () => ctl.abort() }, icon("stop", 14), "Stop"));
-    // Above an open modal dialog, so Stop stays reachable while a preview streams.
-    const modal = Array.from(document.querySelectorAll("dialog[open]")).filter((d) => d.matches(":modal")).pop();
-    (modal || document.body).appendChild(chip);
+    // In an open modal dialog, so Stop stays reachable while a preview streams; else a line at the
+    // bottom of the app, above the bottom navigation (it never floats over the mail).
+    const modal = typeof topModal === "function" ? topModal() : Array.from(document.querySelectorAll("dialog[open]")).filter((d) => d.matches(":modal")).pop();
+    const app = document.getElementById("app"), nav = document.getElementById("bottomNav");
+    if (modal) modal.appendChild(chip);
+    else if (app && !app.classList.contains("hidden")) app.insertBefore(chip, nav && nav.parentNode === app ? nav : null);
+    else document.body.appendChild(chip);
     document.body.classList.add("ai-running");
     const b = { ctl, signal: ctl.signal, label: (t) => { text.textContent = t; }, done: () => { if (current === b) { current = null; chip.remove(); document.body.classList.remove("ai-running"); } } };
     ctl.signal.addEventListener("abort", () => b.done());

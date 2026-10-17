@@ -656,6 +656,9 @@
       ".ctx-menu", ".ac-popup", "dialog:not(.compose):not(.reader-dialog)", ".dlg-body:not(#composeDialog > .dlg-body)",
       ".settings-nav", ".settings-body", ".folder-tree", ".side-pane", ".provider-grid", ".preview-list",
       ".my-day .md-body", ".agenda", ".setup", ".peek .notes",
+      // Command chooser lists, the import folder tree, the open-file lists and the AI pane in
+      // short windows (it scrolls as a whole there, see ai.css).
+      ".qb-cmdlist", ".qb-import-tree", ".qp-file-list", ".ai-pane",
     ].join(", "),
     label: "More",
   });

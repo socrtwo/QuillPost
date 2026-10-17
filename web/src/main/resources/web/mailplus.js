@@ -33,7 +33,7 @@ const menu = {
   openAt(x, y, items, anchorRect = null) {
     this.stack = [items];
     // A modal dialog sits in the top layer, above anything outside it: open the menu inside it.
-    const m0 = this.node(), modal = qsa("dialog[open]").filter((d) => d.matches(":modal")).pop();
+    const m0 = this.node(), modal = typeof topModal === "function" ? topModal() : qsa("dialog[open]").filter((d) => d.matches(":modal")).pop();
     const host = modal || document.body;
     if (m0.parentNode !== host) host.appendChild(m0);
     // The click that opened the menu is still bubbling; don't let the document handler close it.

@@ -62,7 +62,8 @@ const safeArea = (() => {
             const anchor = args[3];
             top = anchor && anchor.top - h - 4 >= s.top + 8 ? anchor.top - h - 4 : s.bottom - h - 8;
           }
-          top = Math.max(top, s.top + 8);
+          // Never below the safe area either (an anchor scrolled out of view, or near the bottom).
+          top = Math.max(Math.min(top, s.bottom - h - 8), s.top + 8);
           m.style.left = Math.max(s.left + 8, left) + "px"; m.style.top = top + "px";
           this.x = m.style.left; this.y = m.style.top;
         }

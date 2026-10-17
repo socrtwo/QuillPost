@@ -185,7 +185,9 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 16
 .topbar .icon-btn:hover, .topbar .icon-btn.active { background: rgba(255,255,255,.16); color: #fff; }
 .brand { font-weight: 700; font-size: 16px; letter-spacing: .2px; display: flex; align-items: center; gap: 8px; margin-right: 8px; white-space: nowrap; }
 .brand svg { width: 22px; height: 22px; }
-.search { flex: 1; max-width: 680px; margin: 0 auto; position: relative; }
+/* The search box gives way to the buttons (never the other way round, which would push the
+   title bar wider than the window), but keeps room to type. */
+.search { flex: 1; max-width: 680px; margin: 0 auto; position: relative; min-width: 96px; }
 .search input { height: 32px; border-radius: var(--radius); border: 0; background: rgba(255,255,255,.95); color: #242424; padding-left: 34px; padding-right: 64px; }
 :root[data-theme="dark"] .search input { background: #2b2b2b; color: #f0f0f0; }
 .search > svg { position: absolute; left: 10px; top: 8px; width: 16px; height: 16px; color: #616161; pointer-events: none; }
@@ -194,7 +196,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--accent); width: 16
 .search .clear { right: 32px; }
 .search .options { right: 2px; }
 .search .icon-btn svg { width: 15px; height: 15px; }
-.topbar-right { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.topbar-right { display: flex; align-items: center; gap: 2px; margin-left: auto; flex: none; }
+.topbar > .icon-btn, .topbar > .brand { flex: none; }
 .avatar {
   width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;
   color: #fff; background: #6b69d6; flex: none; text-transform: uppercase; letter-spacing: .5px; border: 0; cursor: default;
@@ -205,8 +208,8 @@ button.avatar { cursor: pointer; margin-left: 4px; box-shadow: 0 0 0 2px rgba(25
 
 /* ---------- shell: app rail + module ---------- */
 .shell { flex: 1; display: flex; min-height: 0; background: var(--bg); }
-.app-rail { width: 68px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; background: var(--bg); }
-.app-rail button { position: relative; width: 60px; height: 54px; border: 0; background: transparent; border-radius: var(--radius); color: var(--text-3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; }
+.app-rail { width: 68px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 0; background: var(--bg); min-height: 0; overflow-y: auto; scrollbar-width: none; }
+.app-rail button { flex: none; position: relative; width: 60px; height: 54px; border: 0; background: transparent; border-radius: var(--radius); color: var(--text-3); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; }
 .app-rail button svg { width: 22px; height: 22px; }
 .app-rail button:hover { background: var(--bg-hover); color: var(--text); }
 .app-rail button.active { color: var(--accent); background: var(--bg-elev); box-shadow: var(--shadow-1); font-weight: 600; }
@@ -392,6 +395,18 @@ button.avatar { cursor: pointer; margin-left: 4px; box-shadow: 0 0 0 2px rgba(25
 
 /* ---------- reading pane ---------- */
 .reading-pane { display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; overflow: hidden; }
+/* Reading pane in a narrow column (a small window, or the AI pane open beside it): the subject
+   gets a line of its own under the buttons instead of being squeezed to a letter per line. */
+@media (min-width: 701px) {
+  .reading-pane { container: reading / inline-size; }
+  @container reading (max-width: 560px) {
+    .reading-toolbar { flex-wrap: wrap; }
+    .reading-toolbar .btn:not(.ai) { font-size: 0; gap: 0; padding: 0 7px; }
+    .reading-toolbar .btn svg { width: 18px; height: 18px; }
+    .reading-toolbar .rd-subject { flex-basis: 100%; order: 20; margin-top: 6px; }
+    .reading-toolbar #rdAnalyze { margin-left: auto; }
+  }
+}
 .reading-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-3); gap: 8px; }
 .reading-empty svg { width: 96px; height: 96px; color: var(--border-strong); }
 .reading { flex: 1; display: flex; flex-direction: column; min-height: 0; }
@@ -615,6 +630,9 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 .sig-row, .tpl-row, .qs-row, .cat-row, .acct-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 6px; background: var(--bg-elev); }
 .sig-row .grow, .tpl-row .grow, .qs-row .grow, .cat-row .grow, .acct-row .grow { flex: 1; min-width: 0; }
 .acct-row .avatar { width: 36px; height: 36px; }
+/* Narrow windows: the buttons go to a line of their own rather than squeezing the address. */
+.sig-row, .tpl-row, .qs-row, .cat-row, .acct-row { flex-wrap: wrap; }
+.sig-row .grow, .tpl-row .grow, .qs-row .grow, .cat-row .grow, .acct-row .grow { flex-basis: 10em; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .swatch.active { border-color: var(--text); }
@@ -698,6 +716,11 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 
 /* toast / context menu */
 .toast-host { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 100; align-items: center; }
+/* In a modal dialog (app.js toastHost) the toasts are a line at the foot of the dialog: they cover
+   none of its fields or buttons. */
+dialog > .toast-host { position: static; transform: none; inset: auto; flex: none; padding: 0 12px; margin: 0 0 10px; }
+dialog > .toast-host:empty { display: none; }
+dialog > .toast-host .toast { max-width: 100%; }
 .toast { background: #292929; color: #fff; padding: 10px 16px; border-radius: var(--radius); box-shadow: var(--shadow-3); font-size: 13px; display: flex; gap: 12px; align-items: center; animation: rise .2s ease-out; max-width: 90vw; }
 :root[data-theme="dark"] .toast { background: #f0f0f0; color: #1b1b1b; }
 .toast button { background: none; border: 0; color: #479ef5; font-weight: 700; cursor: pointer; }
@@ -738,6 +761,12 @@ dialog.compose.docked[open] { display: flex; height: auto; }
 .rem-item b { display: block; }
 .rem-item .small { color: var(--text-3); }
 
+/* Very short windows (a phone on its side with the keyboard up): the panes keep a usable height
+   and the module scrolls instead of squeezing the message list to nothing. */
+@media (max-height: 300px) {
+  .shell > .module { overflow-y: auto; }
+  .shell > .module > .workspace { flex: none; height: max(200px, 100%); }
+}
 /* ---------- responsive ---------- */
 .mobile-only { display: none; }
 /* Medium windows: no My Day column, narrower folder pane. */

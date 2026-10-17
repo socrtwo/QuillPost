@@ -113,15 +113,8 @@ const FileOpen = typeof document === "undefined" ? null : {
         el("button", { class: "icon-btn", title: "Close", "aria-label": "Close", onclick: () => d.close() }, icon("close"))),
       el("div", { id: "fileBar", class: "qp-file-bar" }),
       el("div", { id: "fileBody", class: "dlg-body qp-file-body" }));
-    // Toasts would sit beneath the modal window: show them inside it while it is open.
-    d.addEventListener("close", () => { const t = document.getElementById("toasts"); if (t && t.parentNode === d) document.body.appendChild(t); });
     document.body.appendChild(d);
     return d;
-  },
-
-  toastsOnTop() {
-    const d = document.getElementById("fileDialog"), t = document.getElementById("toasts");
-    if (d && t && d.open && t.parentNode !== d) d.appendChild(t);
   },
 
   /** Lets the person choose files and opens them. */
@@ -189,7 +182,6 @@ const FileOpen = typeof document === "undefined" ? null : {
     else if (r.kind === "mailbox") body.appendChild(el("div", { class: "qp-file-doc" }, icon("inbox", 48), el("div", {}, el("h2", { text: r.label }), el("p", { text: "This file holds a whole mailbox rather than one message. Import it to copy its messages into a folder." }))));
     else body.appendChild(el("div", { class: "qp-file-doc" }, icon("attach", 48), el("div", {}, el("h2", { text: r.name }), el("p", { text: r.format === "wab" ? "" : "QuillPost does not recognise this kind of file. You can download it or send it as an attachment." }))));
     if (!d.open) d.showModal();
-    this.toastsOnTop();
   },
 
   renderBar(r) {

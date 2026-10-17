@@ -110,9 +110,12 @@ then sign in as `demo@quillpost.test` / `demo` and, under *Server settings*, use
 Browser tests (Playwright with Chromium, run against demo servers; each script's header has the
 exact commands): `node src/test/e2e/embed.mjs` tests the QuillPen embedded editor against a fake
 QuillPen page (`src/test/quillpen-fake/`), and `node src/test/e2e/layout.mjs` opens every
-dialog, menu and overlay on emulated phones (412×915, 360×640, 915×412 landscape, with system-bar
-insets and the keyboard) and checks that nothing sits under the bars or keyboard, overlaps or
-scrolls sideways. `node scripts/gen-icons.mjs` regenerates the icons from `branding/QuillPost/`.
+dialog, menu, pane and overlay — the Quick Access Toolbar in each position, the File backstage,
+every ribbon tab, the AI pane and dialogs, Import Mailbox, the open-file window, the embedded
+editor and every command of the registry that opens something — on emulated phones (412×915,
+360×640, 915×412 landscape, with system-bar insets and the keyboard) and desktop windows
+(1280×860, 1500×900), and checks that nothing sits under the bars or keyboard, overlaps, is cut
+off, is squeezed or scrolls sideways. `node scripts/gen-icons.mjs` regenerates the icons from `branding/QuillPost/`.
 
 ### Setting up an account
 

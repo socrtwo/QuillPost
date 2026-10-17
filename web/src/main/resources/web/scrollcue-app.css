@@ -21,22 +21,32 @@
 /* Long content lists (messages, contacts, tasks, the reading pane, editors, the calendar grid):
    the thin, widen-on-hover scrollbar without the "More" chip, which would sit on top of the list
    all the time. */
-.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page {
+.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page, .ai-log {
   scrollbar-width: thin;
   scrollbar-color: var(--sc-thumb, rgba(96, 104, 116, .5)) transparent;
 }
-.message-list:hover, .reading-scroll:hover, .editor:hover, .html-editor:hover, .tg-body:hover, .reader-page:hover {
+.message-list:hover, .reading-scroll:hover, .editor:hover, .html-editor:hover, .tg-body:hover, .reader-page:hover, .ai-log:hover {
   scrollbar-color: var(--sc-thumb-hover, rgba(80, 88, 100, .8)) transparent;
 }
-.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page { --sc-thumb: rgba(96, 104, 116, .5); --sc-thumb-hover: rgba(80, 88, 100, .8); }
-:root[data-theme="dark"] :is(.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page) { --sc-thumb: rgba(200, 200, 200, .38); --sc-thumb-hover: rgba(225, 225, 225, .7); }
+.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page, .ai-log { --sc-thumb: rgba(96, 104, 116, .5); --sc-thumb-hover: rgba(80, 88, 100, .8); }
+:root[data-theme="dark"] :is(.message-list, .reading-scroll, .editor, .html-editor, .tg-body, .reader-page, .ai-log) { --sc-thumb: rgba(200, 200, 200, .38); --sc-thumb-hover: rgba(225, 225, 225, .7); }
 
 /* Bars that scroll sideways (ribbon, compose tabs and formatting bars, the settings tabs on
    phones): a soft shadow at the edge that has more choices, drawn the same way as the vertical
    edge shadows of scrollcue.css. */
-.ribbon-bar, .compose-tabs, .fmt-bar, .settings-nav, .cal-bar {
+.ribbon-bar, .compose-tabs, .fmt-bar, .settings-nav, .cal-bar, .qb-qat-below, .qb-qat-bottom {
   scrollbar-width: thin;
   --sc-hbg: var(--bg-elev);
+}
+.qb-qat-below { --sc-hbg: var(--bg); }
+/* The Quick Access Toolbar below the ribbon or at the bottom scrolls sideways at every width. */
+.qb-qat-below, .qb-qat-bottom {
+  background:
+    linear-gradient(to right, var(--sc-hbg) 30%, transparent) left center / 28px 100% no-repeat local,
+    linear-gradient(to left, var(--sc-hbg) 30%, transparent) right center / 28px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, .22), transparent) left center / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, .22), transparent) right center / 12px 100% no-repeat scroll;
+  background-color: var(--sc-hbg);
 }
 @media (max-width: 1000px) {
   .ribbon-bar, .compose-tabs, .fmt-bar, .settings-nav {

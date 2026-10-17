@@ -11,13 +11,29 @@ body.ai-running .ribbon-bar[data-rbar="ai"] .rb.ai-stop svg { color: var(--dange
 .fmt-bar[data-cbar="ai"] .btn svg.chev { width: 10px; height: 10px; color: var(--text-3); }
 
 /* ---------- busy chip ---------- */
-.ai-busy { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 1000; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; background: var(--bg-elev); color: var(--text); border-radius: 999px; box-shadow: var(--shadow-4); border: 1px solid var(--border); font-size: 13px; max-width: calc(100vw - 24px); }
+/* A line of its own at the bottom of the app (or of the open dialog), so it covers nothing. */
+.ai-busy { flex: none; align-self: center; width: fit-content; margin: 6px auto; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; background: var(--bg-elev); color: var(--text); border-radius: 999px; box-shadow: var(--shadow-4); border: 1px solid var(--border); font-size: 13px; max-width: calc(100vw - 24px); }
 .ai-busy-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- the AI pane ---------- */
-.ai-pane { position: fixed; top: 56px; right: 8px; bottom: 8px; width: min(420px, calc(100vw - 16px)); z-index: 40; display: flex; flex-direction: column; background: var(--bg-elev); border-radius: var(--radius-lg); box-shadow: var(--shadow-4); border: 1px solid var(--border); overflow: hidden; }
-/* Wide screens: the mail panes make room for the AI pane instead of sitting under it. */
-@media (min-width: 1100px) { body.ai-pane-open #app .shell { padding-right: 428px; } }
+/* Below the title bar, clear of the system bars, the keyboard and a bottom toolbar (safearea.css). */
+:root { --ai-pane-w: min(420px, calc(100vw - 16px - var(--sa-left) - var(--sa-right))); }
+.ai-pane { position: fixed; top: calc(56px + var(--sa-top)); right: calc(8px + var(--sa-right)); bottom: calc(8px + var(--app-b, 0px)); width: var(--ai-pane-w); z-index: 40; display: flex; flex-direction: column; background: var(--bg-elev); border-radius: var(--radius-lg); box-shadow: var(--shadow-4); border: 1px solid var(--border); overflow: hidden; }
+.ai-pane-head h3 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-pane-head .grow { display: none; }
+.ai-pane-head .icon-btn { flex: none; }
+/* Wide screens: the mail panes make room for the AI pane instead of sitting under it, and share
+   what is left so that the reading pane keeps a readable width (its toolbar then wraps, see
+   styles.css "reading pane in a narrow column"). */
+@media (min-width: 1200px) {
+  :root { --ai-pane-w: clamp(320px, 28vw, 420px); }
+  body.ai-pane-open #app .shell { padding-right: calc(var(--ai-pane-w) + 8px); }
+  body.ai-pane-open .workspace, body.ai-pane-open .workspace.with-myday { grid-template-columns: minmax(150px, 220px) minmax(240px, 1fr) minmax(330px, 1.4fr); }
+  body.ai-pane-open .workspace.nav-collapsed, body.ai-pane-open .workspace.nav-collapsed.with-myday { grid-template-columns: minmax(240px, 1fr) minmax(330px, 1.4fr); }
+  body.ai-pane-open .workspace.pane-bottom, body.ai-pane-open .workspace.pane-off { grid-template-columns: minmax(150px, 220px) 1fr; }
+  body.ai-pane-open .workspace.nav-collapsed.pane-bottom, body.ai-pane-open .workspace.nav-collapsed.pane-off { grid-template-columns: 1fr; }
+  body.ai-pane-open .workspace.with-myday .my-day { position: absolute; right: 0; top: 0; bottom: 0; width: 300px; z-index: 15; box-shadow: var(--shadow-4); }
+}
 .ai-pane-head { display: flex; align-items: center; gap: 6px; padding: 8px 8px 6px 12px; border-bottom: 1px solid var(--border); }
 .ai-pane-head svg { color: var(--accent); }
 .ai-pane-head h3 { margin: 0; font-size: 15px; }
@@ -111,9 +127,18 @@ body.ai-running .ai-compose .ai-stop { display: inline-flex; color: var(--danger
 
 /* ---------- phones ---------- */
 @media (max-width: 700px) {
-  .ai-pane { top: 0; right: 0; bottom: 0; left: 0; width: 100vw; border-radius: 0; z-index: 60; padding-top: env(safe-area-inset-top); }
-  .ai-busy { bottom: calc(70px + env(safe-area-inset-bottom)); }
+  /* Phones: the pane fills the safe area (and stops at the keyboard). */
+  .ai-pane { top: var(--sa-top); right: var(--sa-right); bottom: var(--sa-b); left: var(--sa-left); width: auto; border-radius: 0; border: 0; z-index: 60; }
   #rdAi { padding: 0 8px; }
+}
+
+/* Short windows (a phone on its side, more so with the keyboard up): the pane takes the whole
+   height and scrolls as a whole, so its buttons and the question box can always be reached. */
+@media (max-height: 500px) {
+  .ai-pane { top: var(--sa-top); bottom: var(--sa-b); right: var(--sa-right); border-radius: 0; z-index: 60; overflow-y: auto; }
+  .ai-pane > * { flex: none; }
+  .ai-pane .ai-log { flex: 1 0 auto; min-height: 120px; overflow: visible; }
+  .ai-compose textarea { min-height: 40px; }
 }
 
 /* ---------- several AIs: "How the AIs answered" and the settings section ---------- */

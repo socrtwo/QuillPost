@@ -96,8 +96,10 @@ const IOS_BRIDGE = (window.webkit && window.webkit.messageHandlers && window.web
 function openExternal(url) {
   if (NATIVE === "android") { try { window.QuillPostAndroid.openExternal(url); return; } catch {} }
   if (NATIVE === "ios" && IOS_BRIDGE) { try { IOS_BRIDGE.postMessage({ type: "open", url }); return; } catch {} }
-  const w = window.open(url, "_blank", "noopener");
-  if (!w) location.href = url;
+  // Not window.open(url, "_blank", "noopener"): that always returns null, which sent this page
+  // away to the link as well.
+  const w = window.open(url, "_blank");
+  if (w) { try { w.opener = null; } catch {} } else location.href = url;
 }
 /** Shows a document in a new browser window, or in an in-app dialog where pop-ups are unavailable. */
 function popup(title, { html, text, node }) {
@@ -154,8 +156,38 @@ function domainOf(addr) { const i = (addr || "").lastIndexOf("@"); return i >= 0
 const isEmail = (a) => /^[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+$/.test(emailOf(a));
 
 // ------------------------------------------------------------------ toasts
+/**
+ * The toast host lives in the top-most modal dialog while one is open: anything outside a modal
+ * dialog is drawn under it and cannot be clicked (Undo, Dismiss), so it moves in and back out.
+ */
+let toastHostEl = null;
+/** Modal dialogs in the order they were opened: the last open one is drawn on top. */
+const modalStack = [];
+/** The modal dialog on top, or null (DOM order is not drawing order: a dialog opened later is on top). */
+function topModal() {
+  for (let i = modalStack.length - 1; i >= 0; i--) { const d = modalStack[i]; if (d.isConnected && d.open && d.matches(":modal")) return d; }
+  return [...document.querySelectorAll("dialog[open]")].filter((d) => d.matches(":modal")).pop() || null;
+}
+function toastHost() {
+  const host = toastHostEl || (toastHostEl = $("toasts"));
+  const home = topModal() || document.body;
+  if (host && host.parentNode !== home) home.appendChild(host);
+  return host;
+}
+if (typeof HTMLDialogElement !== "undefined" && !HTMLDialogElement.prototype.showModal.__qbToasts) {
+  const showModal = HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal = function (...a) {
+    const r = showModal.apply(this, a);
+    const i = modalStack.indexOf(this); if (i >= 0) modalStack.splice(i, 1);
+    modalStack.push(this);
+    if (toastHostEl && toastHostEl.childNodes.length) toastHost();
+    return r;
+  };
+  HTMLDialogElement.prototype.showModal.__qbToasts = true;
+  document.addEventListener("close", (e) => { const i = modalStack.indexOf(e.target); if (i >= 0) modalStack.splice(i, 1); setTimeout(toastHost, 0); }, true);
+}
 function toast(message, { action, onAction, danger = false, timeout = 6000 } = {}) {
-  const host = $("toasts");
+  const host = toastHost();
   const t = el("div", { class: "toast" + (danger ? " danger" : "") }, el("span", { text: message }));
   if (action) t.appendChild(el("button", { text: action, onclick: () => { onAction && onAction(); t.remove(); } }));
   t.appendChild(el("button", { html: "&#x2715;", title: "Dismiss", onclick: () => t.remove(), style: { color: "inherit", opacity: ".7" } }));
