@@ -244,13 +244,12 @@ object Rtf {
         val i = head.indexOf("\\fonttbl")
         if (i < 0) return emptyMap()
         val out = HashMap<Int, Charset>()
+        // The font table ends where its group closes.
+        val start = head.lastIndexOf('{', i).coerceAtLeast(0)
         var depth = 0
-        var j = i
-        // the font table ends where its group closes
-        var start = head.lastIndexOf('{', i)
-        j = start
+        var j = start
         while (j < head.length) { val c = head[j]; if (c == '\\') { j += 2; continue }; if (c == '{') depth++ else if (c == '}') { depth--; if (depth == 0) break }; j++ }
-        val tbl = head.substring(start.coerceAtLeast(0), j.coerceAtMost(head.length))
+        val tbl = head.substring(start, j.coerceAtMost(head.length))
         for (m in Regex("\\\\f(\\d+)[^;]*?\\\\(?:fcharset(\\d+)|cpg(\\d+))").findAll(tbl)) {
             val f = m.groupValues[1].toInt()
             val cp = m.groupValues[3].toIntOrNull() ?: TextCodec.FCHARSET_CODEPAGE[m.groupValues[2].toIntOrNull() ?: 0] ?: continue
