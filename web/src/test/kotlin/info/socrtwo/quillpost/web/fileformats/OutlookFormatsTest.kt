@@ -224,6 +224,18 @@ class OutlookFormatsTest {
         assertTrue(m.notes.any { it.contains("recurring") })
     }
 
+    @Test fun `S-MIME Outlook items show the signed message inside smime p7m`() {
+        val signed = ("Content-Type: multipart/signed; protocol=\"application/pkcs7-signature\"; boundary=s\r\n\r\n--s\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Signed <b>body</b></p>\r\n" +
+            "--s\r\nContent-Type: application/pkcs7-signature; name=smime.p7s\r\nContent-Transfer-Encoding: base64\r\n\r\nMIAGCSqGSIb3DQEHAqCAMIACAQEx\r\n--s--\r\n").toByteArray()
+        val b = MsgBuilder().prop(Mapi.MESSAGE_CLASS, PV.Str("IPM.Note.SMIME.MultipartSigned")).prop(Mapi.SUBJECT, PV.Str("Signed"))
+            .attach(mapOf(Mapi.ATTACH_LONG_FILENAME to PV.Str("smime.p7m"), Mapi.ATTACH_MIME_TAG to PV.Str("multipart/signed"), Mapi.ATTACH_DATA to PV.Bin(signed))).build()
+        val m = MessageFormats.parse(b)
+        assertContains(m.bodyHtml!!, "Signed <b>body</b>")
+        assertTrue(m.attachments.isEmpty())
+        assertEquals("smime-signed", m.security)
+        assertTrue(m.notes.any { it.contains("does not verify") })
+    }
+
     // ------------------------------------------------------------------ MS-OXTNEF
 
     private fun sampleTnef(): ByteArray {

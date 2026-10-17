@@ -215,6 +215,18 @@ message source and headers, open in a new window, .eml download.
 Mailbox: automatic replies (date range, contacts-only, once per sender per N days), mbox export
 and .eml/.mbox import, storage quota, several accounts at once with unread counts.
 
+**Opening files.** *File ▸ Open File…*, dropping a file on the window, or *Open with QuillPost*
+from Android or the desktop opens any saved message, contact, calendar, document, spreadsheet or
+presentation — recognised by its content, whatever its extension. Messages (`.eml`, Outlook
+`.msg`, `winmail.dat`, Apple Mail `.emlx`, `.mht`, `.nws`, S/MIME and PGP mail, uuencoded, yEnc
+and BinHex attachments, Mac AppleDouble files) open in a message window with their formatting,
+inline pictures and attachments, Reply, Reply all, Forward and Save to folder; remote images stay
+blocked. Outlook templates (`.oft`) open as a new message. vCards, Windows contacts and Outlook
+contacts go to People; iCalendar, vCalendar 1.0 and Outlook appointments to the Calendar. Word,
+Excel, PowerPoint, OpenDocument, iWork, WordPerfect, Lotus 1-2-3 and other office files are offered
+to QuillPen, QuillGrid or QuillStage, or sent as an attachment. Every format, its detection and
+its fidelity are listed in [docs/FORMATS.md](docs/FORMATS.md).
+
 **Calendar.** Day, 3-day, work week, week, month and agenda views; mini month; several
 calendars with colours; recurring events (daily, weekdays, weekly, monthly by date or by "second
 Tuesday", "last Friday", yearly, custom intervals, end by date or count) with single-occurrence
@@ -245,7 +257,7 @@ floating button stays clear of the status bar, navigation bar, cut-outs and keyb
 
 ### Commands, Quick Access Toolbar and keyboard
 
-Every action is a command in one registry (367 of them): the desktop mail client's full Mail set
+Every action is a command in one registry (369 of them): the desktop mail client's full Mail set
 (File backstage, Home, Send / Receive, Folder, View, Help and the message window's Message,
 Insert, Options, Format Text, Review and Draw tabs), commands from other mail programs — Eudora
 (Redirect, Send Again, MoodWatch, Personalities…), Pine/Alpine and mutt (tag and limit by pattern,
@@ -282,7 +294,8 @@ Exchange or Microsoft 365 servers are not available, and QuillPost does not imit
   internet calendars can be subscribed to read-only;
 - Outlook `.pst`/`.ost` files: convert them first (for example with `readpst -M` from libpst) and
   import the resulting `.mbox` or `.eml` files;
-- S/MIME signing and encryption.
+- S/MIME and OpenPGP signing and encryption: signed messages are shown, but signatures are not
+  verified, and encrypted messages cannot be read.
 
 **Where the data lives.** Each account's calendars, contacts, tasks, message categories and
 flags, scheduled messages and settings are JSON files in the data directory (`~/.quillpost`, or
@@ -293,7 +306,8 @@ them. Settings from 1.3 and earlier are upgraded automatically the first time 1.
 
 The backend exposes a JSON API (`/api/session`, `/api/folders`, `/api/messages`, `/api/message`,
 `/api/junk`, `/api/analyze`, `/api/rules/preview`, `/api/rules/apply`, `/api/settings`, …) with a
-bearer token from `/api/session`. The original stateless endpoints `/api/inbox` and `/api/send`
+bearer token from `/api/session`; `/api/file/open` and the other `/api/file/*` routes serve the
+*Open File* feature (`FileRoutes.kt`). The original stateless endpoints `/api/inbox` and `/api/send`
 are unchanged, so the iOS client keeps working.
 
 ## Other platforms

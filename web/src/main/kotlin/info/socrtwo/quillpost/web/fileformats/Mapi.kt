@@ -177,7 +177,31 @@ object Mapi {
         }
 
         if (text.isBlank() && html != null) text = Rtf.htmlToText(html)
-        val atts = attachments.mapNotNull { attachment(it, html) }
+        var atts = attachments.mapNotNull { attachment(it, html) }
+        // S/MIME items keep the real message in an "smime.p7m" attachment: a multipart/signed MIME
+        // entity (clear-signed) or a CMS object (opaque-signed or encrypted).
+        var security: String? = null
+        if (cls.contains("SMIME", true)) {
+            val p7m = atts.firstOrNull { it.fileName.equals("smime.p7m", true) || it.mimeType.contains("pkcs7-mime") || it.mimeType.startsWith("multipart/signed") }
+            val inner = p7m?.let { a ->
+                val b = a.bytes
+                when {
+                    Cms.isEnveloped(b) -> null
+                    Cms.isCms(b) -> Cms.signedContent(b)?.let { runCatching { MimeReader.parse(it, "eml") }.getOrNull() }
+                    else -> runCatching { MimeReader.parse(b, "eml") }.getOrNull()
+                }
+            }
+            if (inner != null) {
+                html = inner.bodyHtml ?: html
+                text = inner.bodyText.ifBlank { text }
+                atts = atts.filter { it !== p7m } + inner.attachments
+                outNotes += inner.notes
+                security = inner.security ?: "smime-signed"
+            } else {
+                security = if (p7m != null && Cms.isEnveloped(p7m.bytes)) "smime-encrypted" else "smime-signed"
+                outNotes += if (security == "smime-encrypted") MimeReader.SMIME_ENCRYPTED else MimeReader.SMIME_SIGNED
+            }
+        }
         val date = p.time(CLIENT_SUBMIT_TIME) ?: p.time(DELIVERY_TIME) ?: h("Date")?.let { MimeReader.parseDate(it) } ?: p.time(CREATION_TIME)
         val importance = when (p.int(IMPORTANCE)) { 0 -> "low"; 2 -> "high"; else -> "normal" }
         val flags = p.int(MESSAGE_FLAGS) ?: 0
@@ -201,7 +225,6 @@ object Mapi {
             }
             cls.startsWith("IPM.StickyNote", true) -> outNotes += "Outlook note."
         }
-        if (cls.contains("SMIME", true)) outNotes += "This item was signed or encrypted with S/MIME. QuillPost shows what it can read but does not verify signatures or decrypt messages."
 
         return ParsedMessage(
             format = format,
@@ -220,7 +243,8 @@ object Mapi {
             attachments = atts,
             importance = importance,
             messageClass = cls,
-            notes = outNotes,
+            notes = outNotes.distinct(),
+            security = security,
             contacts = contacts,
             events = events,
             template = format == "oft" || (flags and 0x08) != 0 && from.address.isEmpty()
