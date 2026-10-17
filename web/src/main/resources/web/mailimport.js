@@ -1,17 +1,14 @@
-/* QuillPost — opening mail files and importing mailboxes from other mail programs.
+/* QuillPost — importing mailboxes and mail stores from other mail programs, and Local Archives.
  *
- * File ▸ Open File… (mail.openMessageFile), File ▸ Import Mailbox… (mail.importMailbox), Local
- * Archives (mail.localArchives) and dropping files or folders on the window all end here. Files go to
- * the server (POST /api/mailbox/upload, folders file by file with their relative paths), which works
- * out what they are from their bytes (MailImport.kt, mailstore/Sniffer.kt):
- *   - a single message (.eml, .msg, .emlx, winmail.dat…) opens in the reading pane from Local
- *     Archives ▸ Opened files;
- *   - a mailbox or mail store (.pst/.ost, mbox, Maildir, .dbx, Eudora, Apple Mail, Thunderbird…)
- *     opens the Import Mailbox dialog: detected format, folder tree with counts, and a destination
- *     (a folder of the signed-in IMAP account, or Local Archives), then progress, cancel and a report;
- *   - calendars and contacts go to Calendar and People; word-processor, spreadsheet and presentation
- *     files are described and handed to the Quill suite app (or the system) that opens them.
- * The shells hand over files opened with "Open with" via window.quillpostOpenIncoming(name).
+ * File ▸ Import Mailbox… (mail.importMailbox), Local Archives (mail.localArchives), and every
+ * mailbox that reaches File ▸ Open File… (mail.openFile, fileopen.js) — picked, dropped, or handed
+ * over by the Android/desktop/iOS apps — end here. Files go to the server
+ * (POST /api/mailbox/upload, folders file by file with their relative paths), which works out what
+ * they are from their bytes (MailImport.kt, mailstore/Sniffer.kt). A mailbox or mail store (.pst,
+ * .ost, mbox, Maildir, .dbx, Eudora, Apple Mail, Thunderbird…) opens the Import Mailbox dialog:
+ * detected format, folder tree with counts, and a destination (a folder of the signed-in IMAP
+ * account, or Local Archives), then progress, cancel and a report. Single messages, contacts,
+ * calendars and office files are handed back to fileopen.js.
  */
 "use strict";
 
@@ -37,12 +34,7 @@ const mailImport = {
     folders.byPath = function (p) { return byPath(p) || self.archiveFolders.find((f) => f.path === p); };
     folders.render = function () { render(); try { self.renderSection(); } catch (e) { console.error(e); } };
     this.wireDrop();
-    // A file handed over by a shell before the page was ready (desktop: #open=<name>).
-    const names = [...(location.hash || "").matchAll(/[#&]open=([^&]+)/g)].map((m) => decodeURIComponent(m[1]));
-    if (names.length) {
-      history.replaceState(null, "", location.pathname + location.search);
-      this.whenSignedIn(async () => { for (const n of names) await this.openIncoming(n); });
-    }
+    this.hookFileOpen();
   },
 
   whenSignedIn(fn) {
@@ -135,11 +127,6 @@ const mailImport = {
     });
   },
 
-  async openFile() {
-    const entries = await this.pick();
-    if (entries.length) await this.open(entries);
-  },
-
   /** The Import Mailbox start: a file, a folder, or drop here. */
   chooseSource() {
     const d = this.dialog("qbImportSource", "Import Mailbox");
@@ -170,27 +157,49 @@ const mailImport = {
   },
 
   // ------------------------------------------------------------------ drag and drop
-  /** Set to false when another module owns window drops; it can then call handleDrop(dataTransfer). */
-  dropEnabled: true,
-  async handleDrop(dt, opts = {}) { const entries = await this.entriesFromDrop(dt); if (entries.length) this.open(entries, opts); },
-
+  /**
+   * Dropped files are opened by fileopen.js (and reach this module through hookFileOpen); dropped
+   * folders — a Maildir, an Apple Mail or Thunderbird folder, an Outlook Express store — are taken
+   * here, before fileopen.js sees the drop.
+   */
   wireDrop() {
-    const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files") && !Array.from(e.dataTransfer.types).includes("application/x-quillpost");
-    const inCompose = (t) => t && t.closest && (t.closest("#composeDialog") || t.closest("#cEditor") || t.closest(".qb-drop-zone") || t.closest("dialog[open]"));
-    let overlay = null;
-    const hide = () => { overlay?.remove(); overlay = null; };
-    window.addEventListener("dragover", (e) => {
-      if (!this.dropEnabled || !hasFiles(e) || inCompose(e.target) || !state.token) return;
-      e.preventDefault();
-      if (!overlay) { overlay = el("div", { class: "qb-drop-overlay" }, el("div", {}, icon("mailbox-in", 48), el("b", { text: "Drop to open" }), el("div", { class: "small", text: "Messages open to read; mailboxes and mail folders can be imported." }))); document.body.appendChild(overlay); }
-    });
-    window.addEventListener("dragleave", (e) => { if (!e.relatedTarget || e.relatedTarget === document.documentElement) hide(); });
+    const isFolder = (dt) => Array.from(dt?.items || []).some((i) => i.webkitGetAsEntry && i.webkitGetAsEntry()?.isDirectory);
     window.addEventListener("drop", async (e) => {
-      if (!this.dropEnabled || !hasFiles(e) || inCompose(e.target) || !state.token) { hide(); return; }
-      e.preventDefault(); hide();
+      if (!state.token || !isFolder(e.dataTransfer) || (e.target?.closest && e.target.closest("#composeDialog, #cEditor, .qb-drop-zone"))) return;
+      e.preventDefault();
       const entries = await this.entriesFromDrop(e.dataTransfer);
-      if (entries.length) this.open(entries);
-    });
+      if (entries.length) this.open(entries, { mailboxOnly: true });
+    }, true);
+  },
+
+  /** True when the server's sniffer says the first bytes of [file] are a mail store or an archive. */
+  async isMailStore(file) {
+    try {
+      const det = await api("/api/mailbox/sniff", { method: "POST", query: { name: file.name, size: file.size }, rawBody: file.slice(0, 65536) });
+      return (det.category === "mailbox" || det.category === "archive") ? det : null;
+    } catch { return null; }
+  },
+
+  /**
+   * Routes mailboxes away from fileopen.js: files it is asked to open are sniffed first (only their
+   * first 64 KB is sent), and a mailbox it has already opened (handed over by a shell) is passed on.
+   */
+  hookFileOpen() {
+    if (typeof FileOpen === "undefined" || !FileOpen || FileOpen.__mailboxes) return;
+    FileOpen.__mailboxes = true;
+    const openFiles = FileOpen.openFiles.bind(FileOpen), show = FileOpen.show.bind(FileOpen);
+    this.fileOpenFiles = openFiles;
+    FileOpen.openFiles = async (files) => {
+      const rest = [];
+      for (const f of files) { if (await this.isMailStore(f)) await this.open([{ file: f, path: f.name }], { mailboxOnly: true }); else rest.push(f); }
+      if (rest.length) return openFiles(rest);
+    };
+    const fromOpened = async (r) => {
+      const blob = await (await fetch(FileOpen.fileUrl("/api/file/raw", r))).blob();
+      return this.open([{ file: new File([blob], r.name), path: r.name }], { mailboxOnly: true });
+    };
+    FileOpen.show = (r) => (r && r.kind === "mailbox" ? fromOpened(r) : show(r));
+    FileOpen.importMailbox = (r) => fromOpened(r);
   },
 
   /** Files and folders from a drop, with their relative paths (folders are walked). */
@@ -239,7 +248,7 @@ const mailImport = {
     }
     line.textContent = "Working out what it is…";
     bar.removeAttribute("value");
-    return api("/api/mailbox/analyze", { method: "POST", query: { upload } });
+    return api("/api/mailbox/analyze", { method: "POST", query: { upload, open: this.fileOpenFiles && entries.length === 1 ? "false" : "" } });
   },
 
   /** Opens whatever [entries] are: a message, a mailbox (import), PIM files, or a document hand-off. */
@@ -251,14 +260,6 @@ const mailImport = {
     try { a = await this.upload(entries, d); }
     catch (e) { qs(".dlg-body", d).innerHTML = ""; qs(".dlg-body", d).append(el("p", { class: "danger", text: e.message })); qs(".dlg-foot", d).append(el("button", { class: "btn", onclick: () => d.close() }, "Close")); return; }
     return this.route(a, d, entries, { mailboxOnly });
-  },
-
-  async openIncoming(name) {
-    const d = this.dialog("qbImport", "Open");
-    if (!d.open) d.showModal();
-    qs(".dlg-body", d).append(el("p", { text: `Opening ${name}…` }));
-    try { const a = await api("/api/mailbox/incoming", { method: "POST", query: { name } }); await this.route(a, d, [], {}); }
-    catch (e) { qs(".dlg-body", d).innerHTML = ""; qs(".dlg-body", d).append(el("p", { class: "danger", text: e.message })); qs(".dlg-foot", d).append(el("button", { class: "btn", onclick: () => d.close() }, "Close")); }
   },
 
   async route(a, d, entries, { mailboxOnly }) {
@@ -274,6 +275,11 @@ const mailImport = {
       return;
     }
     if (det.category === "mailbox" && det.supported) return this.importDialog(a, d);
+    if (this.fileOpenFiles && entries.length === 1 && det.category !== "mailbox" && det.category !== "archive" && det.category !== "unknown") {
+      // Not a mailbox after all (a zip that is a .docx, a single message…): the Open File window shows it.
+      d.close(); api("/api/mailbox/upload", { method: "DELETE", query: { upload: a.upload } }).catch(() => {});
+      return this.fileOpenFiles([entries[0].file]);
+    }
     if ((det.category === "calendar" || det.category === "contacts") && entries.length === 1 && !mailboxOnly) return this.pimImport(a, d, entries[0].file);
     this.describe(a, d, entries);
   },
@@ -413,19 +419,13 @@ const mailImport = {
   },
 };
 
-/** Shells call this with the name of a file they copied into the data folder's "incoming" folder. */
-if (typeof window !== "undefined") window.quillpostOpenIncoming = function (name) {
-  if (typeof state === "undefined" || !state.token) { mailImport.whenSignedIn(() => mailImport.openIncoming(name)); return false; }
-  mailImport.openIncoming(name);
-  return true;
-};
-
 /** The iOS app hands over files opened with QuillPost as base64 (the server is remote there). */
 if (typeof window !== "undefined") window.quillpostOpenData = function (name, base64) {
   const go = () => {
     const bin = atob(base64); const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    mailImport.open([{ file: new File([bytes], name), path: name }]);
+    const file = new File([bytes], name);
+    if (typeof FileOpen !== "undefined" && FileOpen) FileOpen.openFiles([file]); else mailImport.open([{ file, path: name }]);
   };
   if (typeof state === "undefined" || !state.token) { mailImport.whenSignedIn(go); return false; }
   go();
@@ -436,9 +436,6 @@ if (typeof window !== "undefined") window.quillpostOpenData = function (name, ba
   if (typeof Commands === "undefined") return;
   const signedIn = () => typeof state !== "undefined" && !!state.token;
   Commands.def([
-    { id: "mail.openMessageFile", label: "Open File…", icon: "folder-open", tab: "File", group: "Open & Export", scope: "global", popular: true, isEnabled: signedIn,
-      tip: "Opens any mail file: a message (.eml, .msg, .emlx…) opens to read; a mailbox (.pst, .mbox, .dbx…) offers to import it. Documents, spreadsheets and presentations are handed to the right app.",
-      keywords: "eml msg emlx pst ost mbox open read message file", run: () => mailImport.openFile() },
     { id: "mail.importMailbox", label: "Import Mailbox…", icon: "mailbox-in", tab: "File", group: "Open & Export", scope: "global", popular: true, isEnabled: signedIn,
       tip: "Imports mail from Outlook, Thunderbird, Apple Mail, Eudora, Outlook Express, Pegasus, Gmail Takeout and others into a folder of this account or Local Archives",
       keywords: "pst ost mbox maildir mh dbx eudora thunderbird apple mail outlook express pegasus takeout import migrate", run: () => mailImport.chooseSource() },

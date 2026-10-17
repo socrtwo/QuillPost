@@ -231,26 +231,11 @@ object Fixtures {
 
     // ------------------------------------------------------------------------------- OLE2 (CFB)
 
-    /** A minimal compound file whose directory holds [streams] (names only; enough for detection). */
+    /** An OLE2 compound file holding [streams] (built with the shared test CFB writer). */
     fun cfb(streams: List<String>): ByteArray {
-        val ss = 512
-        val out = ByteArray(ss * 4)
-        byteArrayOf(0xD0.toByte(), 0xCF.toByte(), 0x11, 0xE0.toByte(), 0xA1.toByte(), 0xB1.toByte(), 0x1A, 0xE1.toByte()).copyInto(out, 0)
-        le16(0x3E).copyInto(out, 0x18); le16(3).copyInto(out, 0x1A); le16(0xFFFE).copyInto(out, 0x1C); le16(9).copyInto(out, 0x1E); le16(6).copyInto(out, 0x20)
-        le32(1).copyInto(out, 0x2C); le32(1).copyInto(out, 0x30)
-        for (i in 0 until 109) le32(-1).copyInto(out, 0x4C + i * 4)
-        le32(0).copyInto(out, 0x4C) // FAT in sector 0
-        // FAT sector 0: sector 0 = FAT, sector 1 = directory (end of chain), others free.
-        val fat = ss
-        le32(-3).copyInto(out, fat); le32(-2).copyInto(out, fat + 4)
-        for (i in 2 until 128) le32(-1).copyInto(out, fat + i * 4)
-        val dir = ss * 2
-        (listOf("Root Entry") + streams).take(4).forEachIndexed { i, n ->
-            val o = dir + i * 128
-            val b = n.toByteArray(Charsets.UTF_16LE)
-            b.copyInto(out, o); le16(b.size + 2).copyInto(out, o + 64); out[o + 66] = (if (i == 0) 5 else 2).toByte()
-        }
-        return out
+        val root = info.socrtwo.quillpost.web.fileformats.CfbWriter.Node("Root Entry")
+        for (n in streams) root.stream(n, ByteArray(64))
+        return info.socrtwo.quillpost.web.fileformats.CfbWriter.write(root)
     }
 
     // ------------------------------------------------------------------------------- compressed RTF

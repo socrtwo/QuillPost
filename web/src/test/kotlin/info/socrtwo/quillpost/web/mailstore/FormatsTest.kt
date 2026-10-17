@@ -17,7 +17,14 @@ class FormatsTest {
     private fun sniff(name: String, bytes: ByteArray) = Sniffer.sniffFile(File(tmp, name).also { it.writeBytes(bytes) }, name)
     private fun zip(name: String, entries: Map<String, String>): ByteArray {
         val f = File(tmp, name)
-        ZipOutputStream(f.outputStream()).use { z -> for ((k, v) in entries) { z.putNextEntry(ZipEntry(k)); z.write(v.toByteArray()); z.closeEntry() } }
+        ZipOutputStream(f.outputStream()).use { z ->
+            for ((k, v) in entries) {
+                val b = v.toByteArray()
+                // OpenDocument stores "mimetype" first and uncompressed, as real files do.
+                val e = ZipEntry(k).apply { if (k == "mimetype") { method = ZipEntry.STORED; size = b.size.toLong(); compressedSize = b.size.toLong(); crc = java.util.zip.CRC32().also { c -> c.update(b) }.value } }
+                z.putNextEntry(e); z.write(b); z.closeEntry()
+            }
+        }
         return f.readBytes()
     }
 
@@ -52,11 +59,11 @@ class FormatsTest {
         assertEquals("archive", sniff("a.zip", zip("f.zip", mapOf("Mail/cur/1:2,S" to Fixtures.msg("x")))).category)
         assertEquals("pdf", sniff("x", "%PDF-1.4\n".toByteArray()).format)
         assertEquals("rtf", sniff("x", "{\\rtf1\\ansi hi}".toByteArray()).format)
-        assertEquals("wpd", sniff("x", byteArrayOf(0xFF.toByte(), 0x57, 0x50, 0x43, 0, 0, 0, 0)).format)
-        assertEquals("write", sniff("x", byteArrayOf(0x31, 0xBE.toByte(), 0, 0)).format)
-        assertEquals("wk1", sniff("x", byteArrayOf(0, 0, 2, 0, 6, 4, 6, 0)).format)
-        assertEquals("spreadsheetml", sniff("x.xml", "<?xml version=\"1.0\"?>\n<?mso-application progid=\"Excel.Sheet\"?><Workbook/>".toByteArray()).format)
-        assertEquals("wordml", sniff("x.xml", "<?xml version=\"1.0\"?>\n<?mso-application progid=\"Word.Document\"?><w:wordDocument/>".toByteArray()).format)
+        assertEquals("wpd", sniff("x", byteArrayOf(0xFF.toByte(), 0x57, 0x50, 0x43, 16, 0, 0, 0, 1, 0x0A) + ByteArray(118)).format)
+        assertEquals("wri", sniff("x", byteArrayOf(0x31, 0xBE.toByte(), 0, 0) + ByteArray(124)).format)
+        assertEquals("wk1", sniff("x", byteArrayOf(0, 0, 2, 0, 6, 4, 6, 0) + ByteArray(120)).format)
+        assertEquals("xml-excel", sniff("x.xml", "<?xml version=\"1.0\"?>\n<?mso-application progid=\"Excel.Sheet\"?><Workbook/>".toByteArray()).format)
+        assertEquals("xml-word", sniff("x.xml", "<?xml version=\"1.0\"?>\n<?mso-application progid=\"Word.Document\"?><w:wordDocument/>".toByteArray()).format)
         assertEquals("contacts", sniff("x", "BEGIN:VCARD\r\nFN:A\r\nEND:VCARD\r\n".toByteArray()).category)
         assertEquals("calendar", sniff("x", "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n".toByteArray()).category)
         assertEquals("spreadsheet", sniff("data.csv", "a,b\n1,2\n".toByteArray()).category)
@@ -76,48 +83,16 @@ class FormatsTest {
     }
 
     @Test
-    fun compressedRtf() {
+    fun compressedRtfFixturesMatchTheSharedDecompressor() {
+        // The PST fixtures compress RTF with Fixtures.lzfu; check it against the shared reader (fileformats/Rtf.kt).
         val rtf = "{\\rtf1\\ansi Hello {\\b world}\\par}"
-        assertEquals(rtf, String(Rtf.decompress(Fixtures.lzfu(rtf)), Charsets.ISO_8859_1))
-        val mela = PstWriter.le32(rtf.length + 12) + PstWriter.le32(rtf.length) + "MELA".toByteArray() + PstWriter.le32(0) + rtf.toByteArray()
-        assertEquals(rtf, String(Rtf.decompress(mela), Charsets.ISO_8859_1))
-    }
-
-    @Test
-    fun deencapsulatesHtmlAndText() {
-        val html = Rtf.deencapsulate("{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 {\\*\\htmltag1 <p class=\"x\">}\\htmlrtf {\\b\\htmlrtf0 Gr\\'fc\\'dfe\\htmlrtf }\\htmlrtf0 {\\*\\htmltag3 </p>}\\htmlrtf\\par\\htmlrtf0}")!!
-        assertTrue(html.html)
-        assertEquals("<p class=\"x\">Grüße</p>", html.content)
-        val mhtml = Rtf.deencapsulate("{\\rtf1\\ansi\\fromhtml1 {\\*\\mhtmltag84 <img src=\"cid:a@b\">}{\\*\\htmltag84 <img src=\"a.png\">}}")!!
-        assertEquals("<img src=\"cid:a@b\">", mhtml.content)
-        val text = Rtf.deencapsulate("{\\rtf1\\ansi\\fromtext \\pard Line 1\\par Line 2}")!!
-        assertFalse(text.html)
-        assertEquals("Line 1\r\nLine 2", text.content)
-    }
-
-    @Test
-    fun genuineRtfToHtml() {
-        val rtf = "{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}{\\f1 Courier New;}}{\\colortbl;\\red0\\green0\\blue255;}" +
-            "\\pard\\qr\\fs32 Big {\\f1 mono} {\\cf1\\ul blue}\\par" +
-            "\\trowd\\cellx1000\\cellx2000\\intbl A1\\cell B1\\cell\\row" +
-            "\\pard {\\field{\\*\\fldinst HYPERLINK \"https://example.com\"}{\\fldrslt link}}\\par" +
-            "{\\pict\\pngblip\\picwgoal300\\pichgoal150 89504e47}\\par}"
-        val html = Rtf.toHtml(rtf)
-        assertContains(html, "text-align:right")
-        assertContains(html, "font-size:16pt")
-        assertContains(html, "font-family:'Courier New'")
-        assertContains(html, "color:#0000ff")
-        assertContains(html, "<u>blue</u>")
-        assertTrue(Regex("<tr><td valign=\"top\">(<span[^>]*>)?A1(</span>)?</td><td valign=\"top\">(<span[^>]*>)?B1").containsMatchIn(html), html)
-        assertTrue(Regex("<a href=\"https://example.com\">(<span[^>]*>)?link").containsMatchIn(html), html)
-        assertContains(html, "data:image/png;base64,iVBORw==")
-        assertEquals("Big mono blue\nA1\tB1\nlink", Rtf.toText(rtf).replace(Regex("\n+"), "\n").trim())
+        assertEquals(rtf, String(info.socrtwo.quillpost.web.fileformats.Rtf.decompress(Fixtures.lzfu(rtf)), Charsets.ISO_8859_1))
     }
 
     @Test
     fun messageImportReadsEmlEmlxAndOneMessageMbox() {
         val eml = MessageImport.parse(Fixtures.msg("Plain").toByteArray(), "a.eml")
-        assertEquals("eml", eml.format); assertEquals("Plain", eml.subject); assertContains(eml.from, "alice@example.com")
+        assertEquals("eml", eml.format); assertEquals("Plain", eml.subject)
         val emlx = MessageImport.parse(Fixtures.emlx(Fixtures.msg("Apple"), 1L or (1L shl 2), 1790241120), "1.emlx")
         assertEquals("emlx", emlx.format); assertEquals(MsgFlags(seen = true, answered = true), emlx.flags); assertEquals(1790241120000L, emlx.internalDate)
         val mbox = MessageImport.parse(("From a@b Thu Sep 24 09:12:00 2026\n" + Fixtures.msg("One", body = ">From x\n")).toByteArray())

@@ -1,15 +1,12 @@
 package info.socrtwo.quillpost.web.mailstore
 
-import jakarta.activation.DataHandler
-import jakarta.mail.Message
-import jakarta.mail.Part
+import info.socrtwo.quillpost.web.fileformats.Mapi
+import info.socrtwo.quillpost.web.fileformats.MapiAttachment
+import info.socrtwo.quillpost.web.fileformats.MapiProps
+import info.socrtwo.quillpost.web.fileformats.MimeWriter
+import info.socrtwo.quillpost.web.fileformats.ParsedMessage
 import jakarta.mail.internet.InternetAddress
-import jakarta.mail.internet.InternetHeaders
-import jakarta.mail.internet.MimeBodyPart
-import jakarta.mail.internet.MimeMultipart
 import jakarta.mail.internet.MimeUtility
-import jakarta.mail.util.ByteArrayDataSource
-import java.io.ByteArrayInputStream
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -18,10 +15,11 @@ import java.util.TimeZone
 
 /**
  * The messaging layer of Outlook .pst/.ost/.pab files ([MS-PST] section 2.4, property tags from
- * [MS-OXPROPS]): the folder tree, mail with its original Internet headers (or headers rebuilt from
- * the recipients and sender), plain/HTML/RTF bodies (compressed RTF expanded and encapsulated HTML
- * recovered), attachments including attached Outlook items, read/replied/forwarded/flag status and
- * categories; contacts, appointments and tasks become vCard / iCalendar items.
+ * [MS-OXPROPS]): the folder tree; each item's properties, recipient table and attachments are
+ * turned into a MAPI property bag and converted by the same code as Outlook .msg files
+ * (fileformats/Mapi.kt: original Internet headers, plain/HTML/RTF bodies, attachments and attached
+ * items, contacts); this file adds what only stores carry — read/replied/forwarded/flag status,
+ * categories, delivery times, contact groups, appointments with their recurrence, and tasks.
  */
 class PstStore private constructor(private val pst: PstFile) {
 
@@ -43,7 +41,6 @@ class PstStore private constructor(private val pst: PstFile) {
             }
         }
 
-        private val DROP_HEADERS = setOf("content-type", "content-transfer-encoding", "mime-version", "content-disposition", "content-id", "content-description")
     }
 
     private val named: Map<String, Int> by lazy { readNameMap() }
@@ -174,26 +171,21 @@ class PstStore private constructor(private val pst: PstFile) {
         val kw = ArrayList<String>(categories(p))
         if (flagStatus == 1) kw += "\$FlagComplete"
         val date = p.time(0x0E06) ?: p.time(0x0039) ?: p.time(0x3007)
-        return StoreMessage(flags, date, kw) { mime(PstProps.of(pst, node.bidData, node.bidSub), 0).bytes() }
+        val notes = java.util.Collections.synchronizedList(ArrayList<String>())
+        return StoreMessage(flags, date, kw, notes) { mime(PstProps.of(pst, node.bidData, node.bidSub), notes) }
     }
 
     private fun setCodepage(p: PstProps) {
-        p.codepage = Rtf.charsetForCodepage((p.int(0x3FFD) ?: p.int(0x3FDE))?.takeIf { it > 0 } ?: 1252)
+        p.codepage = info.socrtwo.quillpost.web.fileformats.TextCodec.codepage((p.int(0x3FFD) ?: p.int(0x3FDE))?.takeIf { it > 0 } ?: 1252)
     }
 
     private fun categories(p: PstProps): List<String> = name(PS_PUBLIC_STRINGS, "Keywords")?.let { p.strings(it) }.orEmpty().filter { it.isNotBlank() }
 
-    private fun addr(name: String?, email: String?): InternetAddress? {
-        val e = email?.trim().orEmpty()
-        val n = name?.trim().orEmpty()
-        if (e.isEmpty() && n.isEmpty()) return null
-        return runCatching { InternetAddress(if (e.contains('@')) e else "", n.ifBlank { null }, "UTF-8") }.getOrNull()
-    }
-
     private fun senderOf(p: PstProps): InternetAddress? {
         val repSmtp = p.string(0x5D02) ?: p.string(0x0065)?.takeIf { p.string(0x0064)?.equals("SMTP", true) == true || it.contains('@') }
         val sndSmtp = p.string(0x5D01) ?: p.string(0x0C1F)?.takeIf { p.string(0x0C1E)?.equals("SMTP", true) == true || it.contains('@') }
-        return addr(p.string(0x0042) ?: p.string(0x0C1A), repSmtp ?: sndSmtp)
+        val email = (repSmtp ?: sndSmtp)?.takeIf { it.contains('@') } ?: return null
+        return runCatching { InternetAddress(email, p.string(0x0042) ?: p.string(0x0C1A), "UTF-8") }.getOrNull()
     }
 
     private data class Recipient(val type: Int, val name: String, val email: String)
@@ -214,139 +206,89 @@ class PstStore private constructor(private val pst: PstFile) {
         }.getOrDefault(emptyList())
     }
 
-    /** Builds the RFC 5322 form of a message (also used for attached Outlook items). */
-    private fun mime(p: PstProps, depth: Int): ImportedMimeMessage {
-        setCodepage(p)
-        val msg = ImportedMimeMessage(localSession)
-        val transport = p.string(0x007D)?.takeIf { it.contains(':') }
-        if (transport != null) {
-            val ih = InternetHeaders(ByteArrayInputStream((transport.trimEnd() + "\r\n\r\n").toByteArray(Charsets.UTF_8)))
-            val e = ih.allHeaders
-            while (e.hasMoreElements()) {
-                val h = e.nextElement()
-                if (h.name.lowercase() in DROP_HEADERS) continue
-                msg.addHeader(h.name, h.value)
-            }
-        }
-        val recips = recipients(p)
-        fun list(type: Int) = recips.filter { it.type == type }.mapNotNull { addr(it.name, it.email) }.toTypedArray()
-        if (msg.getHeader("From") == null) senderOf(p)?.let { msg.setFrom(it) }
-        if (msg.getHeader("To") == null) list(1).takeIf { it.isNotEmpty() }?.let { msg.setRecipients(Message.RecipientType.TO, it) }
-        if (msg.getHeader("Cc") == null) list(2).takeIf { it.isNotEmpty() }?.let { msg.setRecipients(Message.RecipientType.CC, it) }
-        if (msg.getHeader("Bcc") == null) list(3).takeIf { it.isNotEmpty() }?.let { msg.setRecipients(Message.RecipientType.BCC, it) }
-        if (msg.getHeader("Subject") == null) (p.string(0x0037) ?: p.string(0x0070))?.let { msg.setSubject(stripSubjectPrefix(it), "UTF-8") }
-        if (msg.getHeader("Date") == null) (p.time(0x0039) ?: p.time(0x0E06) ?: p.time(0x3007))?.let { msg.sentDate = Date(it) }
-        if (msg.getHeader("Message-ID") == null) p.string(0x1035)?.takeIf { it.isNotBlank() }?.let { msg.setHeader("Message-ID", it) }
-        if (msg.getHeader("In-Reply-To") == null) p.string(0x1042)?.takeIf { it.isNotBlank() }?.let { msg.setHeader("In-Reply-To", it) }
-        if (msg.getHeader("References") == null) p.string(0x1039)?.takeIf { it.isNotBlank() }?.let { msg.setHeader("References", it) }
-        if (msg.getHeader("Importance") == null) when (p.int(0x0017)) { 0 -> msg.setHeader("Importance", "Low"); 2 -> msg.setHeader("Importance", "High") }
-        if (msg.getHeader("Sensitivity") == null) when (p.int(0x0036)) { 1 -> msg.setHeader("Sensitivity", "Personal"); 2 -> msg.setHeader("Sensitivity", "Private"); 3 -> msg.setHeader("Sensitivity", "Company-Confidential") }
-        val cats = categories(p)
-        if (cats.isNotEmpty() && msg.getHeader("Keywords") == null) msg.setHeader("Keywords", MimeUtility.fold(10, MimeUtility.encodeText(cats.joinToString(", "), "UTF-8", null)))
-        p.string(0x001A)?.takeIf { !it.equals("IPM.Note", true) }?.let { msg.setHeader("X-Outlook-Message-Class", it) }
+    // ---------------------------------------------------- PST properties → MAPI item (fileformats)
 
-        // Bodies: HTML (PidTagHtml), else RTF (encapsulated HTML/text, or real RTF converted), plus plain text.
-        var html: String? = p.binary(0x1013)?.let { decodeHtml(it, p) } ?: p.string(0x1013)
-        var text: String? = p.string(0x1000)
-        if (html == null) {
-            val rtfBytes = p.binary(0x1009)?.let { runCatching { Rtf.decompress(it) }.getOrNull() }
-            if (rtfBytes != null) {
-                val rtf = String(rtfBytes, Charsets.ISO_8859_1)
-                val enc = runCatching { Rtf.deencapsulate(rtf) }.getOrNull()
-                when {
-                    enc != null && enc.html -> html = enc.content
-                    enc != null -> if (text.isNullOrBlank()) text = enc.content
-                    else -> html = runCatching { "<div>" + Rtf.toHtml(rtf) + "</div>" }.getOrNull()
+    /** Named properties in the form [MapiProps.names] uses: "GUID:dispid" or "GUID:name". */
+    private val mapiNames: Map<Int, String> by lazy {
+        named.entries.associate { (k, id) ->
+            val guid = k.substringBefore('/').uppercase()
+            val rest = k.substringAfter('/')
+            id to (if (rest.startsWith("#")) "$guid:${rest.substring(1)}" else "$guid:$rest")
+        }
+    }
+
+    /** The PST property context as a MAPI property bag, so the item converters of the .msg reader apply. */
+    private fun mapi(p: PstProps): MapiProps {
+        val m = MapiProps()
+        m.names = mapiNames
+        m.codepage = p.int(0x3FFD) ?: p.int(0x3FDE) ?: 0
+        for ((id, prop) in p.props) {
+            val v: Any? = runCatching {
+                when (prop.type) {
+                    0x001F -> p.string(id)
+                    0x001E -> p.bytes(id)?.let { MapiProps.Ansi(it) }
+                    0x0102, 0x0048 -> p.bytes(id)
+                    0x0002, 0x0003, 0x000A -> p.int(id)
+                    0x000B -> p.bool(id)
+                    0x0014 -> p.long(id)
+                    0x0040 -> p.long(id)?.let { MapiProps.FileTime(it) }
+                    0x0005 -> p.bytes(id)?.takeIf { it.size >= 8 }?.let { java.lang.Double.longBitsToDouble(it.i64(0)) }
+                    else -> null
                 }
-                if (text.isNullOrBlank()) text = runCatching { Rtf.toText(rtf) }.getOrNull()
-            }
+            }.getOrNull()
+            if (v != null) m.put(id, v)
         }
-        if (text.isNullOrBlank() && html != null) text = Rtf.htmlToText(html)
+        return m
+    }
 
-        // Attachments.
-        val inline = ArrayList<MimeBodyPart>()
-        val attached = ArrayList<MimeBodyPart>()
+    private fun mapiRecipients(p: PstProps): List<MapiProps> {
+        val sub = p.subnode(PstFile.NID_RECIPIENT_TABLE) ?: return emptyList()
+        return runCatching {
+            val t = PstTable(pst, PstHeap(pst.nodeData(sub.bidData)), pst.subnodes(sub.bidSub))
+            t.rows.map { r -> MapiProps().also { m -> for ((id, v) in t.row(r)) if (v is String || v is Int || v is ByteArray || v is Boolean) m.put(id, v) } }
+        }.getOrDefault(emptyList())
+    }
+
+    /** An Outlook item as a parsed message (attachments and attached items included); [notes] collects what was lost. */
+    private fun parsed(p: PstProps, depth: Int, notes: MutableList<String>): ParsedMessage {
+        setCodepage(p)
+        val atts = ArrayList<MapiAttachment>()
         for (sub in p.subs.values.filter { PstFile.nidType(it.nid) == 5 }.sortedBy { it.nid }) {
             val ap = runCatching { PstProps.of(pst, sub.bidData, sub.bidSub) }.getOrNull() ?: continue
             setCodepage(ap)
-            val part = runCatching { attachmentPart(ap, depth) }.getOrNull() ?: continue
-            val cid = ap.string(0x3712)?.trim('<', '>', ' ')?.takeIf { it.isNotBlank() }
-            if (cid != null && html != null && (html.contains("cid:$cid", true) || ap.bool(0x7FFE) == true)) {
-                part.setHeader("Content-ID", "<$cid>")
-                part.disposition = Part.INLINE
-                inline += part
-            } else attached += part
+            val method = ap.int(0x3705) ?: 1
+            val name = ap.string(0x3707) ?: ap.string(0x3704) ?: ap.string(0x3001) ?: "attachment"
+            if (method in 2..4 || method == 7) { notes += "Linked attachment not stored in the data file: ${ap.string(0x370D) ?: ap.string(0x3708) ?: name}"; continue }
+            var embedded: ParsedMessage? = null
+            if (method == 5 || ap.type(0x3701) == 0x000D) {
+                if (depth > 8) continue
+                val hnid = ap.props[0x3701]?.raw?.i32(0) ?: continue
+                val ref = if (hnid and 0x1F == 0) ap.data(hnid)?.takeIf { it.size >= 4 }?.i32(0) else hnid
+                val es = ref?.let { ap.subnode(it) } ?: continue
+                embedded = runCatching { parsed(PstProps.of(pst, es.bidData, es.bidSub), depth + 1, notes) }.getOrNull() ?: continue
+            }
+            atts += MapiAttachment(mapi(ap), embedded)
         }
+        return Mapi.toParsed("pst", mapi(p), mapiRecipients(p), atts)
+    }
 
-        val alt = MimeMultipart("alternative")
-        alt.addBodyPart(MimeBodyPart().apply { setText(text.orEmpty(), "UTF-8") })
-        if (html != null) alt.addBodyPart(MimeBodyPart().apply { setContent(fixCharsetMeta(html), "text/html; charset=UTF-8") })
-        var body: MimeMultipart = alt
-        if (inline.isNotEmpty()) {
-            val rel = MimeMultipart("related")
-            rel.addBodyPart(MimeBodyPart().apply { setContent(alt) })
-            inline.forEach { rel.addBodyPart(it) }
-            body = rel
-        }
-        if (attached.isNotEmpty()) {
-            val mixed = MimeMultipart("mixed")
-            mixed.addBodyPart(MimeBodyPart().apply { setContent(body) })
-            attached.forEach { mixed.addBodyPart(it) }
-            body = mixed
-        }
-        if (html == null && inline.isEmpty() && attached.isEmpty()) msg.setText(text.orEmpty(), "UTF-8") else msg.setContent(body)
-        msg.saveChanges()
-        return msg
+    /** The RFC 5322 form of a message: the item converted by the shared MAPI code, plus what only PSTs carry. */
+    private fun mime(p: PstProps, notes: MutableList<String>): ByteArray {
+        val m = parsed(p, 0, notes)
+        notes += m.notes.filter { !it.startsWith("Outlook") }
+        val extra = StringBuilder()
+        val cats = categories(p)
+        if (cats.isNotEmpty() && m.headers.none { it.first.equals("Keywords", true) })
+            extra.append(MimeUtility.fold(10, "Keywords: " + MimeUtility.encodeText(cats.joinToString(", "), "UTF-8", null))).append("\r\n")
+        when (p.int(0x0036)) { 1 -> "Personal"; 2 -> "Private"; 3 -> "Company-Confidential"; else -> null }?.let { extra.append("Sensitivity: $it\r\n") }
+        p.string(0x001A)?.takeIf { !it.equals("IPM.Note", true) }?.let { extra.append("X-Outlook-Message-Class: $it\r\n") }
+        val body = MimeWriter.toRfc822(m)
+        return if (extra.isEmpty()) body else extra.toString().toByteArray(Charsets.UTF_8) + body
     }
 
     private fun stripSubjectPrefix(s: String): String =
         // PidTagSubject may start with 0x01 and a length byte marking the prefix ("RE: ").
         if (s.length >= 2 && s[0] == '\u0001') s.substring(2) else s
-
-    private fun decodeHtml(b: ByteArray, p: PstProps): String {
-        val head = String(b, 0, minOf(b.size, 4096), Charsets.ISO_8859_1)
-        val declared = Regex("(?i)charset\\s*=\\s*[\"']?([A-Za-z0-9_.:-]+)").find(head)?.groupValues?.get(1)
-        val cs = declared?.let { runCatching { charset(it) }.getOrNull() }
-            ?: p.int(0x3FDE)?.let { Rtf.charsetForCodepage(it) }
-            ?: Charsets.UTF_8
-        return String(b, cs)
-    }
-
-    private fun fixCharsetMeta(html: String): String =
-        html.replace(Regex("(?i)(<meta[^>]+charset\\s*=\\s*[\"']?)([A-Za-z0-9_.:-]+)"), "$1utf-8")
-
-    private fun attachmentPart(ap: PstProps, depth: Int): MimeBodyPart? {
-        val method = ap.int(0x3705) ?: 1
-        val fileName = (ap.string(0x3707) ?: ap.string(0x3704) ?: ap.string(0x3001))?.takeIf { it.isNotBlank() }
-        if (method == 5 || ap.type(0x3701) == 0x000D) {
-            if (depth > 8) return null
-            val raw = ap.props[0x3701]?.raw ?: return null
-            val hnid = raw.i32(0)
-            val ref = if (hnid and 0x1F == 0) ap.data(hnid)?.takeIf { it.size >= 4 }?.i32(0) else hnid
-            val sub = ref?.let { ap.subnode(it) } ?: return null
-            val inner = mime(PstProps.of(pst, sub.bidData, sub.bidSub), depth + 1)
-            return MimeBodyPart().apply {
-                setContent(inner, "message/rfc822")
-                disposition = Part.ATTACHMENT
-                val subj = runCatching { inner.subject }.getOrNull()
-                setFileName(((fileName ?: subj ?: "message").replace(Regex("[\\\\/:*?\"<>|]"), "_").take(100)).let { if (it.endsWith(".eml", true)) it else "$it.eml" })
-            }
-        }
-        if (method in 2..4 || method == 7) {
-            // By reference (a path or URL on the original computer): nothing to copy, keep a note.
-            val path = ap.string(0x370D) ?: ap.string(0x3708) ?: fileName ?: "attachment"
-            return MimeBodyPart().apply { setText("Linked attachment (not stored in the data file): $path", "UTF-8"); setFileName("${fileName ?: "link"}.txt"); disposition = Part.ATTACHMENT }
-        }
-        val data = ap.binary(0x3701) ?: return null
-        val name = fileName ?: if (method == 6) "ole-object.bin" else "attachment.bin"
-        val type = ap.string(0x370E)?.takeIf { it.contains('/') } ?: mimeTypeFor(name)
-        return MimeBodyPart().apply {
-            dataHandler = DataHandler(ByteArrayDataSource(data, type))
-            setFileName(name)
-            disposition = Part.ATTACHMENT
-            ap.string(0x3713)?.takeIf { it.isNotBlank() }?.let { setHeader("Content-Location", it) }
-        }
-    }
 
     // ------------------------------------------------------------------------- contacts, events, tasks
 
@@ -355,7 +297,7 @@ class PstStore private constructor(private val pst: PstFile) {
         val cls = p.string(0x001A).orEmpty()
         return when (kind) {
             FolderKind.CONTACTS -> when {
-                cls.startsWith("IPM.Contact", true) || cls.isEmpty() -> PimItem(kind, vcard(p))
+                cls.startsWith("IPM.Contact", true) || cls.isEmpty() -> parsed(p, 0, ArrayList()).contacts.firstOrNull()?.let { PimItem(kind, contact = it) }
                 cls.startsWith("IPM.DistList", true) -> PimItem(kind, distList(p))
                 else -> null
             }
@@ -374,43 +316,6 @@ class PstStore private constructor(private val pst: PstFile) {
     }
 
     private fun utc(ms: Long) = SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date(ms))
-
-    private fun vcard(p: PstProps): String {
-        val l = ArrayList<String>()
-        l += "BEGIN:VCARD"; l += "VERSION:3.0"
-        val first = p.string(0x3A06).orEmpty(); val last = p.string(0x3A11).orEmpty(); val middle = p.string(0x3A44).orEmpty()
-        val prefix = p.string(0x3A45).orEmpty(); val suffix = p.string(0x3A05).orEmpty()
-        val display = (p.string(0x3001) ?: listOf(first, middle, last).filter { it.isNotBlank() }.joinToString(" ")).trim()
-        l += "N:${esc(last)};${esc(first)};${esc(middle)};${esc(prefix)};${esc(suffix)}"
-        l += "FN:${esc(display.ifBlank { p.string(0x3A16).orEmpty() })}"
-        p.string(0x3A4F)?.takeIf { it.isNotBlank() }?.let { l += "NICKNAME:${esc(it)}" }
-        val company = p.string(0x3A16).orEmpty(); val dept = p.string(0x3A18).orEmpty()
-        if (company.isNotBlank() || dept.isNotBlank()) l += "ORG:${esc(company)};${esc(dept)}"
-        p.string(0x3A17)?.takeIf { it.isNotBlank() }?.let { l += "TITLE:${esc(it)}" }
-        for ((emailLid, typeLid) in listOf(0x8083 to 0x8082, 0x8093 to 0x8092, 0x80A3 to 0x80A2)) {
-            val id = lid(PSETID_ADDRESS, emailLid) ?: continue
-            val v = p.string(id)?.trim().orEmpty()
-            val t = lid(PSETID_ADDRESS, typeLid)?.let { p.string(it) }
-            val email = if (v.contains('@')) v else if (t.equals("EX", true)) "" else v
-            if (email.isNotBlank()) l += "EMAIL;TYPE=INTERNET:${esc(email)}"
-        }
-        for ((tag, type) in listOf(0x3A08 to "WORK,VOICE", 0x3A1B to "WORK,VOICE", 0x3A09 to "HOME,VOICE", 0x3A2F to "HOME,VOICE", 0x3A1C to "CELL", 0x3A24 to "WORK,FAX", 0x3A25 to "HOME,FAX", 0x3A21 to "PAGER", 0x3A1F to "CAR", 0x3A1D to "VOICE", 0x3A1A to "VOICE"))
-            p.string(tag)?.takeIf { it.isNotBlank() }?.let { l += "TEL;TYPE=$type:${esc(it)}" }
-        fun adr(type: String, street: Int?, city: Int?, state: Int?, zip: Int?, country: Int?) {
-            val parts = listOf(street, city, state, zip, country).map { it?.let { id -> p.string(id) }.orEmpty() }
-            if (parts.any { it.isNotBlank() }) l += "ADR;TYPE=$type:;;${parts.joinToString(";") { esc(it) }}"
-        }
-        adr("HOME", 0x3A5D, 0x3A59, 0x3A5C, 0x3A5B, 0x3A5A)
-        adr("WORK", lid(PSETID_ADDRESS, 0x8045) ?: 0x3A29, lid(PSETID_ADDRESS, 0x8046) ?: 0x3A27, lid(PSETID_ADDRESS, 0x8047) ?: 0x3A28, lid(PSETID_ADDRESS, 0x8048) ?: 0x3A2A, lid(PSETID_ADDRESS, 0x8049) ?: 0x3A26)
-        adr("OTHER", 0x3A63, 0x3A5F, 0x3A62, 0x3A61, 0x3A60)
-        p.time(0x3A42)?.let { val d = dateOnly(it); l += "BDAY:${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6)}" }
-        p.time(0x3A41)?.let { val d = dateOnly(it); l += "ANNIVERSARY:${d.substring(0, 4)}-${d.substring(4, 6)}-${d.substring(6)}" }
-        (lid(PSETID_ADDRESS, 0x802B)?.let { p.string(it) } ?: p.string(0x3A50) ?: p.string(0x3A51))?.takeIf { it.isNotBlank() }?.let { l += "URL:${esc(it)}" }
-        p.string(0x1000)?.takeIf { it.isNotBlank() }?.let { l += "NOTE:${esc(it.trim())}" }
-        categories(p).takeIf { it.isNotEmpty() }?.let { l += "CATEGORIES:${it.joinToString(",") { c -> esc(c) }}" }
-        l += "END:VCARD"
-        return l.joinToString("\r\n") + "\r\n"
-    }
 
     /** A contact group (distribution list) as a vCard 4 group: its one-off members' names and addresses. */
     private fun distList(p: PstProps): String {

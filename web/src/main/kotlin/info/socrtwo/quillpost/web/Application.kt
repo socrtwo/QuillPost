@@ -51,6 +51,7 @@ fun Application.module() {
         extraRoutes(sessions)
         commandRoutes(sessions)
         mailImportRoutes(sessions) // File ▸ Open, mailbox import, Local Archives (MailImportRoutes.kt)
+        fileRoutes(sessions) // "Open file": messages, contacts, calendars and office files (FileRoutes.kt)
         // QuillPen embedded editor (desktop): /api/quillpen and /quillpen-embed/<path>. See QuillPenEmbed.kt.
         quillPenEmbedRoutes(sessions, store.root)
         aiRoutes(sessions, store) // AI tab: ai/*.js, relay, desktop key store (AiRoutes.kt)

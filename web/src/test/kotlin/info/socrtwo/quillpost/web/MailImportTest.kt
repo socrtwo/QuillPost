@@ -181,12 +181,4 @@ class MailImportTest {
         assertTrue(!nsf.detection.supported && nsf.detection.note.contains("undocumented"))
         assertFailsWith<IllegalArgumentException> { ctx.imports.start(ImportRequest(nsf.upload)) }
     }
-
-    @Test
-    fun incomingFilesAreConfinedToTheIncomingFolder() {
-        val root = File(tmp, "data")
-        val name = Incoming.stage(root, "letter.eml", Fixtures.msg("Handed over").toByteArray().inputStream())
-        assertNotNull(Incoming.take(root, name))
-        assertFailsWith<IllegalArgumentException> { Incoming.take(root, "../settings.json") }
-    }
 }

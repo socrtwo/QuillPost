@@ -174,7 +174,6 @@ object MailStores {
             val flags = MsgFlags(seen = n !in mh["unseen"].orEmpty(), flagged = n in mh["flagged"].orEmpty(), answered = n in mh["replied"].orEmpty() || n in mh["answered"].orEmpty(), forwarded = n in mh["forwarded"].orEmpty())
             return StoreMessage(flags, f.lastModified()) { f.readBytes() }
         }
-        if (lower.endsWith(".msg") || lower.endsWith(".oft")) return StoreMessage(MsgFlags(seen = true), null) { MessageImport.parse(f.readBytes(), f.name).mime }
         val unread = lower.endsWith(".cnm")
         return StoreMessage(MsgFlags(seen = !unread), null) { MessageImport.parse(f.readBytes(), f.name).mime }
     }

@@ -49,6 +49,10 @@ import java.util.prefs.Preferences
  */
 fun main(args: Array<String>) {
     val prefs = Preferences.userRoot().node("info/socrtwo/quillpost/desktop")
+    // Files the system asked QuillPost to open (double-click, "Open with"): messages, contacts,
+    // calendars, documents. When QuillPost already runs, hand them to it and show its window.
+    val files = args.map { java.io.File(it) }.filter { it.isFile }
+    if (files.isNotEmpty() && FileLaunch.handToRunning(prefs, files)) return
     val port = System.getenv("PORT")?.toIntOrNull() ?: prefs.getInt("port", 8642).let { if (isFree(it)) it else freePort() }
     // QuillPen embedded editor: serve an installed QuillPen's resources/embed folder at /quillpen-embed/.
     QuillPenEmbed.desktop = true
@@ -58,15 +62,8 @@ fun main(args: Array<String>) {
     val server = embeddedServer(Netty, port = port, host = "127.0.0.1") { module() }
     server.start(wait = false)
     val url = "http://127.0.0.1:$port/"
-    // Files passed by the operating system ("Open with", double-click on an associated type).
-    val opened = stageFiles(args.map { java.io.File(it) })
-    if (opened.isNotEmpty()) openBrowser(url + "#" + opened.joinToString("&") { "open=" + java.net.URLEncoder.encode(it, "UTF-8").replace("+", "%20") })
-    else if (prefs.getBoolean("openOnStart", true)) openBrowser(url)
-    // macOS delivers files opened while the app runs as events instead of arguments.
-    runCatching {
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.APP_OPEN_FILE))
-            Desktop.getDesktop().setOpenFileHandler { e -> stageFiles(e.files).forEach { n -> openBrowser(url + "#open=" + java.net.URLEncoder.encode(n, "UTF-8").replace("+", "%20")) } }
-    }
+    FileLaunch.install(prefs, port, files) { openBrowser(url) }
+    if (prefs.getBoolean("openOnStart", true)) openBrowser(url)
 
     application {
         val windowState = rememberWindowState(width = 520.dp, height = 300.dp)
@@ -80,7 +77,7 @@ fun main(args: Array<String>) {
                 Item("Open QuillPost", onClick = { openBrowser(url) })
                 Item("Show window", onClick = { visible = true })
                 Separator()
-                Item("Quit", onClick = { stop(server); exitApplication() })
+                Item("Quit", onClick = { FileLaunch.uninstall(prefs); stop(server); exitApplication() })
             }
         )
         Window(
@@ -90,7 +87,7 @@ fun main(args: Array<String>) {
             title = "QuillPost",
             icon = painterResource("tray.svg")
         ) {
-            LauncherScreen(url = url, onQuit = { stop(server); exitApplication() })
+            LauncherScreen(url = url, onQuit = { FileLaunch.uninstall(prefs); stop(server); exitApplication() })
         }
     }
 }
@@ -130,14 +127,6 @@ private fun openBrowser(url: String) {
             ProcessBuilder(cmd).start()
         }
     }
-}
-
-/** Copies mail files into the data folder's incoming folder; the page opens them by name (#open=). */
-private fun stageFiles(files: List<java.io.File>): List<String> {
-    val existing = files.filter { it.isFile }
-    if (existing.isEmpty()) return emptyList()
-    val root = info.socrtwo.quillpost.web.DataStore().root
-    return existing.mapNotNull { f -> runCatching { info.socrtwo.quillpost.web.Incoming.stage(root, f) }.getOrNull() }
 }
 
 private fun stop(server: EmbeddedServer<*, *>) {

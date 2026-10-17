@@ -6,7 +6,7 @@ const { load } = require("./load.js");
 const L = load();
 
 test("mail import commands are registered for the File tab, the QAT and command search", () => {
-  for (const id of ["mail.openMessageFile", "mail.importMailbox", "mail.localArchives"]) {
+  for (const id of ["mail.openFile", "mail.importMailbox", "mail.localArchives"]) {
     const c = L.Commands.get(id);
     assert.ok(c, id);
     assert.ok(L.icons.has(c.icon), `${id}: icon ${c.icon}`);
@@ -14,6 +14,6 @@ test("mail import commands are registered for the File tab, the QAT and command 
   }
   assert.strictEqual(L.Commands.get("mail.importMailbox").group, "Open & Export");
   assert.ok(L.Commands.search("pst").some((c) => c.id === "mail.importMailbox"));
-  assert.ok(L.Commands.search("eml").some((c) => c.id === "mail.openMessageFile"));
+  assert.ok(!L.Commands.has("mail.openMessageFile"), "one Open File command");
   assert.deepStrictEqual(L.duplicates, []);
 });

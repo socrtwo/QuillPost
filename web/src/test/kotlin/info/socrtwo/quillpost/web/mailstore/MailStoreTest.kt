@@ -236,9 +236,9 @@ class MailStoreTest {
             val plan = texts(mime(folder(s, "Inbox/Projects").messages().single()))
             val planHtml = plan.first { it.first == "text/html" }.second
             assertContains(planHtml, "text-align:center")
-            assertContains(planHtml, "<b>Plan</b>")
+            assertTrue(Regex("font-weight:bold;?\">Plan<").containsMatchIn(planHtml), planHtml)
             assertContains(planHtml, "color:#ff0000")
-            assertContains(planHtml, "<i>italic</i>")
+            assertTrue(Regex("font-style:italic;?\">italic<").containsMatchIn(planHtml), planHtml)
 
             // Sent item: headers rebuilt from the recipient table, body from a data tree.
             val sent = mime(folder(s, "Sent Items").messages().single())
@@ -250,8 +250,8 @@ class MailStoreTest {
             assertEquals("High", sent.getHeader("Importance", null))
             assertEquals(900, (sent.content as String).split("Report line.").size - 1)
 
-            val card = folder(s, "Contacts").pimItems().single().text
-            assertContains(card, "FN:Frank Contact"); assertContains(card, "EMAIL;TYPE=INTERNET:frank@example.com"); assertContains(card, "ORG:Acme;")
+            val card = assertNotNull(folder(s, "Contacts").pimItems().single().contact)
+            assertEquals("Frank Contact", card.displayName); assertEquals("frank@example.com", card.emails.single().value); assertEquals("Acme", card.company)
             val event = folder(s, "Calendar").pimItems().single().text
             assertContains(event, "SUMMARY:Team sync"); assertContains(event, "LOCATION:Room 2"); assertContains(event, "RRULE:FREQ=WEEKLY;BYDAY=TU;COUNT=10")
             assertContains(event, "DTSTART:20260924T091200Z")

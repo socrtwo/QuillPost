@@ -1429,7 +1429,7 @@ function linkify(text, host) {
 
 /** Sanitises email HTML for display in the sandboxed frame. Scripts, forms, external CSS and
  *  (optionally) remote images are removed; cid: images are routed through the attachment API. */
-function sanitizeHtml(html, { allowImages, folder, uid }) {
+function sanitizeHtml(html, { allowImages, folder, uid, cidUrl = null }) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   let blockedImages = 0;
   doc.querySelectorAll("script, iframe, object, embed, link, meta, base, form, input, button, textarea, select, applet, frame, frameset, noscript, svg").forEach((n) => n.remove());
@@ -1440,12 +1440,13 @@ function sanitizeHtml(html, { allowImages, folder, uid }) {
       if (name.startsWith("on") || name === "srcdoc") { n.removeAttribute(a.name); continue; }
       if ((name === "href" || name === "src" || name === "action" || name === "formaction" || name === "xlink:href" || name === "background" || name === "poster") && /^\s*(javascript|vbscript|data:text\/html)/i.test(val)) { n.removeAttribute(a.name); continue; }
       if (name === "style" && /expression\s*\(|javascript:/i.test(val)) n.removeAttribute("style");
-      if (name === "style" && !allowImages && /url\s*\(/i.test(val)) { n.setAttribute("style", val.replace(/url\s*\([^)]*\)/gi, "none")); blockedImages++; }
+      if (name === "style" && cidUrl && /url\(\s*["']?cid:/i.test(val)) n.setAttribute("style", val.replace(/url\(\s*["']?cid:([^"')]+)["']?\s*\)/gi, (m0, id) => `url("${cidUrl(id)}")`));
+      if (name === "style" && !allowImages && /url\s*\(/i.test(n.getAttribute("style") || "")) { n.setAttribute("style", n.getAttribute("style").replace(/url\s*\(([^)]*)\)/gi, (m0, u) => cidUrl && u.includes(cidUrl("")) ? m0 : "none")); blockedImages++; }
     }
     const tag = n.tagName.toLowerCase();
     if (tag === "img" || tag === "image" || tag === "source" || tag === "video" || tag === "audio") {
       const src = n.getAttribute("src") || "";
-      if (/^cid:/i.test(src)) { n.setAttribute("src", attachmentUrl(folder, uid, { cid: src.slice(4).replace(/^<|>$/g, "") })); }
+      if (/^cid:/i.test(src)) { const id = src.slice(4).replace(/^<|>$/g, ""); n.setAttribute("src", cidUrl ? cidUrl(id) : attachmentUrl(folder, uid, { cid: id })); }
       else if (/^data:image\//i.test(src)) { /* inline data image: fine */ }
       else if (src && !allowImages) { n.setAttribute("data-blocked-src", src); n.setAttribute("src", transparent); n.setAttribute("title", "Remote image blocked"); blockedImages++; }
       n.removeAttribute("srcset"); n.removeAttribute("loading");
@@ -1453,7 +1454,8 @@ function sanitizeHtml(html, { allowImages, folder, uid }) {
     }
     if (tag === "a") { n.setAttribute("target", "_blank"); n.setAttribute("rel", "noopener noreferrer"); const href = n.getAttribute("href") || ""; if (href) n.setAttribute("title", "Opens " + href); }
   }
-  if (!allowImages) for (const s of doc.querySelectorAll("style")) { if (/url\s*\(/i.test(s.textContent)) { s.textContent = s.textContent.replace(/url\s*\([^)]*\)/gi, "none"); blockedImages++; } s.textContent = s.textContent.replace(/@import[^;]+;/gi, ""); }
+  if (cidUrl) for (const s of doc.querySelectorAll("style")) s.textContent = s.textContent.replace(/url\(\s*["']?cid:([^"')]+)["']?\s*\)/gi, (m0, id) => `url("${cidUrl(id)}")`);
+  if (!allowImages) for (const s of doc.querySelectorAll("style")) { if (/url\s*\(/i.test(s.textContent)) { s.textContent = s.textContent.replace(/url\s*\(([^)]*)\)/gi, (m0, u) => { if (cidUrl && u.includes(cidUrl(""))) return m0; blockedImages++; return "none"; }); } s.textContent = s.textContent.replace(/@import[^;]+;/gi, ""); }
   const csp = `default-src 'none'; img-src data: 'self'${allowImages ? " https: http:" : ""}; style-src 'unsafe-inline'; font-src 'none'; media-src 'none'; frame-src 'none'; form-action 'none'`;
   const head = `<meta http-equiv="Content-Security-Policy" content="${csp}"><meta charset="utf-8"><base target="_blank"><style>html,body{margin:0;padding:4px 2px;font-family:"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.45;color:#242424;background:#fff;word-wrap:break-word;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}pre{white-space:pre-wrap}blockquote{border-left:3px solid #ccc;margin:8px 0;padding-left:10px;color:#555}</style>`;
   const body = doc.body ? doc.body.innerHTML : "";

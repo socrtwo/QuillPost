@@ -8,6 +8,9 @@
     <!-- QuillPen (the suite's word processor): detected to offer its embedded editor in compose. -->
     <queries>
         <package android:name="io.github.socrtwo.quillpen" />
+        <!-- QuillGrid and QuillStage: "Open in" for spreadsheets and presentations (FileHandoff.kt). -->
+        <package android:name="io.github.socrtwo.quillgrid" />
+        <package android:name="io.github.socrtwo.quillstage" />
         <provider android:authorities="io.github.socrtwo.quillpen.embed" />
     </queries>
 
@@ -34,47 +37,40 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- "Open with" for mail files: messages (.eml, .msg, .emlx) and mailboxes (.mbox, .pst,
-                 .ost, .dbx, .mbx). Content is identified by its bytes, so any of these may arrive. -->
+            <!-- "Open with QuillPost": saved messages (.eml, .msg, winmail.dat, .mht…), contacts and calendars.
+                 The file's content decides what is shown, so generic binary types are accepted too. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-                <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="content" />
                 <data android:scheme="file" />
                 <data android:mimeType="message/rfc822" />
+                <data android:mimeType="message/*" />
                 <data android:mimeType="application/vnd.ms-outlook" />
-                <data android:mimeType="application/vnd.ms-outlook-pst" />
+                <!-- Mailboxes (.mbox, .pst, .ost, .dbx…) go to Import Mailbox (mailimport.js). -->
                 <data android:mimeType="application/mbox" />
                 <data android:mimeType="application/x-mbox" />
-                <data android:mimeType="application/x-ms-tnef" />
+                <data android:mimeType="application/vnd.ms-outlook-pst" />
                 <data android:mimeType="application/ms-tnef" />
-            </intent-filter>
-            <!-- Files without a mail MIME type, recognised by name. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="content" />
-                <data android:scheme="file" />
-                <data android:host="*" />
+                <data android:mimeType="application/vnd.ms-tnef" />
+                <data android:mimeType="multipart/related" />
+                <data android:mimeType="application/x-mimearchive" />
+                <data android:mimeType="text/vcard" />
+                <data android:mimeType="text/x-vcard" />
+                <data android:mimeType="text/directory" />
+                <data android:mimeType="text/calendar" />
+                <data android:mimeType="text/x-vcalendar" />
+                <data android:mimeType="application/pkcs7-mime" />
+                <data android:mimeType="application/mac-binhex40" />
                 <data android:mimeType="application/octet-stream" />
-                <data android:pathPattern=".*\\.eml" />
-                <data android:pathPattern=".*\\.msg" />
-                <data android:pathPattern=".*\\.emlx" />
-                <data android:pathPattern=".*\\.mbox" />
-                <data android:pathPattern=".*\\.mbx" />
-                <data android:pathPattern=".*\\.pst" />
-                <data android:pathPattern=".*\\.ost" />
-                <data android:pathPattern=".*\\.dbx" />
             </intent-filter>
+            <!-- "Share to QuillPost": any file becomes an opened file (and can be sent as an attachment). -->
             <intent-filter>
+                <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="message/rfc822" />
-                <data android:mimeType="application/vnd.ms-outlook" />
-                <data android:mimeType="application/mbox" />
+                <data android:mimeType="*/*" />
             </intent-filter>
             <!-- Let QuillPost be chosen for mailto: links from other apps. -->
             <intent-filter>

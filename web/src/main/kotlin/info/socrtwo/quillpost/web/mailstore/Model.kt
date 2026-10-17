@@ -72,8 +72,8 @@ class StoreMessage(
 
 enum class FolderKind { MAIL, CONTACTS, CALENDAR, TASKS, NOTES, JOURNAL }
 
-/** A contact (vCard 3.0), event (VEVENT) or task (VTODO) taken from a PIM folder. */
-data class PimItem(val kind: FolderKind, val text: String)
+/** A contact (as [contact], or a vCard 3.0 group), event (VEVENT) or task (VTODO) taken from a PIM folder. */
+data class PimItem(val kind: FolderKind, val text: String = "", val contact: info.socrtwo.quillpost.web.ContactDto? = null)
 
 /** A folder in the source store. The root folder of a store is a container; its own messages (if any) are shown as a folder too. */
 class StoreFolder(

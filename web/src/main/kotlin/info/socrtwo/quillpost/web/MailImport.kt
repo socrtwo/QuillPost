@@ -139,7 +139,7 @@ class MailImport(private val ctx: AccountContext, private val tmpRoot: File) {
     }
 
     /** Unpacks archives and decides what was uploaded. */
-    fun analyze(uploadId: String): MailboxAnalysis {
+    fun analyze(uploadId: String, openMessages: Boolean = true): MailboxAnalysis {
         val up = upload(uploadId)
         val input = File(up.dir, "in")
         val files = input.walk().filter { it.isFile }.toList()
@@ -164,10 +164,10 @@ class MailImport(private val ctx: AccountContext, private val tmpRoot: File) {
         }
         val det = if (target.isDirectory) Sniffer.sniffDir(target) else Sniffer.sniffFile(target, name)
         up.name = MailStores.baseName(name); up.detection = det
-        if (det.category == "message") {
+        if (det.category == "message" && openMessages) {
             val parsed = MessageImport.parse(target.readBytes(), name)
             val ref = openMessage(parsed)
-            return MailboxAnalysis(up.id, name, det.copy(label = parsed.formatLabel.ifBlank { det.label }), warnings = parsed.warnings, opened = ref)
+            return MailboxAnalysis(up.id, name, det.copy(label = parsed.formatLabel.ifBlank { det.label }), opened = ref)
         }
         if (det.category != "mailbox" || !det.supported) return MailboxAnalysis(up.id, name, det)
         up.store?.close()
@@ -186,7 +186,7 @@ class MailImport(private val ctx: AccountContext, private val tmpRoot: File) {
     }
 
     /** Stores a single message in Local Archives ▸ Opened files and returns where it is. */
-    fun openMessage(p: ParsedMessage): MessageRef {
+    fun openMessage(p: ImportedMessage): MessageRef {
         val w = ctx.archives.opened()
         val uid = w.append("files", p.mime, p.flags, p.internalDate, emptyList())
         w.finish()
@@ -394,9 +394,10 @@ class MailImport(private val ctx: AccountContext, private val tmpRoot: File) {
         val items: List<PimItem> = folder.pimItems()
         when (folder.kind) {
             FolderKind.CONTACTS -> {
-                val (groups, cards) = items.partition { it.text.contains("KIND:group") }
-                if (cards.isNotEmpty()) {
-                    val r = ctx.importContacts(cards.joinToString("") { it.text }, "vcf")
+                val (groups, cards) = items.partition { it.contact == null && it.text.contains("KIND:group") }
+                val contacts = cards.mapNotNull { it.contact } + cards.filter { it.contact == null && it.text.isNotBlank() }.flatMap { VCard.parse(it.text) }
+                if (contacts.isNotEmpty()) {
+                    val r = ctx.pim.importContacts(contacts)
                     job.contacts += r.imported + r.updated; job.imported += r.imported + r.updated
                     r.errors.forEach { job.report += "${folder.name}: $it" }
                 }

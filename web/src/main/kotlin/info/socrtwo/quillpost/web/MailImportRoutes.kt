@@ -9,6 +9,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import info.socrtwo.quillpost.web.mailstore.Sniffer
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -21,6 +22,7 @@ data class ArchivesResponse(val archives: List<ArchiveMeta>, val folders: List<F
  * Opening and importing mail files (MailImport.kt) and the Local Archives store (LocalArchives.kt):
  *
  *  POST   /api/mailbox/upload?upload=&path=   one file (raw body); repeat with the returned id for folder uploads
+ *  POST   /api/mailbox/sniff?name=&size=      is this (first 64 KB of a file) a mail store?
  *  POST   /api/mailbox/analyze?upload=        detect the format; single messages are opened, mailboxes listed
  *  DELETE /api/mailbox/upload?upload=         discard an upload
  *  POST   /api/mailbox/import                 {ImportRequest} → job
@@ -46,22 +48,17 @@ internal fun Routing.mailImportRoutes(sessions: Sessions) {
             val ctx = call.ctx()
             val id = call.q("upload") ?: throw IllegalArgumentException("upload is required")
             withContext(Dispatchers.IO) {
-                try { ctx.imports.analyze(id) }
+                try { ctx.imports.analyze(id, openMessages = call.q("open") != "false") }
                 catch (e: info.socrtwo.quillpost.web.mailstore.MailStoreException) { throw IllegalArgumentException(e.message) }
             }
         }
     }
-    post("/api/mailbox/incoming") {
+    post("/api/mailbox/sniff") {
         call.handle {
-            val ctx = call.ctx()
-            val name = call.q("name") ?: throw IllegalArgumentException("name is required")
-            withContext(Dispatchers.IO) {
-                val f = Incoming.take(ctx.store.root, name) ?: throw IllegalArgumentException("The file to open was not found (it may have been opened already)")
-                try {
-                    val id = f.inputStream().use { ctx.imports.receive(null, name, it) }
-                    try { ctx.imports.analyze(id) } catch (e: info.socrtwo.quillpost.web.mailstore.MailStoreException) { throw IllegalArgumentException(e.message) }
-                } finally { f.delete() }
-            }
+            call.ctx()
+            // The first bytes of a file the browser is about to open: is it a mail store? (mailimport.js)
+            val head = call.receiveStream().use { it.readNBytes(65536) }
+            Sniffer.sniff(head, call.q("name") ?: "file", call.q("size")?.toLongOrNull() ?: head.size.toLong())
         }
     }
     delete("/api/mailbox/upload") { call.handle { call.q("upload")?.let { call.ctx().imports.discard(it) }; Unit } }
@@ -112,31 +109,4 @@ fun LocalArchives.exportMbox(folder: String, out: java.io.OutputStream): Int {
     }
     out.flush()
     return n
-}
-
-/**
- * Files handed over by the shells ("Open with", file associations, Android share/view intents):
- * the shell copies the file into `<data folder>/incoming/` and asks the page to open it by name.
- * Only plain names inside that folder are accepted.
- */
-object Incoming {
-    fun dir(root: java.io.File): java.io.File = java.io.File(root, "incoming").apply { mkdirs() }
-
-    /** Copies [source] into the incoming folder under a unique name and returns that name. */
-    fun stage(root: java.io.File, source: java.io.File): String = source.inputStream().use { stage(root, source.name, it) }
-
-    /** Copies [input] (e.g. an Android content URI) into the incoming folder; returns the name to open. */
-    fun stage(root: java.io.File, fileName: String, input: java.io.InputStream): String {
-        val base = fileName.replace(Regex("[\\\\/:*?\"<>|\\u0000-\\u001f]"), "_").take(150).ifBlank { "file" }
-        var name = base
-        var i = 1
-        while (java.io.File(dir(root), name).exists()) name = "${i++}-$base"
-        java.io.File(dir(root), name).outputStream().use { input.copyTo(it, 1 shl 16) }
-        return name
-    }
-
-    fun take(root: java.io.File, name: String): java.io.File? {
-        require(name.isNotBlank() && !name.contains('/') && !name.contains('\\') && name != "." && name != "..") { "Bad file name" }
-        return java.io.File(dir(root), name).takeIf { it.isFile }
-    }
 }

@@ -67,8 +67,6 @@ class MainActivity : ComponentActivity() {
     private lateinit var splashRetry: Button
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingMailto: String? = null
-    /** Mail files handed over by "Open with" / share, staged in the data folder, waiting for the page. */
-    private val pendingFiles = ArrayList<String>()
     private var loadedUrl: String? = null
     /** False until the web UI has rendered once (or start-up failed): keeps the launch splash on screen. */
     private var uiReady = false
@@ -100,7 +98,8 @@ class MainActivity : ComponentActivity() {
         window.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.quillpost_background)))
         configureWebView()
         pendingMailto = mailtoFrom(intent)
-        receiveFiles(intent)
+        // "Open with" / "Share to" QuillPost (FileHandoff.kt); not again when the Activity is recreated.
+        if (savedInstanceState == null) FileHandoff.receive(this, intent) { deliverFiles() }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (!::webView.isInitialized || splash.visibility == View.VISIBLE) { moveTaskToBack(true); return }
@@ -116,7 +115,13 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         mailtoFrom(intent)?.let { deliverMailto(it) }
-        receiveFiles(intent)
+        FileHandoff.receive(this, intent) { deliverFiles() }
+    }
+
+    /** Asks the page to show files queued by [FileHandoff] (it also checks by itself once signed in). */
+    private fun deliverFiles() {
+        if (!::webView.isInitialized || LocalServer.url == null || splash.visibility == View.VISIBLE) return
+        webView.evaluateJavascript("window.quillpostOpenPending && window.quillpostOpenPending()", null)
     }
 
     override fun onResume() {
@@ -250,7 +255,6 @@ class MainActivity : ComponentActivity() {
                     uiReady = true
                     splash.visibility = View.GONE
                     pendingMailto?.let { m -> pendingMailto = null; deliverMailto(m) }
-                    pendingFiles.toList().also { pendingFiles.clear() }.forEach { deliverFile(it) }
                 }
             }
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -317,42 +321,6 @@ class MainActivity : ComponentActivity() {
         webView.evaluateJavascript(js, null)
     }
 
-    // ------------------------------------------------------------------ "Open with" mail files
-
-    /** Content URIs of mail files sent to the app (VIEW, SEND, SEND_MULTIPLE). */
-    private fun fileUris(intent: Intent?): List<Uri> {
-        if (intent == null) return emptyList()
-        return when (intent.action) {
-            Intent.ACTION_VIEW -> listOfNotNull(intent.data?.takeIf { it.scheme == "content" || it.scheme == "file" })
-            Intent.ACTION_SEND -> listOfNotNull(if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java) else @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_STREAM))
-            Intent.ACTION_SEND_MULTIPLE -> (if (Build.VERSION.SDK_INT >= 33) intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java) else @Suppress("DEPRECATION") intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)) ?: emptyList()
-            else -> emptyList()
-        }
-    }
-
-    /** Copies the files into the backend's incoming folder (off the UI thread), then asks the page to open them. */
-    private fun receiveFiles(intent: Intent?) {
-        val uris = fileUris(intent)
-        if (uris.isEmpty()) return
-        Thread {
-            for (uri in uris) {
-                val name = runCatching {
-                    contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
-                }.getOrNull() ?: uri.lastPathSegment?.substringAfterLast('/') ?: "mail-file"
-                val staged = runCatching {
-                    contentResolver.openInputStream(uri)?.use { input -> info.socrtwo.quillpost.web.Incoming.stage(java.io.File(filesDir, "quillpost"), name, input) }
-                }.getOrNull()
-                if (staged == null) runOnUiThread { Toast.makeText(this, R.string.open_file_failed, Toast.LENGTH_SHORT).show() }
-                else runOnUiThread { deliverFile(staged) }
-            }
-        }.start()
-    }
-
-    private fun deliverFile(name: String) {
-        if (LocalServer.url == null || splash.visibility == View.VISIBLE || !::webView.isInitialized) { pendingFiles += name; return }
-        webView.evaluateJavascript("window.quillpostOpenIncoming && window.quillpostOpenIncoming(" + jsString(name) + ")", null)
-    }
-
     private fun jsString(s: String): String = "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "") + "\""
 
     // ------------------------------------------------------------------ attachments
@@ -409,6 +377,10 @@ class MainActivity : ComponentActivity() {
         }
         /** True when QuillPen is installed and its embed provider answers (compose "QuillPen" button). */
         @JavascriptInterface fun quillPenAvailable(): Boolean = QuillPenAndroid.isAvailable(this@MainActivity)
+        /** "Open in QuillPen / QuillGrid / QuillStage" for an opened document (fileopen.js). */
+        @JavascriptInterface fun openInApp(url: String, fileName: String, mimeType: String, packageName: String) {
+            if (pageIsLocal && isLocal(Uri.parse(url))) FileHandoff.openInApp(this@MainActivity, url, fileName, mimeType, packageName)
+        }
         @JavascriptInterface fun toast(text: String) { runOnUiThread { Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show() } }
 
         // AI tab API keys, encrypted with an Android Keystore key (AiSecureStore). "" = none.
