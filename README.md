@@ -365,17 +365,17 @@ Notes on the architecture choices:
 
 ## Releases
 
-Pushing a tag such as `v1.5.0` makes GitHub Actions build every target and attach the files
-to one GitHub Release (`Releases → QuillPost v1.5.0`):
+Pushing a tag such as `v1.5.1` makes GitHub Actions build every target and attach the files
+to one GitHub Release (`Releases → QuillPost v1.5.1`):
 
 | Target | Release file |
 |---|---|
-| Android, ChromeOS | `quillpost-v1.5.0.apk` (signed when the signing secrets exist, else `-unsigned`) |
-| Windows | `quillpost-desktop-v1.5.0-windows-x64.msi`, or the portable `.zip` |
-| macOS | `quillpost-desktop-v1.5.0-macos-arm64.dmg`, or the portable `.tar.gz` |
-| Linux x64 | `quillpost-desktop-v1.5.0-linux-x64.deb`, or the portable `.tar.gz` |
-| Raspberry Pi OS (64-bit) / Linux arm64 | `quillpost-desktop-v1.5.0-linux-arm64.deb`, or the portable `.tar.gz` |
-| Web / any OS with Java 17+ (servers, Termux, ChromeOS Linux) | `quillpost-web-v1.5.0-any-jvm.zip` → unzip, run `bin/quillpost-web` |
+| Android, ChromeOS | `quillpost-v1.5.1.apk` (signed when the signing secrets exist, else `-unsigned`) |
+| Windows | `quillpost-desktop-v1.5.1-windows-x64.msi`, or the portable `.zip` |
+| macOS | `quillpost-desktop-v1.5.1-macos-arm64.dmg`, or the portable `.tar.gz` |
+| Linux x64 | `quillpost-desktop-v1.5.1-linux-x64.deb`, or the portable `.tar.gz` |
+| Raspberry Pi OS (64-bit) / Linux arm64 | `quillpost-desktop-v1.5.1-linux-arm64.deb`, or the portable `.tar.gz` |
+| Web / any OS with Java 17+ (servers, Termux, ChromeOS Linux) | `quillpost-web-v1.5.1-any-jvm.zip` → unzip, run `bin/quillpost-web` |
 | iOS | `QuillPost-iOS-simulator.app.zip` (unsigned simulator build; a device build needs an Apple Developer account) |
 
 ### Making a release from Termux (Android)
@@ -403,8 +403,8 @@ Build and test the web/JVM server on the phone (this is the same zip the release
 ```bash
 cd ~/quillpost/web
 chmod +x gradlew
-./gradlew build distZip --no-daemon                   # runs the junk-engine tests, writes build/distributions/quillpost-web-1.5.0.zip
-cd build/distributions && unzip -o quillpost-web-1.5.0.zip && cd quillpost-web-1.5.0
+./gradlew build distZip --no-daemon                   # runs the junk-engine tests, writes build/distributions/quillpost-web-1.5.1.zip
+cd build/distributions && unzip -o quillpost-web-1.5.1.zip && cd quillpost-web-1.5.1
 PORT=8080 ./bin/quillpost-web                          # open http://localhost:8080 in the phone browser
 ```
 
@@ -415,15 +415,15 @@ cd ~/quillpost
 git checkout main && git pull
 # bump the version first if needed: app/build.gradle.kts (versionCode/versionName),
 #   web/build.gradle.kts (version), desktop/build.gradle.kts (version, packageVersion)
-git commit -am "Release v1.5.0"        # only if you changed something
+git commit -am "Release v1.5.1"        # only if you changed something
 git push
-git tag -a v1.5.0 -m "QuillPost 1.5.0"
-git push origin v1.5.0                 # <- this triggers the Android, Desktop, Web and iOS release builds
+git tag -a v1.5.1 -m "QuillPost 1.5.1"
+git push origin v1.5.1                 # <- this triggers the Android, Desktop, Web and iOS release builds
 
 gh run list --limit 8                  # watch the four workflows
 gh run watch                           # follow one interactively
-gh release view v1.5.0                 # list the attached files when they are done
-gh release download v1.5.0 -D ~/storage/downloads/quillpost-v1.5.0
+gh release view v1.5.1                 # list the attached files when they are done
+gh release download v1.5.1 -D ~/storage/downloads/quillpost-v1.5.1
 ```
 
 If the repository has no signing secrets, the APK arrives unsigned; sign it on the phone:
@@ -432,7 +432,7 @@ If the repository has no signing secrets, the APK arrives unsigned; sign it on t
 pkg install -y apksigner
 keytool -genkeypair -v -keystore ~/quillpost-release.jks -alias quillpost -keyalg RSA -keysize 2048 -validity 10000
 apksigner sign --ks ~/quillpost-release.jks --ks-key-alias quillpost \
-  --out quillpost-v1.5.0.apk ~/storage/downloads/quillpost-v1.5.0/quillpost-v1.5.0-unsigned.apk
+  --out quillpost-v1.5.1.apk ~/storage/downloads/quillpost-v1.5.1/quillpost-v1.5.1-unsigned.apk
 ```
 
 To have CI sign it instead, add the secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`
