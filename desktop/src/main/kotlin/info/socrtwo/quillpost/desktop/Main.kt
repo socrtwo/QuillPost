@@ -43,18 +43,18 @@ import java.net.URI
 import java.util.prefs.Preferences
 
 /**
- * Desktop launcher: starts the QuillPost web backend on localhost and opens the Outlook-style
+ * Desktop launcher: starts the Anne's Post web backend on localhost and opens the Outlook-style
  * web UI in the default browser. The window shows the address, lets you reopen or copy it,
  * and the app keeps running from the system tray.
  */
 fun main(args: Array<String>) {
     val prefs = Preferences.userRoot().node("info/socrtwo/quillpost/desktop")
-    // Files the system asked QuillPost to open (double-click, "Open with"): messages, contacts,
-    // calendars, documents. When QuillPost already runs, hand them to it and show its window.
+    // Files the system asked Anne's Post to open (double-click, "Open with"): messages, contacts,
+    // calendars, documents. When Anne's Post already runs, hand them to it and show its window.
     val files = args.map { java.io.File(it) }.filter { it.isFile }
     if (files.isNotEmpty() && FileLaunch.handToRunning(prefs, files)) return
     val port = System.getenv("PORT")?.toIntOrNull() ?: prefs.getInt("port", 8642).let { if (isFree(it)) it else freePort() }
-    // QuillPen embedded editor: serve an installed QuillPen's resources/embed folder at /quillpen-embed/.
+    // Anne's Pen embedded editor: serve an installed Anne's Pen's resources/embed folder at /quillpen-embed/.
     QuillPenEmbed.desktop = true
     if (!GraphicsEnvironment.isHeadless()) QuillPenEmbed.folderChooser = ::chooseQuillPenFolder
     // Single-user app on 127.0.0.1: the backend may keep the AI tab's API keys in its private data folder.
@@ -72,9 +72,9 @@ fun main(args: Array<String>) {
         Tray(
             state = trayState,
             icon = painterResource("tray.svg"),
-            tooltip = "QuillPost",
+            tooltip = "Anne's Post",
             menu = {
-                Item("Open QuillPost", onClick = { openBrowser(url) })
+                Item("Open Anne's Post", onClick = { openBrowser(url) })
                 Item("Show window", onClick = { visible = true })
                 Separator()
                 Item("Quit", onClick = { FileLaunch.uninstall(prefs); stop(server); exitApplication() })
@@ -84,7 +84,7 @@ fun main(args: Array<String>) {
             onCloseRequest = { visible = false },
             visible = visible,
             state = windowState,
-            title = "QuillPost",
+            title = "Anne's Post",
             icon = painterResource("tray.svg")
         ) {
             LauncherScreen(url = url, onQuit = { FileLaunch.uninstall(prefs); stop(server); exitApplication() })
@@ -97,13 +97,13 @@ private fun LauncherScreen(url: String, onQuit: () -> Unit) {
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("QuillPost is running", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text("The mail client opens in your web browser. Closing this window keeps QuillPost running in the tray; use Quit to stop it.",
+                Text("Anne's Post is running", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("The mail client opens in your web browser. Closing this window keeps Anne's Post running in the tray; use Quit to stop it.",
                     style = MaterialTheme.typography.bodyMedium)
                 Text(url, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { openBrowser(url) }) { Text("Open QuillPost") }
+                    Button(onClick = { openBrowser(url) }) { Text("Open Anne's Post") }
                     OutlinedButton(onClick = { Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(url), null) }) { Text("Copy address") }
                     OutlinedButton(onClick = onQuit) { Text("Quit") }
                 }
@@ -137,12 +137,12 @@ private fun isFree(port: Int): Boolean = runCatching { ServerSocket(port, 1, jav
 
 private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
-/** Native folder picker for Settings > Compose > QuillPen folder (runs on the Swing thread). */
+/** Native folder picker for Settings > Compose > Anne's Pen folder (runs on the Swing thread). */
 private suspend fun chooseQuillPenFolder(): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
     var chosen: String? = null
     javax.swing.SwingUtilities.invokeAndWait {
         val chooser = javax.swing.JFileChooser().apply {
-            dialogTitle = "Choose QuillPen's resources/embed folder"
+            dialogTitle = "Choose Anne's Pen's resources/embed folder"
             fileSelectionMode = javax.swing.JFileChooser.DIRECTORIES_ONLY
             isAcceptAllFileFilterUsed = false
         }

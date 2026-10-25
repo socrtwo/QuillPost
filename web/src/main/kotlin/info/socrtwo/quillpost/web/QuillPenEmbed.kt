@@ -19,16 +19,16 @@ import kotlinx.serialization.Serializable
 import java.io.File
 
 /**
- * Desktop side of the QuillPen embedded editor (see the suite's EMBED.md, section 1).
+ * Desktop side of the Anne's Pen embedded editor (see the suite's EMBED.md, section 1).
  *
- * The desktop launcher sets [desktop] (system property `quillpost.desktop=true`). The QuillPen
+ * The desktop launcher sets [desktop] (system property `quillpost.desktop=true`). The Anne's Pen
  * installer ships its web build unpacked in `resources/embed/`; this object finds it in the
  * standard install locations, or in a folder the person chose in Settings, and the routes serve
  * it at `/quillpen-embed/<path>` so the compose window can load it in an iframe.
  *
  * On the self-hosted web server the routes answer "not available" and serve nothing: there the
- * person enters the URL of a QuillPen web deployment instead (kept in the browser). On Android
- * the WebView shell answers `https://quillpen.embed/` itself, from QuillPen's ContentProvider.
+ * person enters the URL of an Anne's Pen web deployment instead (kept in the browser). On Android
+ * the WebView shell answers `https://quillpen.embed/` itself, from Anne's Pen's ContentProvider.
  */
 object QuillPenEmbed {
     /** True when this backend runs inside the desktop launcher (set before the server starts). */
@@ -39,7 +39,7 @@ object QuillPenEmbed {
 
     private const val CHOSEN_FILE = "quillpen-folder.txt"
 
-    /** The standard locations of QuillPen's `resources/embed` folder on this operating system. */
+    /** The standard locations of Anne's Pen's `resources/embed` folder on this operating system. */
     fun standardLocations(
         os: String = System.getProperty("os.name") ?: "",
         env: (String) -> String? = System::getenv,
@@ -59,7 +59,7 @@ object QuillPenEmbed {
         }
     }
 
-    /** A folder holds QuillPen's embed build when it contains index.html. */
+    /** A folder holds Anne's Pen's embed build when it contains index.html. */
     fun isEmbedFolder(dir: File?): Boolean = dir != null && dir.isDirectory && File(dir, "index.html").isFile
 
     fun chosenFolder(dataDir: File): File? =
@@ -162,12 +162,12 @@ internal fun Routing.quillPenEmbedRoutes(sessions: Sessions, dataDir: File) {
     post("/api/quillpen/folder") {
         call.handle {
             sessions.get(call.token())
-            require(QuillPenEmbed.desktop) { "Choosing a QuillPen folder is only possible in the desktop app." }
+            require(QuillPenEmbed.desktop) { "Choosing an Anne's Pen folder is only possible in the desktop app." }
             val folder = call.receive<QuillPenFolderRequest>().folder?.trim()
             if (!folder.isNullOrEmpty()) {
                 val f = File(folder)
-                require(f.isAbsolute) { "Enter the full path of QuillPen's resources/embed folder." }
-                require(QuillPenEmbed.isEmbedFolder(f)) { "No QuillPen editor (index.html) was found in $folder." }
+                require(f.isAbsolute) { "Enter the full path of Anne's Pen's resources/embed folder." }
+                require(QuillPenEmbed.isEmbedFolder(f)) { "No Anne's Pen editor (index.html) was found in $folder." }
             }
             QuillPenEmbed.setChosenFolder(dataDir, folder)
             QuillPenEmbed.status(dataDir)
@@ -183,8 +183,8 @@ internal fun Routing.quillPenEmbedRoutes(sessions: Sessions, dataDir: File) {
     }
     get("/quillpen-embed") { if (call.request.host() == "localhost") call.respondRedirect("/quillpen-embed/") else call.respond(HttpStatusCode.NotFound, ApiError("Not found")) }
     get("/quillpen-embed/{path...}") {
-        // Served only on the "localhost" host name, never on QuillPost's own 127.0.0.1 origin, so the
-        // embedded editor runs in a separate origin and cannot read QuillPost's storage (see embed.js).
+        // Served only on the "localhost" host name, never on Anne's Post's own 127.0.0.1 origin, so the
+        // embedded editor runs in a separate origin and cannot read Anne's Post's storage (see embed.js).
         if (call.request.host() != "localhost") { call.respond(HttpStatusCode.NotFound, ApiError("Not found")); return@get }
         val root = if (QuillPenEmbed.desktop) QuillPenEmbed.root(dataDir) else null
         val file = root?.let { QuillPenEmbed.resolve(it, call.parameters.getAll("path").orEmpty()) }

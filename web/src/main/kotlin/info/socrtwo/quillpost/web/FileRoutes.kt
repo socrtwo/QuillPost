@@ -115,10 +115,10 @@ object OpenedFiles {
     private val files = LinkedHashMap<String, Entry>()
     private val random = java.security.SecureRandom()
 
-    /** Files handed over by the Android or desktop shell before or while the UI runs ("open with QuillPost"). */
+    /** Files handed over by the Android or desktop shell before or while the UI runs ("open with Anne's Post"). */
     private val pending = ArrayList<Pair<String, ByteArray>>()
 
-    /** Called by the desktop launcher and the Android shell (same process) with a file the system asked QuillPost to open. */
+    /** Called by the desktop launcher and the Android shell (same process) with a file the system asked Anne's Post to open. */
     @Synchronized fun enqueue(name: String, bytes: ByteArray) { if (bytes.size <= MAX_FILE) { pending += name to bytes; while (pending.size > 10) pending.removeAt(0) } }
     @Synchronized fun takePending(): List<Pair<String, ByteArray>> = ArrayList(pending).also { pending.clear() }
 
@@ -126,7 +126,7 @@ object OpenedFiles {
     @Volatile var nativeOpener: ((java.io.File) -> Boolean)? = null
 
     /**
-     * Desktop only: the secret a second launch of the app (a file double-clicked while QuillPost
+     * Desktop only: the secret a second launch of the app (a file double-clicked while Anne's Post
      * runs) presents to hand its files to this instance ("/api/file/handoff"). Null disables the route.
      */
     @Volatile var handoffKey: String? = null
@@ -140,7 +140,7 @@ object OpenedFiles {
         var events: List<EventDto> = emptyList()
         when (c.kind) {
             "message" -> {
-                message = runCatching { MessageFormats.parse(c.bytes, c.name, c.format) }.onFailure { notes += "QuillPost could not read this ${c.label}: ${it.message ?: it.javaClass.simpleName}" }.getOrNull()
+                message = runCatching { MessageFormats.parse(c.bytes, c.name, c.format) }.onFailure { notes += "Anne's Post could not read this ${c.label}: ${it.message ?: it.javaClass.simpleName}" }.getOrNull()
                 message?.let { m ->
                     events = m.events.ifEmpty { m.calendar?.let { runCatching { info.socrtwo.quillpost.web.ICal.toEvents(it, ZoneId.systemDefault()).events }.getOrNull() } ?: emptyList() }
                 }
@@ -148,7 +148,7 @@ object OpenedFiles {
             "calendar" -> runCatching { PimFormats.events(c.bytes) }.onSuccess { events = it.events; notes += it.warnings }.onFailure { notes += "The calendar file could not be read: ${it.message}" }
         }
         if (c.wrappedIn != null) notes += "Decoded from ${c.wrappedIn}."
-        if (c.format == "wab") notes += "Windows Address Book files use an undocumented format that QuillPost cannot read. In Windows Contacts or Outlook Express, export the contacts as vCards (.vcf) or a CSV file and open that instead."
+        if (c.format == "wab") notes += "Windows Address Book files use an undocumented format that Anne's Post cannot read. In Windows Contacts or Outlook Express, export the contacts as vCards (.vcf) or a CSV file and open that instead."
         val e = Entry(newId(), owner, c.name, c.bytes, c, message, events, notes)
         synchronized(this) {
             files[e.id] = e
@@ -246,7 +246,7 @@ internal fun Routing.fileRoutes(sessions: Sessions) {
         call.respond(ApiStatus("queued"))
     }
 
-    /** Files the desktop or Android app was asked to open ("Open with QuillPost"), opened for this account. */
+    /** Files the desktop or Android app was asked to open ("Open with Anne's Post"), opened for this account. */
     get("/api/file/pending") {
         call.handle {
             val ctx = call.ctx()

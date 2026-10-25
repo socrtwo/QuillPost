@@ -4,14 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="color-scheme" content="light dark" />
-  <title>QuillPost Mail</title>
+  <title>Anne's Post Mail</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="ai.css" /><!-- AI tab (ai/*.js) -->
   <link rel="stylesheet" href="commands.css" />
   <link rel="stylesheet" href="mailimport.css" /><!-- File ▸ Open, Import Mailbox, Local Archives -->
-  <!-- Suite scroll cues (more choices below the fold) and the QuillPen embedded editor. -->
+  <!-- Suite scroll cues (more choices below the fold) and the Anne's Pen embedded editor. -->
   <link rel="stylesheet" href="scrollcue.css" />
   <link rel="stylesheet" href="scrollcue-app.css" />
   <link rel="stylesheet" href="embed.css" />
@@ -150,7 +150,7 @@
 <!-- ============================ Splash ============================ -->
 <div id="splash" class="splash" aria-hidden="true">
   <div class="splash-mark"><img src="favicon.svg" alt="" width="96" height="96" /></div>
-  <div class="splash-name">QuillPost</div>
+  <div class="splash-name">Anne's Post</div>
   <div class="splash-tag">Mail with built-in junk protection</div>
   <span class="spinner splash-spin"></span>
 </div>
@@ -158,12 +158,12 @@
 <!-- ============================ Setup wizard ============================ -->
 <div id="setup" class="setup hidden">
   <div class="setup-card">
-    <div class="logo"><svg><use href="#i-mail"/></svg> QuillPost</div>
+    <div class="logo"><svg><use href="#i-mail"/></svg> Anne's Post</div>
     <div class="steps"><i id="step0" class="done"></i><i id="step1"></i><i id="step2"></i></div>
 
     <div id="setupStep0">
       <h2>Choose your email provider</h2>
-      <p class="lead">Pick your provider and QuillPost fills in the server settings — over a hundred providers worldwide are ready to go. Not listed? Choose <b>Other</b> and the settings are looked up from your address.</p>
+      <p class="lead">Pick your provider and Anne's Post fills in the server settings — over a hundred providers worldwide are ready to go. Not listed? Choose <b>Other</b> and the settings are looked up from your address.</p>
       <div class="provider-search"><svg><use href="#i-search"/></svg><input id="suProviderSearch" type="search" placeholder="Search providers or domains (gmail, orange.fr, 163…)" autocomplete="off" /></div>
       <div id="suRegionTabs" class="region-tabs"></div>
       <div id="suProviders" class="provider-grid"></div>
@@ -173,7 +173,7 @@
 
     <div id="setupStep1" class="hidden">
       <h2>Add your email account</h2>
-      <p class="lead" id="suLead1">Enter your address and password. QuillPost finds the server settings for you, the same way Outlook does.</p>
+      <p class="lead" id="suLead1">Enter your address and password. Anne's Post finds the server settings for you, the same way Outlook does.</p>
       <div id="suChosen" class="chosen-provider hidden"><span id="suChosenMark" class="provider-mark"></span><span class="grow"><b id="suChosenLabel"></b><span id="suChosenDomains" class="small muted"></span></span><button id="suChangeProvider" class="btn sm">Change</button></div>
       <div id="suProviderNotes" class="provider-box hidden"></div>
       <div id="suError" class="error-box hidden"></div>
@@ -182,7 +182,7 @@
       <div class="field"><label for="suPassword">Password</label><input id="suPassword" type="password" placeholder="Mail or app password" autocomplete="current-password" /><span class="hint" id="suPasswordHint">Gmail, Yahoo, iCloud, AOL and Fastmail require an <em>app password</em> rather than your normal password.</span></div>
       <label class="check"><input id="suRemember" type="checkbox" /><span>Keep me signed in on this device<br /><span class="desc">Stores the account, including the password, in this browser. Only tick this on a device you own.</span></span></label>
       <div class="btn-row" style="margin-top:12px"><button id="suBack1" class="btn">Back</button><span class="grow" style="flex:1"></span><button id="suContinue" class="btn primary">Continue</button></div>
-      <p class="small muted" style="margin-top:14px">Your credentials go only to this QuillPost server (<span id="suOrigin"></span>) and from there to your own mail provider. Use HTTPS when the server is not on your own machine.</p>
+      <p class="small muted" style="margin-top:14px">Your credentials go only to this Anne's Post server (<span id="suOrigin"></span>) and from there to your own mail provider. Use HTTPS when the server is not on your own machine.</p>
     </div>
 
     <div id="setupStep2" class="hidden">
@@ -218,7 +218,7 @@
 <div id="app" class="app hidden">
   <header class="topbar">
     <button id="navToggle" class="icon-btn" title="Show or hide the navigation pane"><svg><use href="#i-menu"/></svg></button>
-    <div class="brand"><svg><use href="#i-mail"/></svg><span>QuillPost</span></div>
+    <div class="brand"><svg><use href="#i-mail"/></svg><span>Anne's Post</span></div>
     <div class="search" id="searchBox">
       <svg><use href="#i-search"/></svg>
       <input id="searchInput" type="search" placeholder="Search (press /)" autocomplete="off" />
@@ -303,7 +303,7 @@
           <button id="hlpHelp" class="rb"><svg><use href="#i-help"/></svg><span class="lbl">Help</span></button>
           <button id="hlpWhatsNew" class="rb"><svg><use href="#i-sparkle"/></svg><span class="lbl">What's new</span></button>
           <button id="hlpReport" class="rb"><svg><use href="#i-warning"/></svg><span class="lbl">Report a problem</span></button>
-          <button id="hlpAbout" class="rb"><svg><use href="#i-info"/></svg><span class="lbl">About QuillPost</span></button>
+          <button id="hlpAbout" class="rb"><svg><use href="#i-info"/></svg><span class="lbl">About Anne's Post</span></button>
         </div>
       </div>
       <div id="workspace" class="workspace">

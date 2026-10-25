@@ -451,7 +451,7 @@ internal fun stripAttachments(part: Part, removed: MutableList<String>, depth: I
             val size = runCatching { bp.size }.getOrDefault(-1)
             val label = name ?: "attachment"
             removed += label
-            val note = MimeBodyPart().apply { setText("[Attachment \"$label\" (${if (size > 0) "${size / 1024} KB" else "unknown size"}, ${ct.substringBefore(';')}) was removed by QuillPost on ${Date()}.]\n", "UTF-8") }
+            val note = MimeBodyPart().apply { setText("[Attachment \"$label\" (${if (size > 0) "${size / 1024} KB" else "unknown size"}, ${ct.substringBefore(';')}) was removed by Anne's Post on ${Date()}.]\n", "UTF-8") }
             (content as MimeMultipart).removeBodyPart(i)
             content.addBodyPart(note, i)
             changed = true

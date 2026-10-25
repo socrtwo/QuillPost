@@ -79,7 +79,7 @@ object Providers {
             "https://appleid.apple.com/account/manage", popular = 5),
         ProviderDef("proton", "Proton Mail", Region.PRIVACY, listOf("proton.me", "protonmail.com", "protonmail.ch", "pm.me"),
             "127.0.0.1", 1143, "STARTTLS", "127.0.0.1", 1025, "STARTTLS",
-            listOf("Proton Mail is end-to-end encrypted and has no public IMAP. Install Proton Mail Bridge (paid plans) on the computer that runs QuillPost, then use the Bridge's user name and password with the settings shown here."),
+            listOf("Proton Mail is end-to-end encrypted and has no public IMAP. Install Proton Mail Bridge (paid plans) on the computer that runs Anne's Post, then use the Bridge's user name and password with the settings shown here."),
             "https://proton.me/mail/bridge", popular = 6),
 
         // ---------------------------------------------------------------- United States & Canada

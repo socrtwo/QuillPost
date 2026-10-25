@@ -1,4 +1,4 @@
-/* QuillPost — importing mailboxes and mail stores from other mail programs, and Local Archives.
+/* Anne's Post — importing mailboxes and mail stores from other mail programs, and Local Archives.
  *
  * File ▸ Import Mailbox… (mail.importMailbox), Local Archives (mail.localArchives), and every
  * mailbox that reaches File ▸ Open File… (mail.openFile, fileopen.js) — picked, dropped, or handed
@@ -295,18 +295,18 @@ const mailImport = {
     } catch (e) { toast(e.message, { danger: true }); }
   },
 
-  /** Files QuillPost does not import itself: say what they are and where they open. */
+  /** Files Anne's Post does not import itself: say what they are and where they open. */
   describe(a, d, entries) {
     const det = a.detection || {};
     qs(".qb-dlg-title", d).textContent = a.name || "Open";
     const body = qs(".dlg-body", d); body.innerHTML = "";
-    const apps = { document: ["QuillPen", "word processor"], spreadsheet: ["QuillGrid", "spreadsheet"], presentation: ["QuillStage", "presentation program"] };
+    const apps = { document: ["Anne\'s Pen", "word processor"], spreadsheet: ["Anne\'s Grid", "spreadsheet"], presentation: ["Anne\'s Stage", "presentation program"] };
     const app = apps[det.category];
     body.append(el("p", {}, el("b", { text: det.label || "Unknown file" }), det.program ? ` — ${det.program}` : ""));
-    if (app) body.append(el("p", { text: `This is not mail. It opens in ${app[0]}, the Quill suite's ${app[1]}, with its formatting — or in any other ${app[1]} on this device. You can also send it as an attachment.` }));
+    if (app) body.append(el("p", { text: `This is not mail. It opens in ${app[0]}, the Anne\'s Office suite's ${app[1]}, with its formatting — or in any other ${app[1]} on this device. You can also send it as an attachment.` }));
     else if (det.note) body.append(el("p", { text: det.note }));
-    else if (!det.supported) body.append(el("p", { text: "QuillPost could not open this file." }));
-    if (det.category === "mailbox" && !det.supported) body.append(el("p", { class: "small muted", text: "See docs/FORMATS.md for the mail programs QuillPost can import from." }));
+    else if (!det.supported) body.append(el("p", { text: "Anne\'s Post could not open this file." }));
+    if (det.category === "mailbox" && !det.supported) body.append(el("p", { class: "small muted", text: "See docs/FORMATS.md for the mail programs Anne\'s Post can import from." }));
     const foot = qs(".dlg-foot", d);
     const file = entries.length === 1 ? entries[0].file : null;
     if (file && det.category !== "unknown") {
@@ -419,7 +419,7 @@ const mailImport = {
   },
 };
 
-/** The iOS app hands over files opened with QuillPost as base64 (the server is remote there). */
+/** The iOS app hands over files opened with Anne's Post as base64 (the server is remote there). */
 if (typeof window !== "undefined") window.quillpostOpenData = function (name, base64) {
   const go = () => {
     const bin = atob(base64); const bytes = new Uint8Array(bin.length);

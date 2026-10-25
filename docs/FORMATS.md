@@ -1,6 +1,6 @@
 # File formats
 
-QuillPost recognises files by their **content**, not their extension: a `.dat`, a file with no
+Anne's Post recognises files by their **content**, not their extension: a `.dat`, a file with no
 extension or a wrongly named file opens the same way as a correctly named one. Detection is in
 `web/src/main/kotlin/.../mailstore/Sniffer.kt` (mail stores), which hands single messages to
 `fileformats/MessageFormats.kt` and office files to `fileformats/DocumentFormats.kt`.
@@ -9,11 +9,11 @@ How to open a file:
 
 * **File ▸ Open File…** (`mail.openFile`) — any file. A single message opens in a message
   window; a mailbox opens the Import Mailbox dialog; contacts and calendars go to People and Calendar; documents,
-  spreadsheets and presentations are handed to QuillPen, QuillGrid or QuillStage (or any other app).
+  spreadsheets and presentations are handed to Anne's Pen, Anne's Grid or Anne's Stage (or any other app).
 * **File ▸ Import Mailbox…** (`mail.importMailbox`) — a mailbox file, a whole mail folder (folder
   upload), or a `.zip` / `.tar` / `.tar.gz` / `.tgz` / `.gz` of either.
 * **Drop** files or folders on the window.
-* **Open with QuillPost** from the file manager (Android "Open with"/"Share", desktop file
+* **Open with Anne's Post** from the file manager (Android "Open with"/"Share", desktop file
   associations, iOS "Open in").
 
 Every action is a command, so it can be put on the Quick Access Toolbar, given a key or found with
@@ -21,7 +21,7 @@ command search (Alt+Q). **Local Archives** (`mail.localArchives`) shows the impo
 
 ## Messages, contacts and calendars
 
-**File ▸ Open File…** (`mail.openFile`), dropping a file on the window, or *Open with QuillPost*
+**File ▸ Open File…** (`mail.openFile`), dropping a file on the window, or *Open with Anne's Post*
 from the system (Android "Open with" / "Share", desktop double-click via the installers' file
 associations) opens one item:
 
@@ -83,8 +83,8 @@ is the API the import pipeline uses for single messages), `FileRoutes.kt` (`/api
 ## Documents, spreadsheets and presentations
 
 Word-processor, spreadsheet and presentation files are recognised by content and offered to the
-Quill suite program that opens them with the original program's layout: **QuillPen**
-(documents), **QuillGrid** (spreadsheets) and **QuillStage** (presentations). *Open in …* starts
+Anne's Office suite program that opens them with the original program's layout: **Anne's Pen**
+(documents), **Anne's Grid** (spreadsheets) and **Anne's Stage** (presentations). *Open in …* starts
 the suite app on Android (`io.github.socrtwo.quillpen` / `.quillgrid` / `.quillstage`, or any app
 that can open the file when it is not installed), hands the file to the program the operating
 system has registered for it in the desktop app, and downloads it in a web browser (which cannot
@@ -191,7 +191,7 @@ stays until removed, so it can be replied to, forwarded or saved to a folder.
 | **Windows Live Mail, Windows Mail (Vista), Outlook Express exports, any folder of `.eml`** | all | folders of `.eml` | RFC 5322 headers | 1 for content, status not available | These programs keep read status in an ESE database (`.edb`) that is not read; messages are imported as read. Sub-folders keep their names. |
 | **Outlook Express 5 / 6** | 5.0–6.0 | `.dbx` + `Folders.dbx` | `CF AD 12 FE` + class id `C5 FD 74 6F` (folder) / `C6 FD 74 6F` (folder list) | 2 | Undocumented by Microsoft; read from the community format description. Raw messages are exact. With `Folders.dbx` (open the whole store folder or a zip of it) the folder tree is rebuilt. Read / replied / forwarded status and arrival time from the message index (best effort). A damaged index is recovered by scanning for message block chains (status then unknown). `Offline.dbx` / `Pop3uidl.dbx` hold no mail. |
 | Outlook Express 4 | 4.x | `.mbx` (+ `.idx`) | `JMF6` | 2 | Messages located by their 16-byte record headers; status is not read (imported as read). |
-| **Eudora** (Windows and Mac) | 1.x – 7.1, OSE | `.mbx` + `.toc`, `.fol` folders, `Attach` folder | mbox with `From ???@???` separators | 2 | The binary `.toc` was never published and changed between versions; QuillPost accepts it only when its records point exactly at message starts (Windows 104/218-byte and classic Mac 278/220-byte layouts), and then restores read / replied / forwarded / redirected / queued state and skips deleted-but-not-compacted messages. `Attachment Converted: "…"` lines: when the attachment folder is part of what was opened, the files are attached back to the message; otherwise they are listed in the report. |
+| **Eudora** (Windows and Mac) | 1.x – 7.1, OSE | `.mbx` + `.toc`, `.fol` folders, `Attach` folder | mbox with `From ???@???` separators | 2 | The binary `.toc` was never published and changed between versions; Anne's Post accepts it only when its records point exactly at message starts (Windows 104/218-byte and classic Mac 278/220-byte layouts), and then restores read / replied / forwarded / redirected / queued state and skips deleted-but-not-compacted messages. `Attachment Converted: "…"` lines: when the attachment folder is part of what was opened, the files are attached back to the message; otherwise they are listed in the report. |
 | **Pegasus Mail** | 2.x – 4.x | `.pmm` (+ `.pmi`), `.cnm` | 128-byte header (folder name) + messages separated by Ctrl-Z | 2 | Folder name from the header; `.cnm` new-mail files are unread messages. The `.pmi` index and `hierarch.pm` are not read (status: read; hierarchy from the file system). |
 | **The Bat!** | all | `.tbb` (+ `.tbn`) | file name (format undocumented) | 3 | Messages recovered by scanning for RFC 5322 header blocks; status, flags and folder tree are not recovered. Export to `.mbox`/`.eml` from The Bat! for full fidelity. |
 | Archives | — | `.zip`, `.tar`, `.tgz`, `.tar.gz`, `.gz` | `PK`, `ustar`, `1F 8B` | — | Unpacked (zip-slip safe) and read as a folder. Office/OpenDocument/iWork zips are recognised as documents, not unpacked. |
@@ -202,9 +202,9 @@ stays until removed, so it can be replied to, forwarded or saved to a folder.
 |---|---|
 | **Lotus Notes / HCL Domino** `.nsf` (signature `1A 00 00 0x 00 00`) | IBM's on-disk database format is proprietary and undocumented; there is no public specification to write a clean-room reader from (the only full readers use IBM's C API or reverse-engineered, non-permissively licensed code). Export from Notes/Domino to `.eml` / mbox, or copy the mail to an IMAP account, then import that. |
 | **Claris Emailer** | No public description of its database format exists. Export from Emailer (or import into Apple Mail and export mbox) first. |
-| Outlook PST/OST with "high" (cyclic) encryption | Needs key tables that are not part of QuillPost; re-export from Outlook. |
+| Outlook PST/OST with "high" (cyclic) encryption | Needs key tables that are not part of Anne's Post; re-export from Outlook. |
 | `.msf`, `.toc`, `.idx`, `.pmi` index files on their own | They hold no messages; the dialog says which file to open instead. |
-| 7-Zip, RAR, bzip2 | No decompressor in QuillPost; extract first or re-pack as `.zip`. |
+| 7-Zip, RAR, bzip2 | No decompressor in Anne's Post; extract first or re-pack as `.zip`. |
 
 ### Code map
 

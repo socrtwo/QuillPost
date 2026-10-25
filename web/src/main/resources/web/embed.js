@@ -1,21 +1,21 @@
-/* QuillPen embedded editor — QuillPost's side of the suite protocol (EMBED.md).
+/* Anne's Pen embedded editor — Anne's Post's side of the suite protocol (EMBED.md).
  *
- * When QuillPen (the suite's word processor) is installed, the compose window can edit the message
+ * When Anne's Pen (the suite's word processor) is installed, the compose window can edit the message
  * body in a complete, embedded copy of it: an <iframe> that fills the compose body, talking to this
  * page with window.postMessage. Loaded after app.js; it only adds to the compose object and the
  * Compose settings page, so app.js needs no QuillPen-specific code.
  *
- * Where QuillPen comes from (detect()):
- *   Android  the WebView shell answers https://quillpen.embed/<path> from QuillPen's ContentProvider
+ * Where Anne's Pen comes from (detect()):
+ *   Android  the WebView shell answers https://quillpen.embed/<path> from Anne's Pen's ContentProvider
  *            and reports availability through QuillPostAndroid.quillPenAvailable();
- *   desktop  the local server serves QuillPen's resources/embed folder at /quillpen-embed/<path>
+ *   desktop  the local server serves Anne's Pen's resources/embed folder at /quillpen-embed/<path>
  *            (GET /api/quillpen reports platform "desktop" and whether it was found);
- *   web      a QuillPen web deployment URL entered in Settings ▸ Compose (stored in this browser);
+ *   web      an Anne's Pen web deployment URL entered in Settings ▸ Compose (stored in this browser);
  *   iOS      not available — the option is hidden.
  *
- * Command hook: openInQuillPen() (global) opens the current compose body in QuillPen and resolves to
+ * Command hook: openInQuillPen() (global) opens the current compose body in Anne's Pen and resolves to
  * true when the editor is starting. For a command registry / Quick Access Bar entry:
- *   { id: "compose.openInQuillPen", label: "QuillPen", title: "Edit this message in QuillPen",
+ *   { id: "compose.openInQuillPen", label: "Anne's Pen", title: "Edit this message in Anne's Pen",
  *     run: () => openInQuillPen(), visible: () => quillPen.isAvailable(), enabled: () => quillPen.canOpen() }
  * quillPen.isAvailable() is the last detection result (synchronous); quillPen.detect() re-checks.
  */
@@ -58,9 +58,9 @@ const quillPen = (() => {
   }
 
   /**
-   * Desktop: QuillPen must not share QuillPost's origin, or (with allow-same-origin) it could read
-   * QuillPost's storage, including the session token and a remembered password. The launcher opens
-   * QuillPost at http://127.0.0.1:<port>; the same server answers http://localhost:<port>, which the
+   * Desktop: Anne's Pen must not share Anne's Post's origin, or (with allow-same-origin) it could read
+   * Anne's Post's storage, including the session token and a remembered password. The launcher opens
+   * Anne's Post at http://127.0.0.1:<port>; the same server answers http://localhost:<port>, which the
    * browser treats as a different origin with separate storage and cookies. The server only serves
    * /quillpen-embed/ on the "localhost" host name.
    */
@@ -70,7 +70,7 @@ const quillPen = (() => {
     return u.origin;
   }
 
-  /** Finds QuillPen for this platform. Resolves to { platform, available, base, status }. */
+  /** Finds Anne's Pen for this platform. Resolves to { platform, available, base, status }. */
   function detect(force = false) {
     const token = state.token || null;
     if (!force && infoToken === token && info.platform) return Promise.resolve(info);
@@ -87,7 +87,7 @@ const quillPen = (() => {
         let status = null;
         if (token) { try { status = await api("/api/quillpen"); } catch {} }
         if (status && status.platform === "desktop") {
-          // If QuillPost itself was opened on "localhost" there is no separate origin left: do not embed.
+          // If Anne's Post itself was opened on "localhost" there is no separate origin left: do not embed.
           next = { platform: "desktop", available: !!status.available && location.hostname !== "localhost", base: embedOrigin() + "/quillpen-embed/", status };
         } else {
           const base = normaliseBase(prefs.get("quillpenUrl", ""));
@@ -118,7 +118,7 @@ const quillPen = (() => {
     if (b) return b;
     const head = qs("#composeDialog .compose-head");
     if (!head) return null;
-    b = el("button", { id: "cQuillPen", class: "btn subtle sm qp-pen-btn hidden", title: "Edit this message in QuillPen", html: QUILL_ICON + "<span>QuillPen</span>" });
+    b = el("button", { id: "cQuillPen", class: "btn subtle sm qp-pen-btn hidden", title: "Edit this message in Anne\'s Pen", html: QUILL_ICON + "<span>Anne\'s Pen</span>" });
     b.onclick = () => (isOpen() ? closeKeepingText() : openInQuillPen());
     head.insertBefore(b, $("cMinimize"));
     return b;
@@ -127,7 +127,7 @@ const quillPen = (() => {
     const b = button(); if (!b) return;
     b.classList.toggle("hidden", !isAvailable() || (mode() === "off" && !isOpen()));
     b.classList.toggle("active", isOpen());
-    b.title = isOpen() ? "Close QuillPen and keep its text in the built-in editor" : "Edit this message in QuillPen";
+    b.title = isOpen() ? "Close Anne\'s Pen and keep its text in the built-in editor" : "Edit this message in Anne\'s Pen";
   }
   function removeOffer() { const o = $("cQuillPenOffer"); if (o) o.remove(); }
   function showOffer() {
@@ -135,8 +135,8 @@ const quillPen = (() => {
     const editor = $("cEditor"); if (!editor) return;
     const offer = el("div", { id: "cQuillPenOffer", class: "qp-pen-offer", role: "note" },
       el("span", { html: QUILL_ICON }),
-      el("span", { class: "grow", text: "Write this message in QuillPen, the suite's word processor?" }),
-      el("button", { class: "btn primary sm", text: "Open in QuillPen", onclick: () => { removeOffer(); openInQuillPen(); } }),
+      el("span", { class: "grow", text: "Write this message in Anne\'s Pen, the suite's word processor?" }),
+      el("button", { class: "btn primary sm", text: "Open in Anne\'s Pen", onclick: () => { removeOffer(); openInQuillPen(); } }),
       el("button", { class: "btn subtle sm", text: "Not now", onclick: () => { removeOffer(); editor.focus(); } }));
     editor.parentNode.insertBefore(offer, editor);
   }
@@ -146,7 +146,7 @@ const quillPen = (() => {
     if (!state.compose) { toast("Start a message first, then open it in QuillPen."); return false; }
     if (frame) { frame.focus(); return true; }
     const found = await detect();
-    if (!found.available || !found.base) { toast("QuillPen is not available. Install it, or set it up in Settings ▸ Compose and reply.", { danger: true }); return false; }
+    if (!found.available || !found.base) { toast("Anne\'s Pen is not available. Install it, or set it up in Settings ▸ Compose and reply.", { danger: true }); return false; }
     if (!state.compose) return false;
     if (state.compose.plain) { toast("This message is plain text. Switch it to HTML (Format text ▸ HTML) to edit it in QuillPen.", { danger: true }); return false; }
     removeOffer();
@@ -156,8 +156,8 @@ const quillPen = (() => {
     src.searchParams.set("embed", "compose"); src.searchParams.set("host", "quillpost"); src.searchParams.set("v", "1");
     origin = src.origin;
     host = el("div", { class: "qp-pen-host" },
-      el("div", { class: "qp-pen-loading", role: "status" }, el("span", { class: "spinner" }), el("span", { text: "Opening QuillPen…" })));
-    frame = el("iframe", { class: "qp-pen-frame", title: "QuillPen editor", sandbox: SANDBOX, allow: "clipboard-read; clipboard-write", referrerpolicy: "no-referrer" });
+      el("div", { class: "qp-pen-loading", role: "status" }, el("span", { class: "spinner" }), el("span", { text: "Opening Anne\'s Pen…" })));
+    frame = el("iframe", { class: "qp-pen-frame", title: "Anne\'s Pen editor", sandbox: SANDBOX, allow: "clipboard-read; clipboard-write", referrerpolicy: "no-referrer" });
     host.prepend(frame);
     editor.parentNode.insertBefore(host, editor);
     dlg.classList.add("qp-pen-open");
@@ -173,7 +173,7 @@ const quillPen = (() => {
     readyTimer = setTimeout(() => {
       if (!frame || ready) return;
       teardown();
-      toast("QuillPen did not start (no answer within 8 seconds). Keep writing in the built-in editor.", { danger: true, timeout: 9000 });
+      toast("Anne\'s Pen did not start (no answer within 8 seconds). Keep writing in the built-in editor.", { danger: true, timeout: 9000 });
       $("cEditor")?.focus();
     }, READY_TIMEOUT_MS);
   }
@@ -200,7 +200,7 @@ const quillPen = (() => {
     });
   }
 
-  /** Asks QuillPen for its current content; resolves to { html, text } or null (no answer). */
+  /** Asks Anne's Pen for its current content; resolves to { html, text } or null (no answer). */
   function request() {
     if (!frame || !ready) return Promise.resolve(null);
     const id = "q" + nextId++;
@@ -210,7 +210,7 @@ const quillPen = (() => {
       if (!post({ type: PREFIX + "request", id })) { clearTimeout(timer); pending.delete(id); resolve(null); }
     });
   }
-  /** Puts QuillPen's HTML into the compose body (sanitised), so drafts, Send and undo use it. */
+  /** Puts Anne's Pen's HTML into the compose body (sanitised), so drafts, Send and undo use it. */
   function apply(html) {
     const clean = cleanFragment(html);
     mirrorHtml = clean;
@@ -225,14 +225,14 @@ const quillPen = (() => {
     if (!frame) return true;
     if (!ready) {
       if (!ask) return true;
-      return confirm("QuillPen is still starting. Continue with the message as it was before QuillPen opened?");
+      return confirm("Anne\'s Pen is still starting. Continue with the message as it was before Anne\'s Pen opened?");
     }
     // Wait for a copy already on its way, then ask again: the person may have typed since.
     if (syncing) await syncing.catch(() => {});
     const r = await request();
     if (r && typeof r.html === "string") { apply(r.html); return true; }
     if (!ask) return true;
-    return confirm("QuillPen did not return the message in time. Continue with the last version it reported?");
+    return confirm("Anne\'s Pen did not return the message in time. Continue with the last version it reported?");
   }
   async function closeKeepingText() {
     if (!frame) return;
@@ -241,7 +241,7 @@ const quillPen = (() => {
     $("cEditor")?.focus();
   }
 
-  // ------------------------------------------------------------------ messages from QuillPen
+  // ------------------------------------------------------------------ messages from Anne's Pen
   addEventListener("message", (e) => {
     if (!frame || e.source !== frame.contentWindow || e.origin !== origin) return;
     const m = e.data;
@@ -281,7 +281,7 @@ const quillPen = (() => {
   // ------------------------------------------------------------------ sanitising
   const DROP = "script,style,iframe,frame,frameset,object,embed,applet,base,meta,link,title,form,input,button,textarea,select,option,noscript,template,portal,dialog";
   const URL_ATTRS = new Set(["href", "src", "xlink:href", "action", "formaction", "background", "poster", "cite", "longdesc", "lowsrc", "dynsrc"]);
-  /** Email-body fragment from QuillPen → safe to put into the compose editor. */
+  /** Email-body fragment from Anne's Pen → safe to put into the compose editor. */
   function cleanFragment(html) {
     const doc = new DOMParser().parseFromString("<!doctype html><html><body>" + String(html || "") + "</body></html>", "text/html");
     doc.body.querySelectorAll(DROP).forEach((n) => n.remove());
@@ -310,7 +310,7 @@ const quillPen = (() => {
   };
   compose.close = function (...args) { teardown(); removeOffer(); return base.close.apply(this, args); };
   compose.show = function (...args) {
-    // Moving the dialog (dock ⇄ window) reloads the iframe; QuillPen says "ready" again and gets
+    // Moving the dialog (dock ⇄ window) reloads the iframe; Anne's Pen says "ready" again and gets
     // the latest copy of the body back.
     const before = frame && frame.contentWindow;
     const r = base.show.apply(this, args);
@@ -338,14 +338,14 @@ const quillPen = (() => {
       box.innerHTML = "";
       const p = info.platform;
       if (p === "ios" || (p === "android" && !info.available)) return;
-      box.appendChild(el("h4", { text: "QuillPen" }));
+      box.appendChild(el("h4", { text: "Anne\'s Pen" }));
       if (info.available) {
-        box.appendChild(ui.row("Edit messages in QuillPen", "Write in an embedded copy of QuillPen, the suite's word processor. Ask offers it in every new message; Always opens it straight away. The QuillPen button in the message window works in every mode.",
+        box.appendChild(ui.row("Edit messages in Anne\'s Pen", "Write in an embedded copy of Anne\'s Pen, the suite's word processor. Ask offers it in every new message; Always opens it straight away. The Anne\'s Pen button in the message window works in every mode.",
           ui.pref("quillpenMode", "ask", MODES, updateButton)));
       }
       if (p === "desktop") {
         const st = info.status || {};
-        const input = el("input", { type: "text", value: st.chosen || "", placeholder: st.detected || "Folder that contains QuillPen's index.html", spellcheck: "false", "aria-label": "QuillPen folder" });
+        const input = el("input", { type: "text", value: st.chosen || "", placeholder: st.detected || "Folder that contains Anne\'s Pen's index.html", spellcheck: "false", "aria-label": "Anne\'s Pen folder" });
         const msg = el("div", { class: "small muted qp-pen-status" });
         const save = async (folder) => {
           try { await api("/api/quillpen/folder", { method: "POST", body: { folder } }); await detect(true); draw(); }
@@ -356,11 +356,11 @@ const quillPen = (() => {
           el("button", { class: "btn sm", text: "Use folder", onclick: () => save(input.value) }),
           st.chosen ? el("button", { class: "btn subtle sm", text: "Automatic", title: "Forget the chosen folder and look in the standard places", onclick: () => save(null) }) : null);
         msg.textContent = info.available
-          ? `Using QuillPen from ${st.folder}.`
-          : `QuillPen was not found${st.searched?.length ? " in " + st.searched.join(", ") : ""}. Choose its resources/embed folder (AppImage users: the folder you unpacked).`;
-        box.appendChild(ui.row("QuillPen folder", "QuillPen's installer puts its editor in resources/embed next to the app. Leave empty to find it automatically.", el("div", { class: "qp-pen-col" }, controls, msg)));
+          ? `Using Anne\'s Pen from ${st.folder}.`
+          : `Anne\'s Pen was not found${st.searched?.length ? " in " + st.searched.join(", ") : ""}. Choose its resources/embed folder (AppImage users: the folder you unpacked).`;
+        box.appendChild(ui.row("Anne\'s Pen folder", "Anne\'s Pen's installer puts its editor in resources/embed next to the app. Leave empty to find it automatically.", el("div", { class: "qp-pen-col" }, controls, msg)));
       } else if (p === "web") {
-        const input = el("input", { type: "url", value: prefs.get("quillpenUrl", ""), placeholder: "https://quillpen.example.org/", spellcheck: "false", "aria-label": "QuillPen web address" });
+        const input = el("input", { type: "url", value: prefs.get("quillpenUrl", ""), placeholder: "https://quillpen.example.org/", spellcheck: "false", "aria-label": "Anne\'s Pen web address" });
         const msg = el("div", { class: "small muted qp-pen-status" });
         const save = async () => {
           const v = input.value.trim();
@@ -369,9 +369,9 @@ const quillPen = (() => {
           msg.textContent = "Checking…";
           await detect(true); draw();
         };
-        msg.textContent = !info.base ? "Not set. Enter the address of a QuillPen web deployment (for example a self-hosted copy)."
-          : info.available ? `QuillPen at ${info.base} answers.` : `QuillPen at ${info.base} could not be reached.`;
-        box.appendChild(ui.row("QuillPen web address", "Edit messages in a QuillPen web deployment. Only the message text is exchanged with it.",
+        msg.textContent = !info.base ? "Not set. Enter the address of an Anne\'s Pen web deployment (for example a self-hosted copy)."
+          : info.available ? `Anne\'s Pen at ${info.base} answers.` : `Anne\'s Pen at ${info.base} could not be reached.`;
+        box.appendChild(ui.row("Anne\'s Pen web address", "Edit messages in an Anne\'s Pen web deployment. Only the message text is exchanged with it.",
           el("div", { class: "qp-pen-col" }, el("div", { class: "qp-pen-field" }, input, el("button", { class: "btn sm", text: "Save", onclick: save })), msg)));
       }
     };
@@ -385,17 +385,17 @@ const quillPen = (() => {
   return { detect, isAvailable, isOpen, canOpen, open, request, sync, mode, cleanFragment };
 })();
 
-/** Opens the current compose body in the embedded QuillPen editor (command / Quick Access Bar hook). */
+/** Opens the current compose body in the embedded Anne's Pen editor (command / Quick Access Bar hook). */
 function openInQuillPen() { return quillPen.open(); }
 window.quillPen = quillPen;
 window.openInQuillPen = openInQuillPen;
 
-// Command registry: "Edit in QuillPen" can go on the Quick Access Bar, a tab or a shortcut.
+// Command registry: "Edit in Anne's Pen" can go on the Quick Access Bar, a tab or a shortcut.
 if (window.Commands) {
   Commands.def({
-    id: "compose.openInQuillPen", label: "Edit in QuillPen", icon: "edit", tab: "Message", group: "QuillPen", scope: "compose",
-    tip: "Edit this message in the embedded QuillPen word processor (when QuillPen is installed)",
-    origin: "QuillPost",
+    id: "compose.openInQuillPen", label: "Edit in Anne\'s Pen", icon: "edit", tab: "Message", group: "Anne\'s Pen", scope: "compose",
+    tip: "Edit this message in the embedded Anne\'s Pen word processor (when Anne\'s Pen is installed)",
+    origin: "Anne\'s Post",
     isEnabled: () => quillPen.isAvailable() && quillPen.canOpen(),
     run: () => openInQuillPen(),
   });

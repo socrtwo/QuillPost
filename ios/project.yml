@@ -12,7 +12,7 @@ targets:
     info:
       path: QuillPost/Info.plist
       properties:
-        CFBundleDisplayName: QuillPost
+        CFBundleDisplayName: Anne's Post
         CFBundleShortVersionString: "1.5.0"
         CFBundleVersion: "6"
         UILaunchScreen:
@@ -30,8 +30,8 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIViewControllerBasedStatusBarAppearance: true
         ITSAppUsesNonExemptEncryption: false
-        # "Open in QuillPost" for mail files. QuillPost reads the content, so the types only tell iOS
-        # which files to offer; the page uploads them to the QuillPost server (mailimport.js).
+        # "Open in Anne's Post" for mail files. Anne's Post reads the content, so the types only tell iOS
+        # which files to offer; the page uploads them to the Anne's Post server (mailimport.js).
         CFBundleDocumentTypes:
           - CFBundleTypeName: Mail message
             CFBundleTypeRole: Viewer
@@ -71,13 +71,13 @@ targets:
             UTTypeDescription: Eudora / Outlook Express 4 mailbox
             UTTypeConformsTo: [public.data]
             UTTypeTagSpecification: { public.filename-extension: [mbx] }
-        # The app talks to the user's own QuillPost server, which on a home network is often
+        # The app talks to the user's own Anne's Post server, which on a home network is often
         # plain http://192.168.x.y:8080. Allow that; HTTPS still works and is recommended
         # for servers reachable from the internet.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
           NSAllowsLocalNetworking: true
-        NSLocalNetworkUsageDescription: QuillPost connects to the QuillPost server on your own network to show your mail.
+        NSLocalNetworkUsageDescription: Anne's Post connects to the Anne's Post server on your own network to show your mail.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.socrtwo.quillpost

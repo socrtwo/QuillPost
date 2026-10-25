@@ -18,7 +18,7 @@ import java.util.zip.Inflater
  *
  * The messaging layer (folders, messages, attachments, recipients, named properties) is in
  * [PstStore]. "High" (cyclic) encryption is not supported: it needs key tables that are not in
- * QuillPost; such files are reported as unreadable.
+ * Anne's Post; such files are reported as unreadable.
  */
 class PstFile(val fb: FileBytes) : Closeable {
     val version: Int
@@ -45,7 +45,7 @@ class PstFile(val fb: FileBytes) : Closeable {
         pageSize = if (fourK) 4096 else 512
         if (unicode) { nbtRoot = h.i64(224); bbtRoot = h.i64(240); crypt = h.u8(513) }
         else { nbtRoot = h.u32(188); bbtRoot = h.u32(196); crypt = h.u8(461) }
-        if (crypt == 2) throw MailStoreException("This Outlook data file uses \"high\" (cyclic) encryption, which QuillPost cannot read. Open it in Outlook and export it to a new .pst with compressible encryption, then import that.")
+        if (crypt == 2) throw MailStoreException("This Outlook data file uses \"high\" (cyclic) encryption, which Anne's Post cannot read. Open it in Outlook and export it to a new .pst with compressible encryption, then import that.")
     }
 
     val variant: String get() = when {

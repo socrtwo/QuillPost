@@ -1,4 +1,4 @@
-/* QuillPost — People: contacts, favourites, contact lists, categories, contact cards and the
+/* Anne's Post — People: contacts, favourites, contact lists, categories, contact cards and the
  * contact editor, with vCard / CSV import and export. Loaded before app.js.
  */
 "use strict";

@@ -2,15 +2,15 @@ package info.socrtwo.quillpost.web.fileformats
 
 /**
  * Recognises word-processor, spreadsheet and presentation files by their content (the file
- * extension only breaks ties or names formats that have no signature), so QuillPost can offer
- * the suite program that opens them: QuillPen, QuillGrid or QuillStage.
+ * extension only breaks ties or names formats that have no signature), so Anne's Post can offer
+ * the suite program that opens them: Anne's Pen, Anne's Grid or QuillStage.
  */
 object DocumentFormats {
 
     enum class Kind(val app: String, val appLabel: String, val androidPackage: String) {
-        DOCUMENT("quillpen", "QuillPen", "io.github.socrtwo.quillpen"),
-        SPREADSHEET("quillgrid", "QuillGrid", "io.github.socrtwo.quillgrid"),
-        PRESENTATION("quillstage", "QuillStage", "io.github.socrtwo.quillstage")
+        DOCUMENT("quillpen", "Anne's Pen", "io.github.socrtwo.quillpen"),
+        SPREADSHEET("quillgrid", "Anne's Grid", "io.github.socrtwo.quillgrid"),
+        PRESENTATION("quillstage", "Anne's Stage", "io.github.socrtwo.quillstage")
     }
 
     data class Detected(val format: String, val label: String, val kind: Kind, val confidence: Double)

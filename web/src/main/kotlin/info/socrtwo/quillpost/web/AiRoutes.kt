@@ -148,7 +148,7 @@ private fun relayEnabled(): Boolean = qpEnv("QUILLPOST_AI_RELAY")?.lowercase() !
  * Which networks the relay may reach. Link-local addresses (cloud metadata services live there),
  * "any" and multicast addresses are always refused. Loopback and private addresses (a local
  * Ollama, a server on the LAN) are allowed only when the browser asking is itself on loopback or
- * a private network — so a QuillPost server reachable from the internet does not become a way into
+ * a private network — so an Anne's Post server reachable from the internet does not become a way into
  * its own network. QUILLPOST_AI_RELAY_PRIVATE=on / off overrides that ("off" is the safe choice
  * behind a reverse proxy on the same machine, where every client appears as loopback).
  */
@@ -174,7 +174,7 @@ object AiRelayNetwork {
 
 /**
  * The desktop app's API-key store: one JSON file in the data folder, readable and writable only
- * by the user account that runs QuillPost (POSIX 0600 in a 0700 folder; on Windows the file sits
+ * by the user account that runs Anne's Post (POSIX 0600 in a 0700 folder; on Windows the file sits
  * in the user's profile, whose default permissions already exclude other standard users). The
  * file is not encrypted — the desktop launcher opens the system browser and has no OS keychain
  * bridge — and docs/AI.md says so.
@@ -266,15 +266,15 @@ internal fun Routing.aiRoutes(sessions: Sessions, store: DataStore) {
     }
 
     post("/api/ai/proxy") {
-        if (!relayEnabled()) { call.relayRefusal(HttpStatusCode.Forbidden, "the AI relay is turned off on this QuillPost server (QUILLPOST_AI_RELAY=off)"); return@post }
+        if (!relayEnabled()) { call.relayRefusal(HttpStatusCode.Forbidden, "the AI relay is turned off on this Anne's Post server (QUILLPOST_AI_RELAY=off)"); return@post }
         if (call.request.header("X-QuillPost-AI") != "1") { call.relayRefusal(HttpStatusCode.BadRequest, "missing X-QuillPost-AI header"); return@post }
-        val ctx = try { sessions.get(call.token()) } catch (e: AuthException) { call.relayRefusal(HttpStatusCode.Unauthorized, "sign in to QuillPost first"); return@post }
+        val ctx = try { sessions.get(call.token()) } catch (e: AuthException) { call.relayRefusal(HttpStatusCode.Unauthorized, "sign in to Anne's Post first"); return@post }
         val req = try { call.receive<AiProxyRequest>() } catch (e: Exception) { call.relayRefusal(HttpStatusCode.BadRequest, "malformed relay request"); return@post }
         val method = req.method.uppercase()
         if (method != "GET" && method != "POST") { call.relayRefusal(HttpStatusCode.BadRequest, "only GET and POST are relayed"); return@post }
         if (!AiAllowList.allowed(req.url, customBases(ctx))) {
             val host = runCatching { URI(req.url).host }.getOrNull() ?: "this address"
-            call.relayRefusal(HttpStatusCode.Forbidden, "$host is not an AI service QuillPost knows. Set it up in AI ▸ Set up AI first.")
+            call.relayRefusal(HttpStatusCode.Forbidden, "$host is not an AI service Anne's Post knows. Set it up in AI ▸ Set up AI first.")
             return@post
         }
         val netRefusal = withContext(Dispatchers.IO) {

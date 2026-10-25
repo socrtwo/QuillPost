@@ -282,7 +282,7 @@ class AccountContext(
         // Forward before any move so the UIDs are still valid in this folder.
         for ((uid, to) in forwards) {
             val subject = raws[uid]?.summary?.subject.orEmpty()
-            runCatching { io { mail.send(SendRequest(to = listOf(to), subject = "FW: $subject", body = "Forwarded automatically by a QuillPost rule.", attachMessages = listOf(MessageRef(folder, uid)))) } }
+            runCatching { io { mail.send(SendRequest(to = listOf(to), subject = "FW: $subject", body = "Forwarded automatically by an Anne's Post rule.", attachMessages = listOf(MessageRef(folder, uid)))) } }
         }
         if (moves.isNotEmpty() || markRead.isNotEmpty() || flag.isNotEmpty() || copies.isNotEmpty()) {
             io {
@@ -640,7 +640,7 @@ class AccountContext(
         return DraftResponse(drafts, uid ?: -1L)
     }
 
-    /** Messages QuillPost moved automatically after [since]; drives the "moved to Junk" toasts. */
+    /** Messages Anne's Post moved automatically after [since]; drives the "moved to Junk" toasts. */
     fun activity(since: Long): List<ActivityDto> = cache.values
         .filter { it.verdict.autoMoved && it.at > since }
         .sortedByDescending { it.at }

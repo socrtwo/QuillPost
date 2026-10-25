@@ -17,7 +17,7 @@ import java.net.URL
 import kotlin.concurrent.thread
 
 /**
- * Runs the QuillPost backend (the same Ktor module as the web and desktop clients) inside the
+ * Runs the Anne's Post backend (the same Ktor module as the web and desktop clients) inside the
  * app process, bound to 127.0.0.1 only. The WebView in [MainActivity] loads its Outlook-style
  * UI from here, so the phone needs no separate server.
  *
@@ -25,7 +25,7 @@ import kotlin.concurrent.thread
  * UI stores the signed-in account in `localStorage`, which is scoped to host + port.
  */
 object LocalServer {
-    private const val TAG = "QuillPost"
+    private const val TAG = "Anne's Post"
     private const val PREFS = "quillpost-server"
     private const val PREFERRED_PORT = 8642
 

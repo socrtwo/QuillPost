@@ -2,7 +2,7 @@ import SwiftUI
 import WebKit
 import UIKit
 
-/// Full-screen WebKit view for the Outlook-style QuillPost client.
+/// Full-screen WebKit view for the Outlook-style Anne's Post client.
 ///
 /// Native glue, mirroring the Android shell:
 /// - `mailto:` and links to other sites open outside the page (in-app compose / Safari);
@@ -182,7 +182,7 @@ struct QuillPostWebView: UIViewRepresentable {
             case "open":
                 if let s = body["url"] as? String, let u = URL(string: s) { UIApplication.shared.open(u) }
             case "print":
-                printPage(title: body["title"] as? String ?? "QuillPost message")
+                printPage(title: body["title"] as? String ?? "Anne's Post message")
             case "changeServer":
                 Task { @MainActor in state.changeServer() }
             default:

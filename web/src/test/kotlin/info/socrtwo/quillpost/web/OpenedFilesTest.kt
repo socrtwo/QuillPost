@@ -29,7 +29,7 @@ class OpenedFilesTest {
         val docx = java.io.ByteArrayOutputStream().also { java.util.zip.ZipOutputStream(it).use { z -> z.putNextEntry(java.util.zip.ZipEntry("word/document.xml")); z.write("<w/>".toByteArray()); z.closeEntry() } }.toByteArray()
         val r = OpenedFiles.response(OpenedFiles.open("a@example.com", "x.bin", docx))
         assertEquals("document", r.kind)
-        assertEquals("QuillPen", r.app!!.label)
+        assertEquals("Anne's Pen", r.app!!.label)
         assertEquals("io.github.socrtwo.quillpen", r.app!!.androidPackage)
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document", r.mimeType)
         val wab = OpenedFiles.response(OpenedFiles.open("a@example.com", "Address.wab", ByteArray(64) { 1 }))

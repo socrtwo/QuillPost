@@ -5,10 +5,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- QuillPen (the suite's word processor): detected to offer its embedded editor in compose. -->
+    <!-- Anne's Pen (the suite's word processor): detected to offer its embedded editor in compose. -->
     <queries>
         <package android:name="io.github.socrtwo.quillpen" />
-        <!-- QuillGrid and QuillStage: "Open in" for spreadsheets and presentations (FileHandoff.kt). -->
+        <!-- Anne's Grid and Anne's Stage: "Open in" for spreadsheets and presentations (FileHandoff.kt). -->
         <package android:name="io.github.socrtwo.quillgrid" />
         <package android:name="io.github.socrtwo.quillstage" />
         <provider android:authorities="io.github.socrtwo.quillpen.embed" />
@@ -37,7 +37,7 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- "Open with QuillPost": saved messages (.eml, .msg, winmail.dat, .mht…), contacts and calendars.
+            <!-- "Open with Anne's Post": saved messages (.eml, .msg, winmail.dat, .mht…), contacts and calendars.
                  The file's content decides what is shown, so generic binary types are accepted too. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -65,14 +65,14 @@
                 <data android:mimeType="application/mac-binhex40" />
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
-            <!-- "Share to QuillPost": any file becomes an opened file (and can be sent as an attachment). -->
+            <!-- "Share to Anne's Post": any file becomes an opened file (and can be sent as an attachment). -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
             </intent-filter>
-            <!-- Let QuillPost be chosen for mailto: links from other apps. -->
+            <!-- Let Anne's Post be chosen for mailto: links from other apps. -->
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
                 <category android:name="android.intent.category.DEFAULT" />

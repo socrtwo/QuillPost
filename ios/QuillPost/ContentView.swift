@@ -46,7 +46,7 @@ struct SplashView: View {
                 .ignoresSafeArea()
             VStack(spacing: 10) {
                 Image("LaunchLogo").resizable().scaledToFit().frame(width: 110, height: 110)
-                Text("QuillPost").font(.system(size: 34, weight: .heavy)).foregroundColor(.white)
+                Text("Anne's Post").font(.system(size: 34, weight: .heavy)).foregroundColor(.white)
                 Text("Mail with built-in junk protection").font(.subheadline).foregroundColor(.white.opacity(0.85))
                 ProgressView().tint(.white).padding(.top, 18)
             }
@@ -54,7 +54,7 @@ struct SplashView: View {
     }
 }
 
-/// First-run screen: where is the QuillPost server?
+/// First-run screen: where is the Anne's Post server?
 struct ServerSetupView: View {
     @EnvironmentObject var state: AppState
     @State private var url: String = ""
@@ -72,9 +72,9 @@ struct ServerSetupView: View {
                         .submitLabel(.go)
                         .onSubmit { connect() }
                 } header: {
-                    Text("QuillPost server address")
+                    Text("Anne's Post server address")
                 } footer: {
-                    Text("QuillPost for iPhone and iPad shows the same Outlook-style mail client as the desktop and web versions, served by a QuillPost server on your own network. Run the server on a PC, Mac, Raspberry Pi or NAS (the \"quillpost-web\" download, or the desktop app started with HOST=0.0.0.0) and enter its address here — for example http://192.168.1.20:8080. Use https:// when the server is reachable from the internet.")
+                    Text("Anne's Post for iPhone and iPad shows the same Outlook-style mail client as the desktop and web versions, served by an Anne's Post server on your own network. Run the server on a PC, Mac, Raspberry Pi or NAS (the \"quillpost-web\" download, or the desktop app started with HOST=0.0.0.0) and enter its address here — for example http://192.168.1.20:8080. Use https:// when the server is reachable from the internet.")
                 }
                 if let problem {
                     Section { Text(problem).foregroundColor(.red) }
@@ -91,7 +91,7 @@ struct ServerSetupView: View {
                     .disabled(checking || url.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
-            .navigationTitle("QuillPost")
+            .navigationTitle("Anne's Post")
             .toolbar {
                 if !state.serverURL.isEmpty {
                     ToolbarItem(placement: .cancellationAction) {
@@ -121,10 +121,10 @@ struct ServerSetupView: View {
                 let (data, response) = try await URLSession.shared.data(for: req)
                 let status = (response as? HTTPURLResponse)?.statusCode ?? 0
                 let body = String(data: data, encoding: .utf8) ?? ""
-                if status == 200 && body.contains("QuillPost") {
+                if status == 200 && body.contains("Anne's Post") {
                     state.useServer(s)
                 } else {
-                    problem = "Something answered at \(s), but it does not look like a QuillPost server (HTTP \(status))."
+                    problem = "Something answered at \(s), but it does not look like an Anne's Post server (HTTP \(status))."
                 }
             } catch {
                 problem = "Could not reach \(s): \(error.localizedDescription)"
@@ -140,7 +140,7 @@ struct ConnectionErrorView: View {
     var body: some View {
         VStack(spacing: 14) {
             Image(systemName: "wifi.exclamationmark").font(.system(size: 44)).foregroundColor(.secondary)
-            Text("Cannot reach the QuillPost server").font(.headline)
+            Text("Cannot reach the Anne's Post server").font(.headline)
             Text(message).font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
             Text(state.serverURL).font(.footnote).foregroundColor(.secondary)
             HStack {
