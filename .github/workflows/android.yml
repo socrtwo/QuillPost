@@ -116,7 +116,7 @@ jobs:
         with:
           tag_name: ${{ steps.rel.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: QuillPost ${{ steps.rel.outputs.tag }}
+          name: Anne's Post ${{ steps.rel.outputs.tag }}
           generate_release_notes: true
           body: |
             Downloads (built by GitHub Actions from this tag; assets from the other workflows are attached as they finish):
@@ -126,5 +126,5 @@ jobs:
             - **Linux x64**: `quillpost-desktop-<tag>-linux-x64.deb`, or the portable tar.gz.
             - **Raspberry Pi OS (64-bit) / Linux arm64**: `quillpost-desktop-<tag>-linux-arm64.deb`, or the portable tar.gz.
             - **Web / any JVM (servers, Termux, ChromeOS Linux)**: `quillpost-web-<tag>-any-jvm.zip` — unzip and run `bin/quillpost-web`.
-            - **iOS**: `QuillPost-iOS-simulator.app.zip` (unsigned simulator build; a device build needs an Apple Developer account). Shows the same client, served by a QuillPost server on your network.
+            - **iOS**: `QuillPost-iOS-simulator.app.zip` (unsigned simulator build; a device build needs an Apple Developer account). Shows the same client, served by an Anne's Post server on your network.
           files: release-assets/*.apk

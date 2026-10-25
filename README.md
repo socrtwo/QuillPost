@@ -1,6 +1,6 @@
-# QuillPost
+# Anne's Post
 
-*Part of the Quill suite: [QuillPen](https://github.com/socrtwo/QuillPen) (documents), [QuillGrid](https://github.com/socrtwo/QuillGrid) (spreadsheets), **QuillPost** (email) and [QuillStage](https://github.com/socrtwo/QuillStage) (presentations). Formerly named Quillbox.*
+*Part of the Anne's Office suite: [Anne's Pen](https://github.com/socrtwo/QuillPen) (documents), [Anne's Grid](https://github.com/socrtwo/QuillGrid) (spreadsheets), **Anne's Post** (email) and [Anne's Stage](https://github.com/socrtwo/QuillStage) (presentations). Formerly named Quillbox.*
 
 Email client for Android, desktop, web and iOS: downloads IMAP/POP3 mail, composes with a
 formatting toolbar, and keeps junk out of the Inbox with open DNS blocklists, an offline
@@ -9,16 +9,16 @@ Calendar, People (contacts) and To Do, and its interface follows the familiar la
 Microsoft 365 Outlook: app bar, ribbon, folder pane, Focused/Other inbox, conversations and a
 reading pane.
 
-QuillPost is an independent open-source project. It is not affiliated with, sponsored or endorsed
+Anne's Post is an independent open-source project. It is not affiliated with, sponsored or endorsed
 by Microsoft. Outlook and Microsoft 365 are trademarks of Microsoft Corporation and are named here
-only to describe the layout QuillPost users will recognise. QuillPost uses its own name, logo,
+only to describe the layout Anne's Post users will recognise. Anne's Post uses its own name, logo,
 icons, colours and open fonts, and contains no Microsoft code or artwork.
 
 ---
 
-## QuillPost (Android app)
+## Anne's Post (Android app)
 
-QuillPost for Android is the Outlook-style client packaged as an app. The APK contains the
+Anne's Post for Android is the Outlook-style client packaged as an app. The APK contains the
 same mail engine and the same interface as the web and desktop versions: at start-up the app
 launches the backend on `127.0.0.1` inside its own process and shows the UI full-screen in a
 WebView. Nothing leaves the phone except the connections to your own mail provider, the DNS
@@ -108,8 +108,8 @@ then sign in as `demo@quillpost.test` / `demo` and, under *Server settings*, use
 `127.0.0.1:3143` (security *None*) and SMTP `127.0.0.1:3025` (*None*).
 
 Browser tests (Playwright with Chromium, run against demo servers; each script's header has the
-exact commands): `node src/test/e2e/embed.mjs` tests the QuillPen embedded editor against a fake
-QuillPen page (`src/test/quillpen-fake/`), and `node src/test/e2e/layout.mjs` opens every
+exact commands): `node src/test/e2e/embed.mjs` tests the Anne's Pen embedded editor against a fake
+Anne's Pen page (`src/test/quillpen-fake/`), and `node src/test/e2e/layout.mjs` opens every
 dialog, menu, pane and overlay — the Quick Access Toolbar in each position, the File backstage,
 every ribbon tab, the AI pane and dialogs, Import Mailbox, the open-file window, the embedded
 editor and every command of the registry that opens something — on emulated phones (412×915,
@@ -199,15 +199,15 @@ read and delivery receipts, Reply-To, aliases (send from another address), recip
 autocomplete from contacts, contact lists, recent recipients and people who have written to you,
 undo send (0–30 seconds), schedule send, drafts with autosave, forward as attachment, edit as new.
 
-Editing in QuillPen: when QuillPen, the suite's word processor, is installed, the message window
-gets a **QuillPen** button that opens the message body in a complete embedded copy of QuillPen
+Editing in Anne's Pen: when Anne's Pen, the suite's word processor, is installed, the message window
+gets a **Anne's Pen** button that opens the message body in a complete embedded copy of Anne's Pen
 (ribbon and all) inside the message window; *Done* brings the text back, *Cancel* keeps the old
-body, and *Send* while QuillPen is open asks it for the latest text first. *Settings ▸ Compose and
-reply ▸ Edit messages in QuillPen* chooses Off, Ask (offered in every new message) or Always. On
-Android QuillPen is found automatically (it shares its editor through a content provider); the
-desktop app looks in QuillPen's install folder (`resources/embed`) or a folder you choose; the web
-version takes the address of a QuillPen web deployment. Not available on iOS. The protocol is the
-suite's EMBED.md; QuillPost's side is `web/src/main/resources/web/embed.js`,
+body, and *Send* while Anne's Pen is open asks it for the latest text first. *Settings ▸ Compose and
+reply ▸ Edit messages in Anne's Pen* chooses Off, Ask (offered in every new message) or Always. On
+Android Anne's Pen is found automatically (it shares its editor through a content provider); the
+desktop app looks in Anne's Pen's install folder (`resources/embed`) or a folder you choose; the web
+version takes the address of an Anne's Pen web deployment. Not available on iOS. The protocol is the
+suite's EMBED.md; Anne's Post's side is `web/src/main/resources/web/embed.js`,
 `web/src/main/kotlin/.../QuillPenEmbed.kt` and `app/src/main/java/.../QuillPenAndroid.kt`.
 
 Reading: meeting invitations with Accept/Tentative/Decline (with or without a response),
@@ -218,7 +218,7 @@ message source and headers, open in a new window, .eml download.
 Mailbox: automatic replies (date range, contacts-only, once per sender per N days), mbox export
 and .eml/.mbox import, storage quota, several accounts at once with unread counts.
 
-**Opening files.** *File ▸ Open File…*, dropping a file on the window, or *Open with QuillPost*
+**Opening files.** *File ▸ Open File…*, dropping a file on the window, or *Open with Anne's Post*
 from Android or the desktop opens any saved message, contact, calendar, document, spreadsheet or
 presentation — recognised by its content, whatever its extension. Messages (`.eml`, Outlook
 `.msg`, `winmail.dat`, Apple Mail `.emlx`, `.mht`, `.nws`, S/MIME and PGP mail, uuencoded, yEnc
@@ -227,7 +227,7 @@ inline pictures and attachments, Reply, Reply all, Forward and Save to folder; r
 blocked. Outlook templates (`.oft`) open as a new message. vCards, Windows contacts and Outlook
 contacts go to People; iCalendar, vCalendar 1.0 and Outlook appointments to the Calendar. Word,
 Excel, PowerPoint, OpenDocument, iWork, WordPerfect, Lotus 1-2-3 and other office files are offered
-to QuillPen, QuillGrid or QuillStage, or sent as an attachment. Every format, its detection and
+to Anne's Pen, Anne's Grid or Anne's Stage, or sent as an attachment. Every format, its detection and
 its fidelity are listed in [docs/FORMATS.md](docs/FORMATS.md).
 
 **Opening and importing mail from other programs.** The same *Open File…*, drops (files or
@@ -293,19 +293,19 @@ Inspector*.
 The full list with ids, keys and origins, what runs on the server and what was left out (and why)
 is in [docs/COMMANDS.md](docs/COMMANDS.md). JavaScript unit tests: `node --test web/src/test/js/*.test.js`.
 
-### What QuillPost cannot do
+### What Anne's Post cannot do
 
-QuillPost talks to standard IMAP, POP3 and SMTP servers. Features that depend on Microsoft
-Exchange or Microsoft 365 servers are not available, and QuillPost does not imitate them:
+Anne's Post talks to standard IMAP, POP3 and SMTP servers. Features that depend on Microsoft
+Exchange or Microsoft 365 servers are not available, and Anne's Post does not imitate them:
 
 - shared mailboxes, delegate access, message recall, voting buttons, reactions, Copilot and
   Microsoft Teams integration;
 - server-side free/busy look-up and room booking: invitations are sent as ordinary iCalendar
   e-mail, which Outlook, Google Calendar and Apple Calendar all understand;
-- server-side automatic replies and rules: QuillPost applies them while it is running (always, for
+- server-side automatic replies and rules: Anne's Post applies them while it is running (always, for
   the server version; the desktop and phone apps must be open);
 - calendar and contact sync with CalDAV/CardDAV or Exchange: calendars, contacts and tasks are
-  stored by QuillPost per account and move between programs as `.ics`, `.vcf` and `.csv` files;
+  stored by Anne's Post per account and move between programs as `.ics`, `.vcf` and `.csv` files;
   internet calendars can be subscribed to read-only;
 - S/MIME and OpenPGP signing and encryption: signed messages are shown, but signatures are not
   verified, and encrypted messages cannot be read.
@@ -325,7 +325,7 @@ are unchanged, so the iOS client keeps working.
 
 ## Other platforms
 
-QuillPost started as an Android app; sibling clients live in their own folders. Each is built
+Anne's Post started as an Android app; sibling clients live in their own folders. Each is built
 by its own GitHub Actions workflow.
 
 | Folder      | Target                          | Stack                                              | Build artifact |
@@ -333,7 +333,7 @@ by its own GitHub Actions workflow.
 | `app/`      | Android (and **ChromeOS**)      | WebView shell around the embedded web client (Ktor CIO backend in-process, Jakarta Mail) | `.apk`         |
 | `desktop/`  | Windows / macOS / Linux / Raspberry Pi OS | Native launcher (Compose Desktop) around the embedded web client | `.msi`/`.dmg`/`.deb` (x64 + arm64) + portable archives |
 | `web/`      | Browser (self-hosted)           | Ktor backend (JVM, Jakarta Mail) + Outlook-style web UI, junk engine | server `.zip`  |
-| `ios/`      | iPhone / iPad                   | SwiftUI + WebKit shell showing the web client served by your own QuillPost server | `.app` (simulator) |
+| `ios/`      | iPhone / iPad                   | SwiftUI + WebKit shell showing the web client served by your own Anne's Post server | `.app` (simulator) |
 
 Notes on the architecture choices:
 
@@ -355,7 +355,7 @@ Notes on the architecture choices:
   mail work and serves a browser UI. See the section above.
 - **iOS**: Jakarta Mail is JVM-only and Apple does not allow a JVM on iOS, so the iPhone/iPad
   app cannot run the backend itself. It shows the same web client full-screen in WebKit, served
-  by a QuillPost server on your own network — the `quillpost-web` zip on a PC, Mac, Raspberry Pi
+  by an Anne's Post server on your own network — the `quillpost-web` zip on a PC, Mac, Raspberry Pi
   or NAS (it binds to all interfaces by default), or the desktop app started with
   `HOST=0.0.0.0`. Enter the address (for example `http://192.168.1.20:8080`) on the first
   screen; *Settings → Account → Change server* changes it later. Printing, attachment saving
@@ -366,7 +366,7 @@ Notes on the architecture choices:
 ## Releases
 
 Pushing a tag such as `v1.5.0` makes GitHub Actions build every target and attach the files
-to one GitHub Release (`Releases → QuillPost v1.5.0`):
+to one GitHub Release (`Releases → Anne's Post v1.5.0`):
 
 | Target | Release file |
 |---|---|
@@ -394,7 +394,7 @@ git config --global user.name  "Your Name"
 git config --global user.email "you@example.com"
 gh auth login                                         # GitHub CLI login (HTTPS + browser/token)
 git clone https://github.com/socrtwo/QuillPost.git
-cd QuillPost
+cd Anne's Post
 mkdir -p ~/.gradle && printf 'org.gradle.jvmargs=-Xmx1536m\norg.gradle.daemon=false\n' >> ~/.gradle/gradle.properties
 ```
 
@@ -417,7 +417,7 @@ git checkout main && git pull
 #   web/build.gradle.kts (version), desktop/build.gradle.kts (version, packageVersion)
 git commit -am "Release v1.5.0"        # only if you changed something
 git push
-git tag -a v1.5.0 -m "QuillPost 1.5.0"
+git tag -a v1.5.0 -m "Anne's Post 1.5.0"
 git push origin v1.5.0                 # <- this triggers the Android, Desktop, Web and iOS release builds
 
 gh run list --limit 8                  # watch the four workflows
@@ -452,7 +452,7 @@ a signed iOS app).
 ## Security note
 
 Credentials and downloaded mail are stored locally only and are transmitted solely to the
-user's own mail servers (on the web/iOS clients, via your own QuillPost backend). Use real
+user's own mail servers (on the web/iOS clients, via your own Anne's Post backend). Use real
 credentials only on your own device; the repository ships with placeholder values only.
 
 The web backend keeps passwords in memory for the life of a session. On disk it writes rules,

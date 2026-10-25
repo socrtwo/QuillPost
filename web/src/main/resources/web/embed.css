@@ -1,8 +1,8 @@
-/* QuillPen embedded editor in the compose window (embed.js). */
+/* Anne's Pen embedded editor in the compose window (embed.js). */
 .qp-pen-btn { gap: 6px; margin-right: 4px; }
 .qp-pen-btn svg { width: 16px; height: 16px; color: var(--accent); }
 .qp-pen-btn.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-soft-2); }
-/* While QuillPen is open its own ribbon replaces the built-in formatting bars and editor. */
+/* While Anne's Pen is open its own ribbon replaces the built-in formatting bars and editor. */
 .compose.qp-pen-open .compose-tabs,
 .compose.qp-pen-open .fmt-bar,
 .compose.qp-pen-open #cEditor { display: none !important; }

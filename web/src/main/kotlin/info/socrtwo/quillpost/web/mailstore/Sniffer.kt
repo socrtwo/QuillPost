@@ -84,7 +84,7 @@ object Sniffer {
         return when (ext) {
             "mbx" -> d("mailbox", "mbox", "Mailbox (.mbx)", "Eudora")
             "mbox", "mbs", "mbs1" -> d("mailbox", "mbox", "mbox mailbox")
-            else -> d("unknown", ext.ifEmpty { "bin" }, "Unrecognised file", supported = false, note = "QuillPost could not tell what this file is from its contents.")
+            else -> d("unknown", ext.ifEmpty { "bin" }, "Unrecognised file", supported = false, note = "Anne's Post could not tell what this file is from its contents.")
         }
     }
 

@@ -1,4 +1,4 @@
-/* QuillPost — the mail command set, part 1: the desktop mail client's own commands (File/backstage,
+/* Anne's Post — the mail command set, part 1: the desktop mail client's own commands (File/backstage,
  * Home, Send / Receive, Folder, View, Help, the message window's Message, Insert, Options, Format
  * Text, Review and Draw tabs, and the context menus), plus Undo/Redo for mail actions. Part 2
  * (mailextra.js) adds commands from other mail programs and new ones. Registration is pure data;
@@ -602,7 +602,7 @@ const mailUndo = {
     { id: "help.keySchemes", label: "Keyboard Scheme", icon: "keyboard", kind: "menu", keywords: "gmail mutt vim j k", menu: () => [["default", "Desktop mail (default)"], ["gmail", "Gmail-style (j/k, e, #, x, s, !)"], ["mutt", "Mutt/Pine-style (j/k, d, |, b, T, l, $)"]].map(([v, l]) => ({ label: l, checked: Commands.scheme === v, onClick: () => { Commands.scheme = v; prefs.set("keyScheme", v); toast(`Keyboard scheme: ${l}`); } })) },
     { id: "help.whatsNew", label: "What's New", icon: "sparkle", run: () => mailplus.whatsNew() },
     { id: "help.feedback", label: "Report a Problem", icon: "warning", run: () => openExternal(QB_REPO + "/issues/new") },
-    { id: "help.about", label: "About QuillPost", icon: "info", run: () => settingsUI.open("about") },
+    { id: "help.about", label: "About Anne's Post", icon: "info", run: () => settingsUI.open("about") },
   ]);
 
   // ------------------------------------------------------------------ Edit (undo / redo)

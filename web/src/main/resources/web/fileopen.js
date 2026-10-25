@@ -1,23 +1,23 @@
-/* QuillPost — "Open file": any email, contact, calendar, word-processor, spreadsheet or
+/* Anne's Post — "Open file": any email, contact, calendar, word-processor, spreadsheet or
  * presentation file, whatever its extension. The backend recognises the file by its content
  * (FileRoutes.kt, fileformats/*.kt); this module shows it:
  *   - messages (.eml, .msg, winmail.dat, .emlx, .mht, .nws, .oft, S/MIME, PGP…) in a message
  *     window with Reply, Reply all, Forward, Save to folder and the attachments;
  *   - contacts (.vcf, .contact, Outlook contacts) with "Add to People";
  *   - calendars (.ics, .vcs, Outlook appointments) with "Add to calendar";
- *   - documents, spreadsheets and presentations with "Open in QuillPen / QuillGrid / QuillStage"
+ *   - documents, spreadsheets and presentations with "Open in Anne's Pen / Anne's Grid / Anne's Stage"
  *     and "Send as attachment".
  * Commands: mail.openFile, mail.sendFileAsAttachment. Files can also be dropped on the window,
- * and the desktop and Android apps hand over files the system asks QuillPost to open.
+ * and the desktop and Android apps hand over files the system asks Anne's Post to open.
  * The helpers in FileOpen.logic have no DOM dependencies and are tested in Node.
  */
 "use strict";
 
 const FileOpenLogic = (() => {
   const SUITE = {
-    document: { id: "quillpen", label: "QuillPen", pkg: "io.github.socrtwo.quillpen", url: "https://github.com/socrtwo/QuillPen", what: "word processor" },
-    spreadsheet: { id: "quillgrid", label: "QuillGrid", pkg: "io.github.socrtwo.quillgrid", url: "https://github.com/socrtwo/QuillGrid", what: "spreadsheet" },
-    presentation: { id: "quillstage", label: "QuillStage", pkg: "io.github.socrtwo.quillstage", url: "https://github.com/socrtwo/QuillStage", what: "presentation program" },
+    document: { id: "quillpen", label: "Anne's Pen", pkg: "io.github.socrtwo.quillpen", url: "https://github.com/socrtwo/QuillPen", what: "word processor" },
+    spreadsheet: { id: "quillgrid", label: "Anne's Grid", pkg: "io.github.socrtwo.quillgrid", url: "https://github.com/socrtwo/QuillGrid", what: "spreadsheet" },
+    presentation: { id: "quillstage", label: "Anne's Stage", pkg: "io.github.socrtwo.quillstage", url: "https://github.com/socrtwo/QuillStage", what: "presentation program" },
   };
   const ICONS = { message: "mail", contacts: "people", calendar: "calendar", document: "note", spreadsheet: "table", presentation: "pane", mailbox: "inbox", other: "attach" };
 
@@ -27,7 +27,7 @@ const FileOpenLogic = (() => {
   function iconFor(kind) { return ICONS[kind] || "attach"; }
 
   /**
-   * How "Open in QuillPen/QuillGrid/QuillStage" works here: the Android app starts the suite
+   * How "Open in Anne's Pen / Anne's Grid / Anne's Stage" works here: the Android app starts the suite
    * app with the file, the desktop app hands it to the program the system registered, a web
    * browser can only download it.
    */
@@ -180,7 +180,7 @@ const FileOpen = typeof document === "undefined" ? null : {
     else if (r.kind === "calendar") this.renderEvents(r, body);
     else if (FileOpenLogic.suiteApp(r.kind)) this.renderDocument(r, body);
     else if (r.kind === "mailbox") body.appendChild(el("div", { class: "qp-file-doc" }, icon("inbox", 48), el("div", {}, el("h2", { text: r.label }), el("p", { text: "This file holds a whole mailbox rather than one message. Import it to copy its messages into a folder." }))));
-    else body.appendChild(el("div", { class: "qp-file-doc" }, icon("attach", 48), el("div", {}, el("h2", { text: r.name }), el("p", { text: r.format === "wab" ? "" : "QuillPost does not recognise this kind of file. You can download it or send it as an attachment." }))));
+    else body.appendChild(el("div", { class: "qp-file-doc" }, icon("attach", 48), el("div", {}, el("h2", { text: r.name }), el("p", { text: r.format === "wab" ? "" : "Anne's Post does not recognise this kind of file. You can download it or send it as an attachment." }))));
     if (!d.open) d.showModal();
   },
 
@@ -304,9 +304,9 @@ const FileOpen = typeof document === "undefined" ? null : {
     const app = FileOpenLogic.suiteApp(r.kind);
     const plan = FileOpenLogic.openPlan(r, { android: !!(window.QuillPostAndroid && window.QuillPostAndroid.openInApp) });
     const how = plan.method === "web"
-      ? `In a web browser QuillPost cannot start other programs. Choose "${plan.label}" to download the file, then open it in ${app.label} (the Quill suite's ${app.what}) or any ${app.what}.`
+      ? `In a web browser Anne's Post cannot start other programs. Choose "${plan.label}" to download the file, then open it in ${app.label} (the Anne's Office suite's ${app.what}) or any ${app.what}.`
       : plan.method === "android" ? `${app.label} opens it with the same layout as the program that made it. If ${app.label} is not installed, you will be offered other apps.`
-      : `QuillPost hands the file to the program your computer opens ${r.label} files with — ${app.label} when it is installed.`;
+      : `Anne's Post hands the file to the program your computer opens ${r.label} files with — ${app.label} when it is installed.`;
     body.appendChild(el("div", { class: "qp-file-doc" }, icon(FileOpenLogic.iconFor(r.kind), 48),
       el("div", {}, el("h2", { text: r.name }), el("p", { class: "muted", text: `${r.label} · ${fmtSize(r.size)}${r.wrappedIn ? " · decoded from " + r.wrappedIn : ""}` }), el("p", { text: how }))));
   },
@@ -437,7 +437,7 @@ const FileOpen = typeof document === "undefined" ? null : {
     document.addEventListener("dragenter", (e) => {
       if (!state.token || inCompose(e) || !Array.from(e.dataTransfer?.types || []).includes("Files")) return;
       depth++;
-      if (!overlay) { overlay = el("div", { class: "qp-drop-overlay" }, el("div", {}, icon("upload", 40), el("b", { text: "Drop to open in QuillPost" }), el("span", { text: "Messages, contacts, calendars, documents, spreadsheets and presentations" }))); document.body.appendChild(overlay); }
+      if (!overlay) { overlay = el("div", { class: "qp-drop-overlay" }, el("div", {}, icon("upload", 40), el("b", { text: "Drop to open in Anne's Post" }), el("span", { text: "Messages, contacts, calendars, documents, spreadsheets and presentations" }))); document.body.appendChild(overlay); }
     });
     document.addEventListener("dragleave", () => { if (--depth <= 0) hide(); });
     document.addEventListener("dragover", (e) => { if (overlay && !inCompose(e)) e.preventDefault(); });
@@ -453,11 +453,11 @@ const FileOpen = typeof document === "undefined" ? null : {
 
 /** The two commands (pure data; nothing runs until a command does, so the Node tests can load this file). */
 const FILE_COMMANDS = [
-  { id: "mail.openFile", label: "Open File…", icon: "upload", tab: "File", group: "Open & Export", popular: true, scope: "global", origin: "QuillPost",
+  { id: "mail.openFile", label: "Open File…", icon: "upload", tab: "File", group: "Open & Export", popular: true, scope: "global", origin: "Anne's Post",
     tip: "Open any message (.eml, .msg, winmail.dat, .mht…), contact, calendar, document, spreadsheet or presentation file",
     keywords: "eml msg oft tnef winmail mht mhtml emlx nws vcf vcard ics vcs calendar contact doc docx xls xlsx ppt pptx odt rtf open file drop",
     run: () => FileOpen.pick() },
-  { id: "mail.sendFileAsAttachment", label: "Send File as Attachment…", icon: "attach", tab: "File", group: "Open & Export", scope: "global", origin: "QuillPost",
+  { id: "mail.sendFileAsAttachment", label: "Send File as Attachment…", icon: "attach", tab: "File", group: "Open & Export", scope: "global", origin: "Anne's Post",
     tip: "Start a new message with a file attached (the opened file, or one you choose)",
     keywords: "send to mail recipient attach file share",
     run: async (ctx = {}) => {
@@ -473,7 +473,7 @@ if (typeof Commands !== "undefined") Commands.def(FILE_COMMANDS);
 
 if (FileOpen) {
   FileOpen.installDrop();
-  // Files handed over by the desktop or Android app ("Open with QuillPost"): checked once signed in, and on request.
+  // Files handed over by the desktop or Android app ("Open with Anne's Post"): checked once signed in, and on request.
   window.quillpostOpenPending = () => FileOpen.openPending();
   let seenToken = null;
   setInterval(() => { const t = typeof state !== "undefined" && state.settings ? state.token : null; if (t && t !== seenToken) { seenToken = t; FileOpen.openPending(); } }, 1500);

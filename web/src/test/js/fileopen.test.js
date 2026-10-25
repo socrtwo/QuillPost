@@ -36,19 +36,19 @@ test("index.html loads the module after the command files, with its stylesheet",
 });
 
 test("each kind of file gets the right suite program", () => {
-  assert.equal(L.suiteApp("document").label, "QuillPen");
+  assert.equal(L.suiteApp("document").label, "Anne's Pen");
   assert.equal(L.suiteApp("spreadsheet").pkg, "io.github.socrtwo.quillgrid");
   assert.equal(L.suiteApp("presentation").pkg, "io.github.socrtwo.quillstage");
   assert.equal(L.suiteApp("message"), null);
   for (const k of ["message", "contacts", "calendar", "document", "spreadsheet", "presentation", "mailbox", "other", "nonsense"]) assert.ok(sprite.has(L.iconFor(k)), k);
 });
 
-test("Open in QuillPen/QuillGrid/QuillStage: Android intent, desktop handler or download", () => {
+test("Open in Anne's Pen / Anne's Grid / Anne's Stage: Android intent, desktop handler or download", () => {
   const doc = { kind: "spreadsheet", nativeOpen: false };
   assert.equal(L.openPlan(doc, { android: true }).method, "android");
   assert.equal(L.openPlan({ ...doc, nativeOpen: true }, {}).method, "desktop");
   assert.equal(L.openPlan(doc, {}).method, "web");
-  assert.equal(L.openPlan(doc, {}).label, "Open in QuillGrid");
+  assert.equal(L.openPlan(doc, {}).label, "Open in Anne's Grid");
   assert.equal(L.openPlan({ kind: "message" }, {}), null);
 });
 

@@ -175,7 +175,7 @@ try {
   await dialogOpen();
   t.ok((await badge()).includes("Word document"), "docx: recognised as a Word document");
   const docButtons = (await barButtons()).join("|");
-  t.ok(docButtons.includes("Open in QuillPen") && docButtons.includes("Send as attachment"), "docx: Open in QuillPen and Send as attachment offered");
+  t.ok(docButtons.includes("Open in Anne's Pen") && docButtons.includes("Send as attachment"), "docx: Open in Anne's Pen and Send as attachment offered");
   await shot("07-docx");
   await page.click("#fileBar button:has-text('Send as attachment')");
   await page.waitForSelector("#composeDialog[open]", { timeout: 8000 });

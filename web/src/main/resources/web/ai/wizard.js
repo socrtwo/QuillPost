@@ -1,4 +1,4 @@
-/* QuillPost AI — setup wizard (providers grouped by cost, key test, live model list), the
+/* Anne's Post AI — setup wizard (providers grouped by cost, key test, live model list), the
  * Providers & models manager, AI settings and the AI & Privacy page.
  *
  * The wizard opens the provider's sign-up or key page in the browser; the key comes back by
@@ -10,7 +10,7 @@
   const C = window.QbAiClient, S = window.QbAiStore, P = window.QbAiProviders, PR = window.QbAiPrompts;
   const qbAi = (window.qbAi = window.qbAi || {});
 
-  /** Lets the QuillPost backend relay reach a custom or local server address (it refuses unknown hosts). */
+  /** Lets the Anne's Post backend relay reach a custom or local server address (it refuses unknown hosts). */
   async function registerEndpoint(def, cfg) {
     const base = S.resolveBaseUrl(def, cfg);
     if (!base || base === def.baseUrl) return;
@@ -30,7 +30,7 @@
     const showChooser = () => {
       reset(); root.innerHTML = "";
       if (reason) root.appendChild(el("p", { class: "ai-reason", text: reason }));
-      root.appendChild(el("p", { class: "small muted", text: "Choose where QuillPost's AI features run. You can add several and switch at any time (AI ▸ Active AI). Nothing is sent anywhere until you run an AI command." }));
+      root.appendChild(el("p", { class: "small muted", text: "Choose where Anne's Post's AI features run. You can add several and switch at any time (AI ▸ Active AI). Nothing is sent anywhere until you run an AI command." }));
       const s = S.settings();
       for (const sec of P.SECTIONS) {
         root.append(el("h4", { text: sec.title }), el("p", { class: "small muted", text: sec.help }));
@@ -223,7 +223,7 @@
       }
       const out = el("div", { class: "ai-try" });
       root.append(
-        el("p", { class: "small muted", text: P.isOnDevice(p) ? "Text you give AI commands is processed on this device." : `When you run an AI command, QuillPost sends the text it needs to ${qbAi.hostOf(S.resolveBaseUrl(p, cfg || {}))} — straight from this page, or relayed by your QuillPost backend when the service does not accept calls from web pages. ${p.name}'s terms and privacy policy apply${p.free === "free" ? "; free tiers may use what you send to improve their models" : ""}.` }),
+        el("p", { class: "small muted", text: P.isOnDevice(p) ? "Text you give AI commands is processed on this device." : `When you run an AI command, Anne's Post sends the text it needs to ${qbAi.hostOf(S.resolveBaseUrl(p, cfg || {}))} — straight from this page, or relayed by your Anne's Post backend when the service does not accept calls from web pages. ${p.name}'s terms and privacy policy apply${p.free === "free" ? "; free tiers may use what you send to improve their models" : ""}.` }),
         el("div", { class: "btn-row" },
           el("button", { class: "btn", "data-action": "try", onclick: async () => {
             out.textContent = "…";
@@ -395,7 +395,7 @@
     lang.onchange = () => S.saveSettings((x) => { x.language = lang.value; });
     const limit = select([["25", "25"], ["50", "50"], ["100", "100"], ["200", "200"]], String(s.mailboxLimit || 100));
     limit.onchange = () => S.saveSettings((x) => { x.mailboxLimit = Number(limit.value); });
-    const route = select([["auto", "Direct when the service allows it, else through the QuillPost backend"], ["direct", "Always direct from this page"], ["proxy", "Always through the QuillPost backend"]], s.network || "auto");
+    const route = select([["auto", "Direct when the service allows it, else through the Anne's Post backend"], ["direct", "Always direct from this page"], ["proxy", "Always through the Anne's Post backend"]], s.network || "auto");
     route.onchange = () => S.saveSettings((x) => { x.network = route.value; });
     const usage = el("p", { class: "small muted", text: `Requests sent from this browser: ${s.usage.requests.toLocaleString()} · tokens in/out (where the service reports them): ${s.usage.tokensIn.toLocaleString()} / ${s.usage.tokensOut.toLocaleString()} · since ${new Date(s.usage.since).toLocaleDateString()}` });
     root.append(
@@ -407,7 +407,7 @@
       check("mailboxPreviews", "Include the first words of each message, not only date, sender, subject and flags"),
       el("div", { class: "field" }, el("label", { text: "Describe at most this many messages of the folder" }), limit),
       el("h4", { text: "Network" }),
-      el("div", { class: "field" }, el("label", { text: "Route for cloud requests" }), route, el("span", { class: "hint", text: "The QuillPost backend relays only to the AI services in its list and to addresses you set up here; it never logs keys or text." })),
+      el("div", { class: "field" }, el("label", { text: "Route for cloud requests" }), route, el("span", { class: "hint", text: "The Anne's Post backend relays only to the AI services in its list and to addresses you set up here; it never logs keys or text." })),
       el("h4", { text: "Usage" }), usage,
       el("div", { class: "btn-row" },
         el("button", { class: "btn sm", onclick: () => { S.saveSettings((x) => { x.usage = { requests: 0, tokensIn: 0, tokensOut: 0, since: Date.now() }; }); usage.textContent = "Usage counters reset."; } }, "Reset counters")),
@@ -453,16 +453,16 @@
     const rows = PR.COMMANDS.map((c) => el("tr", {}, el("td", { text: c.label }), el("td", { text: SCOPE_TEXT[c.scope] + (c.id === "phishing" ? ", selected headers (authentication results, Return-Path, List-Unsubscribe), the links and the built-in junk engine's findings" : "") })));
     const backend = S.keyBackend();
     const body = el("div", { class: "ai-privacy" },
-      el("p", {}, el("b", { text: "QuillPost has no AI service of its own. " }), "AI requests go from your device to the provider you choose, with your own key, or to a model on this device. Nothing is sent until you run an AI command or ask in the AI pane, and every answer has a \"What was sent\" section showing the exact text."),
+      el("p", {}, el("b", { text: "Anne's Post has no AI service of its own. " }), "AI requests go from your device to the provider you choose, with your own key, or to a model on this device. Nothing is sent until you run an AI command or ask in the AI pane, and every answer has a \"What was sent\" section showing the exact text."),
       ensembleNow(s) || el("p", {}, el("b", { text: "Active provider: " }), p ? p.name : "none",
         p ? (P.isOnDevice(p) ? " — runs on this device; your mail does not leave it." : ` — what a command needs is sent to ${qbAi.hostOf(S.resolveBaseUrl(p, s.providers[p.id] || {}))}; its terms and privacy policy apply.`) : ""),
       el("h4", { text: "What each command sends" }),
       el("table", { class: "ai-table" }, el("tbody", {}, ...rows)),
       el("p", { class: "small muted", text: "Long messages are cut to a size limit (smaller for the on-device model). Message text is sent as plain text: remote images, attachments' contents and your password are never sent." }),
       el("h4", { text: "Relay" }),
-      el("p", { text: "Some services do not accept requests from web pages. For those (and for local servers the page cannot reach) the request goes through the QuillPost backend that serves this page — on the desktop and Android apps that is on this device; for a self-hosted QuillPost it is your own server. The relay only forwards to the AI services QuillPost knows and the addresses you set up, and never logs keys or text." }),
+      el("p", { text: "Some services do not accept requests from web pages. For those (and for local servers the page cannot reach) the request goes through the Anne's Post backend that serves this page — on the desktop and Android apps that is on this device; for a self-hosted Anne's Post it is your own server. The relay only forwards to the AI services Anne's Post knows and the addresses you set up, and never logs keys or text." }),
       el("h4", { text: "API keys" }),
-      el("p", { text: `Keys are stored in ${backend.label}. They are never put in settings, drafts, exported settings or anything sent to your mail server.` + (backend.encrypted ? "" : " This storage is not encrypted by QuillPost; anyone with access to this device account could read it. Use the on-device model or a local server if that matters.") }),
+      el("p", { text: `Keys are stored in ${backend.label}. They are never put in settings, drafts, exported settings or anything sent to your mail server.` + (backend.encrypted ? "" : " This storage is not encrypted by Anne's Post; anyone with access to this device account could read it. Use the on-device model or a local server if that matters.") }),
       el("h4", { text: "Changes are previewed" }),
       el("p", { text: "AI text is shown first and goes into your draft only when you press Insert or Replace, as one step you can undo (Ctrl+Z, or Undo on the notice). Tasks, events, contacts and categories are added only for the items you tick." }),
       el("h4", { text: "Free tiers" }),

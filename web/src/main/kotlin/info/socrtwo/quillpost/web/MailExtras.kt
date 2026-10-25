@@ -257,7 +257,7 @@ fun MailSession.sendMdn(original: RawSummary, to: String) {
     })
     report.addBodyPart(jakarta.mail.internet.MimeBodyPart().apply {
         setContent(
-            "Reporting-UA: QuillPost\r\nFinal-Recipient: rfc822;${account.email}\r\n" +
+            "Reporting-UA: Anne's Post\r\nFinal-Recipient: rfc822;${account.email}\r\n" +
                 (if (original.messageId.isNotBlank()) "Original-Message-ID: ${original.messageId}\r\n" else "") +
                 "Disposition: manual-action/MDN-sent-manually; displayed\r\n",
             "message/disposition-notification"

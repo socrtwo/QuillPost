@@ -2,6 +2,6 @@
 <paths>
     <!-- Attachments saved by MainActivity on Android 8/9: <app external files>/Download/ -->
     <external-files-path name="downloads" path="Download/" />
-    <!-- Opened files handed to QuillPen, QuillGrid or QuillStage (FileHandoff.openInApp): <cache>/open/ -->
+    <!-- Opened files handed to Anne's Pen, Anne's Grid or Anne's Stage (FileHandoff.openInApp): <cache>/open/ -->
     <cache-path name="open" path="open/" />
 </paths>

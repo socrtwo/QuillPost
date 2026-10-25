@@ -1,5 +1,5 @@
-// Browser test of the QuillPen embedded editor (web/src/main/resources/web/embed.js) against a fake
-// QuillPen (web/src/test/quillpen-fake/index.html) that implements QuillPen's side of the protocol.
+// Browser test of the Anne's Pen embedded editor (web/src/main/resources/web/embed.js) against a fake
+// Anne's Pen (web/src/test/quillpen-fake/index.html) that implements Anne's Pen's side of the protocol.
 //
 // Needs two demo servers (in-memory mailbox, see README "Run it"): one acting as the desktop app
 // (system property quillpost.desktop=true) and one as the plain web server, each with its own
@@ -14,7 +14,7 @@
 //
 // Environment: DESKTOP_URL (default http://127.0.0.1:8120/), WEB_URL (http://127.0.0.1:8121/),
 // DESKTOP_IMAP/DESKTOP_SMTP, WEB_IMAP/WEB_SMTP (ports above), CHROMIUM (browser executable).
-// The script itself serves the fake QuillPen for the web-deployment and Android cases.
+// The script itself serves the fake Anne's Pen for the web-deployment and Android cases.
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -31,9 +31,9 @@ const desktopAccount = demoAccount(Number(process.env.DESKTOP_IMAP || 13143), Nu
 const webAccount = demoAccount(Number(process.env.WEB_IMAP || 13144), Number(process.env.WEB_SMTP || 13026));
 
 // Variants of the fake: one that never answers, one that tries to finish the edit at once.
-const SILENT_HTML = "<!doctype html><title>silent</title><p>QuillPen that never says ready</p>";
+const SILENT_HTML = "<!doctype html><title>silent</title><p>Anne's Pen that never says ready</p>";
 const EVIL_HTML = `<!doctype html><title>evil</title><script>
-  parent.postMessage({ type: "quill-embed:ready", v: 1, app: "QuillPen" }, "*");
+  parent.postMessage({ type: "quill-embed:ready", v: 1, app: "Anne's Pen" }, "*");
   parent.postMessage({ type: "quill-embed:done", v: 1, html: "<b>EVIL</b>", text: "EVIL" }, "*");
 </script>`;
 
@@ -69,9 +69,9 @@ async function flow(page, label) {
   await page.click("#cQuillPenOffer .btn.primary");
   await waitReady(page);
   t.ok(await penOpen(page), `${label}: iframe open`);
-  t.ok(!(await page.isVisible("#cEditor")), `${label}: built-in editor hidden while QuillPen is open`);
+  t.ok(!(await page.isVisible("#cEditor")), `${label}: built-in editor hidden while Anne's Pen is open`);
   const loaded = await pen(page).locator("#doc").innerHTML();
-  t.ok(/Hello <b>world<\/b>/.test(loaded), `${label}: body loaded into QuillPen (${loaded.slice(0, 60)})`);
+  t.ok(/Hello <b>world<\/b>/.test(loaded), `${label}: body loaded into Anne's Pen (${loaded.slice(0, 60)})`);
   const meta = await pen(page).locator("#meta").textContent();
   t.ok(/Embed test/.test(meta), `${label}: subject sent with load`);
   const sandbox = await page.getAttribute("#composeDialog .qp-pen-frame", "sandbox");
@@ -98,10 +98,10 @@ async function flow(page, label) {
   await pen(page).locator("#done").click();
   await page.waitForFunction(() => !document.querySelector("#composeDialog .qp-pen-frame"));
   const afterDone = await editorHtml(page);
-  t.ok(/done-text/.test(afterDone) && /typed-in-pen/.test(afterDone), `${label}: Done puts QuillPen's HTML into the body`);
+  t.ok(/done-text/.test(afterDone) && /typed-in-pen/.test(afterDone), `${label}: Done puts Anne's Pen's HTML into the body`);
   t.ok(!/onerror|<script|javascript:/i.test(afterDone), `${label}: event handlers, scripts and javascript: links removed`);
   t.ok(await page.isVisible("#cEditor"), `${label}: built-in editor back after Done`);
-  t.ok(!(await page.evaluate(() => window.__pwned)), `${label}: nothing from the editor ran in QuillPost`);
+  t.ok(!(await page.evaluate(() => window.__pwned)), `${label}: nothing from the editor ran in Anne's Post`);
 
   // Cancel → the previous body is kept.
   const before = await editorHtml(page);
@@ -124,7 +124,7 @@ async function flow(page, label) {
   const req = await sendReq;
   const body = req ? JSON.parse(req.postData() || "{}") : {};
   t.ok(/SENT-MARKER/.test(body.html || ""), `${label}: Send requests the content first (html has the last keystrokes)`);
-  t.ok(/SENT-MARKER/.test(body.body || ""), `${label}: plain-text part made from QuillPen's content`);
+  t.ok(/SENT-MARKER/.test(body.body || ""), `${label}: plain-text part made from Anne's Pen's content`);
   await page.waitForFunction(() => !state.compose, null, { timeout: 10000 }).catch(() => {});
   t.ok(!(await penOpen(page)), `${label}: editor gone after sending`);
   // Cancel the undo-send hold so the demo mailbox is not changed.
@@ -136,7 +136,7 @@ async function settingsRow(page) {
   await page.evaluate(() => settingsUI.open("compose"));
   await page.waitForSelector("#settingsDialog[open]");
   await page.waitForTimeout(600);
-  const hasMode = await page.locator("#stBody .setting-row", { hasText: "Edit messages in QuillPen" }).count();
+  const hasMode = await page.locator("#stBody .setting-row", { hasText: "Edit messages in Anne's Pen" }).count();
   return hasMode;
 }
 
@@ -163,25 +163,25 @@ async function main() {
       // Not installed: no button, no mode row, but the folder field.
       await page.evaluate(() => api("/api/quillpen/folder", { method: "POST", body: { folder: null } }));
       await page.evaluate(() => quillPen.detect(true));
-      t.eq(await settingsRow(page), 0, "desktop: mode hidden while QuillPen is not found");
-      t.ok(await page.locator("#stBody .setting-row", { hasText: "QuillPen folder" }).count() === 1, "desktop: folder field shown");
+      t.eq(await settingsRow(page), 0, "desktop: mode hidden while Anne's Pen is not found");
+      t.ok(await page.locator("#stBody .setting-row", { hasText: "Anne's Pen folder" }).count() === 1, "desktop: folder field shown");
       await page.fill("#stBody .qp-pen-field input", "/etc");
       await page.click("#stBody .qp-pen-field .btn >> text=Use folder");
       await page.waitForTimeout(400);
-      t.ok(/No QuillPen editor/.test(await page.textContent("#stBody .qp-pen-status")), "desktop: a folder without index.html is refused");
+      t.ok(/No Anne's Pen editor/.test(await page.textContent("#stBody .qp-pen-status")), "desktop: a folder without index.html is refused");
       await page.fill("#stBody .qp-pen-field input", FAKE_DIR);
       await page.click("#stBody .qp-pen-field .btn >> text=Use folder");
-      await page.waitForSelector("#stBody .setting-row >> text=Edit messages in QuillPen", { timeout: 5000 });
-      t.ok(true, "desktop: choosing the folder detects QuillPen");
+      await page.waitForSelector("#stBody .setting-row >> text=Edit messages in Anne's Pen", { timeout: 5000 });
+      t.ok(true, "desktop: choosing the folder detects Anne's Pen");
       await page.evaluate(() => $("settingsDialog").close());
       const info = await page.evaluate(() => quillPen.detect());
       { const u = new URL("/quillpen-embed/", DESKTOP_URL); u.hostname = "localhost";
         t.eq(info.base, u.toString(), "desktop: served from /quillpen-embed/ on a separate origin (localhost)"); }
       const sameOrigin = await page.evaluate(() => fetch("/quillpen-embed/index.html").then((r) => r.status));
-      t.eq(sameOrigin, 404, "desktop: QuillPost's own origin refuses the embed files");
+      t.eq(sameOrigin, 404, "desktop: Anne's Post's own origin refuses the embed files");
       await flow(page, "desktop");
 
-      // Timeout: a QuillPen that never answers → error and built-in editor after 8 s.
+      // Timeout: an Anne's Pen that never answers → error and built-in editor after 8 s.
       await page.evaluate((f) => api("/api/quillpen/folder", { method: "POST", body: { folder: f } }), silentDir);
       await page.evaluate(() => quillPen.detect(true));
       await openCompose(page, "<p>keep me</p>");
@@ -191,7 +191,7 @@ async function main() {
       await page.waitForFunction(() => !document.querySelector("#composeDialog .qp-pen-frame"), null, { timeout: 12000 }).catch(() => {});
       const waited = Date.now() - t0;
       t.ok(waited >= 7500 && waited < 11000, `desktop: falls back after ~8 s (${waited} ms)`);
-      t.ok(await page.locator(".toast", { hasText: "QuillPen did not start" }).count() > 0, "desktop: timeout error shown");
+      t.ok(await page.locator(".toast", { hasText: "Anne's Pen did not start" }).count() > 0, "desktop: timeout error shown");
       t.ok(/keep me/.test(await editorHtml(page)) && (await page.isVisible("#cEditor")), "desktop: built-in editor with the body after the timeout");
       await page.evaluate(() => compose.close(true));
 
@@ -200,7 +200,7 @@ async function main() {
       await page.evaluate(() => { prefs.set("quillpenMode", "always"); return quillPen.detect(true); });
       await openCompose(page);
       await waitReady(page).catch(() => {});
-      t.ok(await penOpen(page), "desktop: Always opens QuillPen straight away");
+      t.ok(await penOpen(page), "desktop: Always opens Anne's Pen straight away");
       // Moving the window (dock ⇄ pop out) reloads the frame; the body comes back.
       await pen(page).locator("#doc").click(); await page.keyboard.type(" moved-text"); await page.waitForTimeout(1200);
       await page.evaluate(() => compose.popOut());
@@ -217,7 +217,7 @@ async function main() {
       await ctx.close();
     }
 
-    // ---------------------------------------------------------------- web (a QuillPen deployment URL)
+    // ---------------------------------------------------------------- web (an Anne's Pen deployment URL)
     {
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
       await signIn(ctx, webAccount, { quillpenMode: "ask" });
@@ -225,10 +225,10 @@ async function main() {
       await page.goto(WEB_URL);
       await waitSignedIn(page);
       t.eq(await settingsRow(page), 0, "web: mode hidden until a URL is set");
-      t.ok(await page.locator("#stBody .setting-row", { hasText: "QuillPen web address" }).count() === 1, "web: URL field shown");
+      t.ok(await page.locator("#stBody .setting-row", { hasText: "Anne's Pen web address" }).count() === 1, "web: URL field shown");
       await page.fill("#stBody .qp-pen-field input", fakeBase + "index.html");
       await page.click("#stBody .qp-pen-field .btn >> text=Save");
-      await page.waitForSelector("#stBody .setting-row >> text=Edit messages in QuillPen", { timeout: 5000 });
+      await page.waitForSelector("#stBody .setting-row >> text=Edit messages in Anne's Pen", { timeout: 5000 });
       t.eq(await page.evaluate(() => prefs.get("quillpenUrl")), fakeBase, "web: URL stored without index.html");
       await page.evaluate(() => $("settingsDialog").close());
       await flow(page, "web");
@@ -248,7 +248,7 @@ async function main() {
       const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true });
       await signIn(ctx, webAccount, { quillpenMode: "ask" });
       await ctx.addInitScript(() => { window.QuillPostAndroid = { platform: () => "android", version: () => "test", openExternal() {}, print() {}, toast() {}, quillPenAvailable: () => true }; });
-      // What MainActivity.shouldInterceptRequest does with QuillPen's ContentProvider.
+      // What MainActivity.shouldInterceptRequest does with Anne's Pen's ContentProvider.
       await ctx.route("https://quillpen.embed/**", (route) => {
         const p = new URL(route.request().url()).pathname;
         if (p === "/" || p === "/index.html") route.fulfill({ status: 200, contentType: "text/html", body: FAKE_HTML });
@@ -257,7 +257,7 @@ async function main() {
       const page = await ctx.newPage(); watch(page, "android");
       await page.goto(WEB_URL);
       await waitSignedIn(page);
-      t.eq(await settingsRow(page), 1, "android: mode shown when QuillPen is installed");
+      t.eq(await settingsRow(page), 1, "android: mode shown when Anne's Pen is installed");
       t.eq(await page.locator("#stBody .qp-pen-field").count(), 0, "android: no folder/URL field");
       await page.evaluate(() => $("settingsDialog").close());
       await openCompose(page);
@@ -280,9 +280,9 @@ async function main() {
       await waitSignedIn(page);
       await openCompose(page);
       await page.waitForTimeout(700);
-      t.ok(!(await page.isVisible("#cQuillPen")) && !(await penOpen(page)), "ios: no QuillPen button, never opened");
+      t.ok(!(await page.isVisible("#cQuillPen")) && !(await penOpen(page)), "ios: no Anne's Pen button, never opened");
       t.eq(await settingsRow(page), 0, "ios: option hidden in settings");
-      t.eq(await page.locator("#stBody .qp-pen-settings h4").count(), 0, "ios: no QuillPen section");
+      t.eq(await page.locator("#stBody .qp-pen-settings h4").count(), 0, "ios: no Anne's Pen section");
       await ctx.close();
     }
   } finally {

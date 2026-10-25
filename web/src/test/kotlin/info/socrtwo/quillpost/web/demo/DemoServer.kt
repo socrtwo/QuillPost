@@ -13,7 +13,7 @@ import java.util.Properties
 /**
  * Starts an in-memory IMAP (3143) + SMTP (3025) server seeded with a realistic mix of mail —
  * genuine newsletters, personal mail, a PayPal phish from a look-alike domain, a "Norton"
- * invoice from Gmail, a blacklisted sender — then starts QuillPost on port 8080.
+ * invoice from Gmail, a blacklisted sender — then starts Anne's Post on port 8080.
  *
  * Sign in as demo@quillpost.test / demo. Use "Server settings" on the setup screen:
  * IMAP localhost:3143 (None), SMTP localhost:3025 (None).

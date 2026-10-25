@@ -1,4 +1,4 @@
-/* QuillPost AI — the on-device model ("QuillPost Local AI"): a small open instruction model run
+/* Anne's Post AI — the on-device model ("Anne's Post Local AI"): a small open instruction model run
  * with Transformers.js in a module Web Worker. WebGPU is used when the device offers it,
  * otherwise WebAssembly on the CPU.
  *
@@ -136,7 +136,7 @@ self.onmessage = async (e) => {
   async function localStorageEstimate() {
     try {
       const e = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null;
-      if (e && e.usage) return `${(e.usage / 1048576).toFixed(0)} MB used by QuillPost in this browser's storage.`;
+      if (e && e.usage) return `${(e.usage / 1048576).toFixed(0)} MB used by Anne's Post in this browser's storage.`;
     } catch { /* unsupported */ }
     return "";
   }

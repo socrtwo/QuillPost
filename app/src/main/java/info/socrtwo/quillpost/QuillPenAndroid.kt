@@ -11,13 +11,13 @@ import java.io.ByteArrayInputStream
 import java.io.FileNotFoundException
 
 /**
- * Android side of the QuillPen embedded editor (the suite's EMBED.md, section 1).
+ * Android side of the Anne's Pen embedded editor (the suite's EMBED.md, section 1).
  *
- * QuillPen (applicationId [PACKAGE]) exports a read-only ContentProvider, authority [AUTHORITY],
+ * Anne's Pen (applicationId [PACKAGE]) exports a read-only ContentProvider, authority [AUTHORITY],
  * that serves its built web files by path. The compose window loads
  * `https://quillpen.embed/index.html?embed=compose&host=quillpost&v=1` in an iframe; the WebView
  * hands every request to that host to [intercept], which answers it from the provider. The page
- * therefore runs on its own origin (`https://quillpen.embed`), separate from QuillPost's.
+ * therefore runs on its own origin (`https://quillpen.embed`), separate from Anne's Post's.
  */
 object QuillPenAndroid {
     const val PACKAGE = "io.github.socrtwo.quillpen"
@@ -26,7 +26,7 @@ object QuillPenAndroid {
 
     @Volatile private var cached: Boolean? = null
 
-    /** QuillPen is installed and its provider answers index.html. Cached until [forget]. */
+    /** Anne's Pen is installed and its provider answers index.html. Cached until [forget]. */
     fun isAvailable(context: Context): Boolean {
         cached?.let { return it }
         val ok = isInstalled(context) && runCatching {
@@ -51,7 +51,7 @@ object QuillPenAndroid {
     fun isEmbedUrl(uri: Uri?): Boolean = uri != null && uri.scheme == "https" && uri.host == HOST
 
     /**
-     * Answers a WebView request for `https://quillpen.embed/<path>` from QuillPen's provider, or
+     * Answers a WebView request for `https://quillpen.embed/<path>` from Anne's Pen's provider, or
      * returns null for any other URL. Path segments are checked before they reach the provider
      * (no `..`, no hidden files), the query string is ignored, and the MIME type comes from the
      * file extension (JavaScript modules are refused by the WebView without it).

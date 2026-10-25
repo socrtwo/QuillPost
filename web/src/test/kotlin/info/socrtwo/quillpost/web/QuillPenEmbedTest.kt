@@ -47,12 +47,14 @@ class QuillPenEmbedTest {
     @Test fun `standard install locations per platform`() {
         val env = mapOf("LOCALAPPDATA" to "C:\\Users\\a\\AppData\\Local", "PROGRAMFILES" to "C:\\Program Files")
         val win = QuillPenEmbed.standardLocations("Windows 11", { env[it] }, "C:\\Users\\a").map { it.path }
-        assertEquals(2, win.size)
-        assertTrue(win[0].endsWith("Programs\\QuillPen\\resources\\embed"))
-        assertTrue(win[1].endsWith("QuillPen\\resources\\embed"))
+        assertEquals(4, win.size)
+        assertTrue(win[0].endsWith("Programs\\Anne's Pen\\resources\\embed"))
+        assertTrue(win[1].endsWith("Anne's Pen\\resources\\embed"))
+        assertTrue(win[2].endsWith("Programs\\QuillPen\\resources\\embed"))
+        assertTrue(win[3].endsWith("QuillPen\\resources\\embed"))
         val mac = QuillPenEmbed.standardLocations("Mac OS X", { null }, "/Users/a").map { it.path }
-        assertEquals(listOf("/Applications/QuillPen.app/Contents/Resources/embed", "/Users/a/Applications/QuillPen.app/Contents/Resources/embed"), mac)
-        assertEquals(listOf("/opt/QuillPen/resources/embed"), QuillPenEmbed.standardLocations("Linux", { null }, "/home/a").map { it.path })
+        assertEquals(listOf("/Applications/Anne's Pen.app/Contents/Resources/embed", "/Users/a/Applications/Anne's Pen.app/Contents/Resources/embed", "/Applications/QuillPen.app/Contents/Resources/embed", "/Users/a/Applications/QuillPen.app/Contents/Resources/embed"), mac)
+        assertEquals(listOf("/opt/Anne's Pen/resources/embed", "/opt/QuillPen/resources/embed"), QuillPenEmbed.standardLocations("Linux", { null }, "/home/a").map { it.path })
     }
 
     @Test fun `chosen folder is used only when it holds index html`() {

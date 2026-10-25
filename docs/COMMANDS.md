@@ -1,6 +1,6 @@
 # Commands, Quick Access Toolbar and keyboard
 
-Every action in QuillPost Mail is a **command** in one registry
+Every action in Anne's Post Mail is a **command** in one registry
 (`web/src/main/resources/web/commands.js`): `{ id, label, icon, tab, group, tip, keys, kind
 (button / toggle / menu), scope (mail / compose / global), run, menu, isEnabled, isActive,
 origin }`. The ribbon, the Quick Access Toolbar (QAT), the right-click menus, the keyboard and
@@ -11,7 +11,7 @@ command search all run the same commands by id, so any command can be put anywhe
 | `commands.js` | Registry, key names and keymaps, the QAT model (standard choices, *Add All*, sanitising) |
 | `mailtools.js` | Pure helpers: quoted-text folding, thread digest, mutt patterns, pipe filters, MoodWatch, tracker detection, free time slots, pre-send checks… |
 | `mailcommands.js` | The desktop mail client's own commands (File, Home, Send / Receive, Folder, View, Help, and the message window's Message, Insert, Options, Format Text, Review and Draw tabs), Undo/Redo, ribbon bindings |
-| `mailextra.js` | Commands from other mail programs, commands original to QuillPost, and their list / reading-pane behaviour |
+| `mailextra.js` | Commands from other mail programs, commands original to Anne's Post, and their list / reading-pane behaviour |
 | `qat.js`, `commands.css` | The QAT, its drop-down, *More Commands…*, command search, keyboard customisation, command reference, File backstage, the extra ribbon and compose tabs, and the keyboard dispatcher |
 | `CommandFeatures.kt`, `CommandRoutes.kt` | Server side: `/api/x/…` endpoints (below) |
 
@@ -75,7 +75,7 @@ to load the client keeps working as before.
 | **Claris Emailer, Opera M2** | *Unified Inbox* (every signed-in account), *Mailing Lists* (grouped by List-Id), *Attachments by Type*, *Low Bandwidth Mode* |
 | **Outlook** (desktop) | Everything that makes sense for IMAP/POP3/SMTP: see the File, Home, Send / Receive, Folder, View, Help, Message, Insert, Options, Format Text, Review and Draw tables below — e.g. Send/Receive All, Update Folder, Send All, Work Offline, Clean Up Conversation/Folder, Ignore, Never Block Sender/Domain/List, Reply with Meeting, Always Move Messages in This Conversation, Follow Up (Today…Custom, Add Reminder), Search Folders, Copy Folder, Recover Deleted Items, Folder Properties, Mailbox Cleanup, Save As (.eml/.txt/.html), Edit Message, Business Card, Attach Item, Calendar, Sensitivity, Follow Up for recipients, Delay Delivery, Format Painter, Change Case, Accessibility checker, Word Count, Draw, Screenshot, Undo/Redo of mail actions |
 
-## Commands original to QuillPost (origin "QuillPost")
+## Commands original to Anne's Post (origin "Anne's Post")
 
 *Reply with Time Slots* / *Insert Free Time Slots* (free times from the built-in Calendar),
 *Thread Digest* (per-person new text, open questions, requests, dates and links — no AI, quoted
@@ -112,10 +112,10 @@ is marked for deletion).
   Editor grammar, Smart Lookup / Researcher, Thesaurus and Online Pictures (Microsoft/Bing
   services); Fastmail Masked Email, Apple Hide My Email and Mail Drop, Gmail Confidential Mode,
   Spark shared links (provider accounts). The browser's own spell checker is used for *Spelling*.
-* **Read tracking** (Superhuman/Spark "read statuses"): deliberately not offered — QuillPost blocks
+* **Read tracking** (Superhuman/Spark "read statuses"): deliberately not offered — Anne's Post blocks
   tracking pixels instead.
 * **S/MIME and PGP** signing/encryption, Pegasus noticeboards, Outlook Download Headers / Mark to
-  Download (POP3 offline-store features; QuillPost reads mail online), *Cancel All* (requests are
+  Download (POP3 offline-store features; Anne's Post reads mail online), *Cancel All* (requests are
   not batched), *Ignore Subthread*.
 
 ## Tests
@@ -132,7 +132,7 @@ is marked for deletion).
 <!-- generated -->
 ## Command table
 
-371 commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).
+371 commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "Anne's Post" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).
 
 ### File (24)
 
@@ -159,8 +159,8 @@ is marked for deletion).
 | Quick Print (Selected Messages) | `file.quickPrint` | Print |  | Outlook |
 | Options | `file.options` | Options |  | Outlook |
 | Exit (Sign Out) | `file.signOut` | Options |  | Outlook |
-| Open File… | `mail.openFile` | Open & Export |  | QuillPost |
-| Send File as Attachment… | `mail.sendFileAsAttachment` | Open & Export |  | QuillPost |
+| Open File… | `mail.openFile` | Open & Export |  | Anne's Post |
+| Send File as Attachment… | `mail.sendFileAsAttachment` | Open & Export |  | Anne's Post |
 | Import Mailbox… | `mail.importMailbox` | Open & Export |  | Outlook |
 
 ### Home (85)
@@ -338,7 +338,7 @@ is marked for deletion).
 | Keyboard Scheme | `help.keySchemes` | Help |  | Outlook |
 | What's New | `help.whatsNew` | Help |  | Outlook |
 | Report a Problem | `help.feedback` | Help |  | Outlook |
-| About QuillPost | `help.about` | Help |  | Outlook |
+| About Anne's Post | `help.about` | Help |  | Outlook |
 
 ### Message (35)
 
@@ -550,23 +550,23 @@ is marked for deletion).
 | Mailing Lists | `opera.mailingLists` | Claris Emailer & Opera |  | Opera M2 |
 | Attachments by Type | `opera.attachments` | Claris Emailer & Opera |  | Opera M2 |
 | Low Bandwidth Mode | `opera.lowBandwidth` | Claris Emailer & Opera |  | Opera M2 |
-| Reply with Time Slots | `new.replyTimeSlots` | Insights |  | QuillPost |
-| Insert Free Time Slots | `new.insertTimeSlots` | Insights |  | QuillPost |
-| Thread Digest | `new.threadDigest` | Insights |  | QuillPost |
-| Attachment Shelf | `new.attachmentShelf` | Insights |  | QuillPost |
-| Waiting for Reply | `new.waiting` | Insights |  | QuillPost |
+| Reply with Time Slots | `new.replyTimeSlots` | Insights |  | Anne's Post |
+| Insert Free Time Slots | `new.insertTimeSlots` | Insights |  | Anne's Post |
+| Thread Digest | `new.threadDigest` | Insights |  | Anne's Post |
+| Attachment Shelf | `new.attachmentShelf` | Insights |  | Anne's Post |
+| Waiting for Reply | `new.waiting` | Insights |  | Anne's Post |
 | Questions Waiting for You | `new.nudges` | Insights |  | Gmail (Nudges) |
-| Unsubscribe Everywhere… | `new.unsubscribeEverywhere` | Insights |  | QuillPost |
-| Sender Timeline | `new.senderTimeline` | Insights |  | QuillPost (Opera M2 contact view) |
-| Big-Attachment Finder | `new.bigAttachments` | Insights |  | QuillPost |
-| Check Quote Integrity | `new.quoteCheck` | Insights |  | QuillPost |
-| Bulk Act on Sender or Domain… | `new.bulkSender` | Insights |  | QuillPost |
-| Sender Rules | `new.senderRules` | Insights |  | QuillPost |
-| Preview as Plain Text / Safe HTML | `new.plainPreview` | Insights |  | QuillPost |
-| Header Inspector (SPF/DKIM/DMARC) | `new.headerInspector` | Insights |  | QuillPost |
-| Clean Tracking Links | `new.cleanLinksToggle` | Insights |  | QuillPost |
-| Check Message Before Sending | `new.presend` | Insights |  | QuillPost |
-| Always Check Before Sending | `new.presendAuto` | Insights |  | QuillPost |
-| Triage Mode | `new.triage` | Insights |  | QuillPost |
-| Export Conversation as Markdown | `new.exportMarkdown` | Insights |  | QuillPost |
+| Unsubscribe Everywhere… | `new.unsubscribeEverywhere` | Insights |  | Anne's Post |
+| Sender Timeline | `new.senderTimeline` | Insights |  | Anne's Post (Opera M2 contact view) |
+| Big-Attachment Finder | `new.bigAttachments` | Insights |  | Anne's Post |
+| Check Quote Integrity | `new.quoteCheck` | Insights |  | Anne's Post |
+| Bulk Act on Sender or Domain… | `new.bulkSender` | Insights |  | Anne's Post |
+| Sender Rules | `new.senderRules` | Insights |  | Anne's Post |
+| Preview as Plain Text / Safe HTML | `new.plainPreview` | Insights |  | Anne's Post |
+| Header Inspector (SPF/DKIM/DMARC) | `new.headerInspector` | Insights |  | Anne's Post |
+| Clean Tracking Links | `new.cleanLinksToggle` | Insights |  | Anne's Post |
+| Check Message Before Sending | `new.presend` | Insights |  | Anne's Post |
+| Always Check Before Sending | `new.presendAuto` | Insights |  | Anne's Post |
+| Triage Mode | `new.triage` | Insights |  | Anne's Post |
+| Export Conversation as Markdown | `new.exportMarkdown` | Insights |  | Anne's Post |
 

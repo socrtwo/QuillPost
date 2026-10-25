@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Fake QuillPen for tests: implements QuillPen's side of the embed protocol (the suite's EMBED.md)
+  Fake Anne's Pen for tests: implements Anne's Pen's side of the embed protocol (the suite's EMBED.md)
   with a contenteditable instead of the real editor. Used by web/src/test/e2e/embed.mjs.
   It records every message it receives in window.__received.
 -->
@@ -8,7 +8,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QuillPen (test double)</title>
+<title>Anne's Pen (test double)</title>
 <style>
   html, body { margin: 0; height: 100%; font: 14px system-ui, sans-serif; }
   body { display: flex; flex-direction: column; }
@@ -19,7 +19,7 @@
 </style>
 </head>
 <body>
-<div class="bar"><b>QuillPen <span id="meta"></span></b><button id="done">Done</button><button id="cancel">Cancel</button></div>
+<div class="bar"><b>Anne's Pen <span id="meta"></span></b><button id="done">Done</button><button id="cancel">Cancel</button></div>
 <div id="doc" contenteditable="true"></div>
 <script>
   "use strict";
@@ -52,7 +52,7 @@
   });
   document.getElementById("done").onclick = () => send({ type: P + "done", html: doc.innerHTML, text: doc.innerText });
   document.getElementById("cancel").onclick = () => send({ type: P + "cancel" });
-  send({ type: P + "ready", app: "QuillPen", version: "test" });
+  send({ type: P + "ready", app: "Anne's Pen", version: "test" });
 </script>
 </body>
 </html>

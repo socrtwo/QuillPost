@@ -9,7 +9,7 @@ import java.io.File
  * best-effort: a layout is accepted only when its records point exactly at message boundaries in
  * the .mbx. Two layouts are known from public notes — Windows (104-byte header, 218-byte
  * little-endian records: offset, length, GMT seconds, state) and classic Mac (278-byte header,
- * 220-byte big-endian records: offset, length, body offset, status). From an accepted .toc QuillPost
+ * 220-byte big-endian records: offset, length, body offset, status). From an accepted .toc Anne's Post
  * takes the read/replied/forwarded state and skips messages Eudora had deleted but not yet
  * compacted away. Without a usable .toc every message in the .mbx is imported.
  *
@@ -68,7 +68,7 @@ object Eudora {
         val toc = File(mbx.parentFile, mbx.nameWithoutExtension + ".toc").takeIf { it.isFile }
             ?: mbx.parentFile?.listFiles()?.firstOrNull { it.name.equals(mbx.nameWithoutExtension + ".toc", true) }
         val entries = toc?.let { readToc(it, ix.entries.map { e -> e.fromLineStart }.toSet(), fb.length) }
-        if (toc != null && entries == null) warnings += "${mbx.name}: the table of contents (${toc.name}) is in a layout QuillPost does not know; every message in the file was imported and read status was not restored."
+        if (toc != null && entries == null) warnings += "${mbx.name}: the table of contents (${toc.name}) is in a layout Anne's Post does not know; every message in the file was imported and read status was not restored."
         val byStart = entries?.associateBy { it.offset }
         val list = if (byStart != null) ix.entries.filter { it.fromLineStart in byStart } else ix.entries
         if (byStart != null && list.size < ix.entries.size) warnings += "${mbx.name}: ${ix.entries.size - list.size} deleted messages that Eudora had not compacted away were skipped."

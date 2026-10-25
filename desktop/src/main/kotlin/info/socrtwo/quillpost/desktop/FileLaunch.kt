@@ -11,14 +11,14 @@ import java.util.prefs.Preferences
 /**
  * Opening files with the desktop app: file arguments (Windows and Linux "Open with", the file
  * associations set in build.gradle.kts), macOS open-file events, a second launch handing its
- * files to the running instance, and "Open in QuillPen/QuillGrid/QuillStage", which hands an
+ * files to the running instance, and "Open in Anne's Pen / Anne's Grid / Anne's Stage", which hands an
  * opened document to the program the operating system has registered for it.
  */
 object FileLaunch {
     private const val PORT_KEY = "runningPort"
     private const val SECRET_KEY = "handoffKey"
 
-    /** Gives [files] to a QuillPost already running for this user; true when it took them. */
+    /** Gives [files] to an Anne's Post already running for this user; true when it took them. */
     fun handToRunning(prefs: Preferences, files: List<File>): Boolean {
         val port = prefs.getInt(PORT_KEY, 0)
         val key = prefs.get(SECRET_KEY, null)

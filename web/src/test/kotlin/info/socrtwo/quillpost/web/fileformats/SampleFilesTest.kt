@@ -22,7 +22,7 @@ class SampleFilesTest {
 
     fun samples(): Map<String, ByteArray> {
         val out = LinkedHashMap<String, ByteArray>()
-        out["Welcome.eml"] = ("From: \"Quill Team\" <team@quillpost.test>\r\nTo: demo@quillpost.test\r\nSubject: =?UTF-8?Q?Welcome_to_QuillPost_=E2=9C=93?=\r\n" +
+        out["Welcome.eml"] = ("From: \"Anne's Office Team\" <team@quillpost.test>\r\nTo: demo@quillpost.test\r\nSubject: =?UTF-8?Q?Welcome_to_QuillPost_=E2=9C=93?=\r\n" +
             "Date: Tue, 22 Sep 2026 09:15:00 +0200\r\nMessage-ID: <welcome@quillpost.test>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"m\"\r\n\r\n" +
             "--m\r\nContent-Type: multipart/related; boundary=\"r\"\r\n\r\n--r\r\nContent-Type: text/html; charset=utf-8\r\n\r\n" +
             "<h2 style=\"color:#0f6cbd\">Hello from a saved .eml file</h2><p>This message has an <b>inline image</b>:</p><img src=\"cid:logo@quill\" width=\"64\" height=\"64\"><p>and a remote tracking pixel that stays blocked:</p><img src=\"https://tracker.example/pixel.gif\" width=\"1\" height=\"1\">\r\n" +

@@ -1,10 +1,10 @@
-/* QuillPost AI — settings and API-key storage.
+/* Anne's Post AI — settings and API-key storage.
  *
  * Settings (which provider is active, models, options, saved prompts, usage) live in this
  * browser's localStorage under "qb.ai.v1". API keys never do. They go to a separate key store:
  *   - Android app: the QuillPostAndroid bridge, which encrypts them with AES-GCM under a key held
  *     in the Android Keystore and keeps only the ciphertext in private SharedPreferences;
- *   - desktop app: the QuillPost backend on this computer, which writes them to its private data
+ *   - desktop app: the Anne's Post backend on this computer, which writes them to its private data
  *     folder (owner-only file permissions; not encrypted — the desktop launcher has no OS
  *     keychain bridge);
  *   - a plain browser (self-hosted web, iOS app): IndexedDB for this site, not encrypted at rest.
@@ -32,7 +32,7 @@
       mailboxPreviews: false,
       /** Ask about this mailbox: at most this many messages of the folder are described. */
       mailboxLimit: 100,
-      /** Network route for cloud requests: auto (direct, else through the QuillPost backend), direct, proxy. */
+      /** Network route for cloud requests: auto (direct, else through the Anne's Post backend), direct, proxy. */
       network: "auto",
       prompts: [],
       usage: { requests: 0, tokensIn: 0, tokensOut: 0, since: Date.now() },
@@ -117,7 +117,7 @@
 
   function importSettings(obj) {
     const src = obj && obj.format === "quillpost-ai-settings" ? obj.settings : null;
-    if (!src || typeof src !== "object") throw new Error("This is not a QuillPost AI settings file.");
+    if (!src || typeof src !== "object") throw new Error("This is not an Anne's Post AI settings file.");
     saveSettings((s) => {
       for (const k of ["enabled", "language", "confirmEachSend", "mailboxPreviews", "mailboxLimit", "network"]) if (k in src) s[k] = src[k];
       if (src.providers && typeof src.providers === "object") for (const [id, cfg] of Object.entries(src.providers)) if (P.providerById(id) && cfg && typeof cfg === "object") s.providers[id] = { ...cfg, id };
@@ -143,7 +143,7 @@
       remove: async (n) => { bridge.secureRemove(n); } };
   }
 
-  /** Desktop app: the local QuillPost backend keeps keys in its private data folder. */
+  /** Desktop app: the local Anne's Post backend keeps keys in its private data folder. */
   function desktopBackend(fetchFn, tokenFn) {
     const call = async (method, n, value) => {
       const headers = { Accept: "application/json", "X-QuillPost-AI": "1" };
@@ -152,10 +152,10 @@
       if (value !== undefined) headers["Content-Type"] = "application/json";
       const res = await fetchFn("/api/ai/keys/" + encodeURIComponent(n), { method, headers, body: value !== undefined ? JSON.stringify({ value }) : undefined });
       if (res.status === 404 && method === "GET") return null;
-      if (!res.ok) throw new Error("The QuillPost key store answered " + res.status);
+      if (!res.ok) throw new Error("The Anne's Post key store answered " + res.status);
       return method === "GET" ? ((await res.json()).value || null) : null;
     };
-    return { kind: "desktop-file", label: "the QuillPost data folder on this computer (readable only by your user account; not encrypted)", encrypted: false,
+    return { kind: "desktop-file", label: "the Anne's Post data folder on this computer (readable only by your user account; not encrypted)", encrypted: false,
       get: (n) => call("GET", n), set: (n, v) => call("PUT", n, v), remove: (n) => call("DELETE", n) };
   }
 
@@ -187,7 +187,7 @@
     const bridge = root.QuillPostAndroid;
     if (bridge) {
       if (typeof bridge.secureGet === "function" && typeof bridge.secureSet === "function") return androidBackend(bridge);
-      return unavailableBackend("This version of the Android app cannot store API keys securely. Update QuillPost, or use the on-device model or a local server that needs no key.");
+      return unavailableBackend("This version of the Android app cannot store API keys securely. Update Anne's Post, or use the on-device model or a local server that needs no key.");
     }
     try { if (root.indexedDB) return indexedDbBackend(root.indexedDB); } catch { /* blocked */ }
     return unavailableBackend("This browser offers no storage for API keys.");

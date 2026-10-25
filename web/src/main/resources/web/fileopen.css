@@ -1,4 +1,4 @@
-/* QuillPost — "Open file" window (fileopen.js). */
+/* Anne's Post — "Open file" window (fileopen.js). */
 .qp-file-dialog .dlg-head h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .qp-file-dialog .dlg-head .badge { flex: none; }
 .qp-file-history { width: auto; max-width: 260px; margin-left: auto; }

@@ -1,10 +1,10 @@
-/* QuillPost AI — provider-neutral chat client: OpenAI-compatible chat/completions, Anthropic
+/* Anne's Post AI — provider-neutral chat client: OpenAI-compatible chat/completions, Anthropic
  * Messages, Gemini generateContent, the browser's built-in model and the on-device model.
  * Streams (server-sent events) with Stop (AbortSignal) everywhere.
  *
  * Network route: requests go straight from this page to the provider when the provider allows
  * cross-origin calls. Providers that do not (and local servers the page cannot reach directly)
- * are called through the QuillPost backend's narrow relay, POST /api/ai/proxy, which only
+ * are called through the Anne's Post backend's narrow relay, POST /api/ai/proxy, which only
  * forwards to the provider addresses in its allow-list and the custom address you registered.
  *
  * The request builders and the SSE splitter are pure functions, unit-tested in web/src/test/js.
@@ -198,7 +198,7 @@
   // ------------------------------------------------------------------ transport
   const net = {
     fetch: (...a) => root.fetch(...a),
-    /** Session token for the QuillPost backend relay (set by the UI). */
+    /** Session token for the Anne's Post backend relay (set by the UI). */
     token: () => null,
   };
   function configure(o) { Object.assign(net, o); }
@@ -226,7 +226,7 @@
     if (tk) headers.Authorization = "Bearer " + tk;
     const res = await net.fetch("/api/ai/proxy", { method: "POST", headers, signal, body: JSON.stringify({ url: r.url, method: r.method, headers: r.headers, body: r.body == null ? null : JSON.stringify(r.body) }) });
     const why = res.headers && res.headers.get && res.headers.get("X-QuillPost-Proxy-Error");
-    if (why) throw new AiError(`The QuillPost relay refused the request: ${decodeURIComponent(why)}`, "proxy", res.status);
+    if (why) throw new AiError(`The Anne's Post relay refused the request: ${decodeURIComponent(why)}`, "proxy", res.status);
     return res;
   }
 

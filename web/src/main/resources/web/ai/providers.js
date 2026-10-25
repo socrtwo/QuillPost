@@ -1,11 +1,11 @@
-/* QuillPost AI — provider registry: where to sign up, where keys live, what is free, how to call it.
+/* Anne's Post AI — provider registry: where to sign up, where keys live, what is free, how to call it.
  *
  * Ported from the sister apps' provider table (checked October 2026 against provider docs and
  * live model lists). Provider consoles move pages often: every entry has a docs link, and model
  * lists are fetched live after a key is added, so stale defaults correct themselves.
  *
  * Provider and model names are used nominatively (to say which service a key belongs to); no
- * provider's branding is used for QuillPost's own features.
+ * provider's branding is used for Anne's Post's own features.
  *
  * Loads as a classic browser script (window.QbAiProviders) and as a CommonJS module for the
  * Node tests in web/src/test/js. The backend keeps a matching host allow-list for its CORS
@@ -22,13 +22,13 @@
    * kind:    openai (chat/completions) · anthropic (messages) · gemini (generateContent) ·
    *          local (on-device model in a Web Worker) · builtin (the browser's own model)
    * free:    device · free · trial · paid · local
-   * cors:    yes (callable from a web page) · no (needs the QuillPost backend proxy) · unknown · local
+   * cors:    yes (callable from a web page) · no (needs the Anne's Post backend proxy) · unknown · local
    * fields:  extra settings; {accountId}, {resource}, {region} are substituted into baseUrl
    */
   const PROVIDERS = [
     // ------------------------------------------------------------ free, no account
     {
-      id: "device", name: "On-device model (QuillPost Local AI)", kind: "local", baseUrl: "", needsKey: false,
+      id: "device", name: "On-device model (Anne's Post Local AI)", kind: "local", baseUrl: "", needsKey: false,
       links: { docs: "https://huggingface.co/docs/transformers.js" },
       free: "device", freeNote: "Free, private, no account. Downloads a small open model once (about 270 MB to 1 GB) and runs it on this device; works offline afterwards. Slower and less capable than cloud models.",
       keyViewable: true, models: { fast: "onnx-community/Qwen2.5-0.5B-Instruct", quality: "onnx-community/Qwen2.5-0.5B-Instruct" }, cors: "local",
@@ -46,7 +46,7 @@
       links: { signup: "https://openrouter.ai/", keys: "https://openrouter.ai/settings/keys", billing: "https://openrouter.ai/settings/credits", free: "https://openrouter.ai/models?max_price=0", docs: "https://openrouter.ai/docs" },
       free: "free", freeNote: "Free models (\":free\" and the openrouter/free router): 20 requests per minute, 50 per day (1,000 per day after a one-time $10 credit purchase). Paid models from every major lab with credits.",
       keyViewable: false, models: { fast: "openrouter/free", quality: "openrouter/auto" }, cors: "yes",
-      extraHeaders: { "HTTP-Referer": "https://github.com/socrtwo/QuillPost", "X-Title": "QuillPost" },
+      extraHeaders: { "HTTP-Referer": "https://github.com/socrtwo/QuillPost", "X-Title": "Anne's Post" },
     },
     {
       id: "gemini", name: "Google Gemini API", kind: "gemini", baseUrl: "https://generativelanguage.googleapis.com/v1beta", needsKey: true,
@@ -103,7 +103,7 @@
       links: { signup: "https://build.nvidia.com/", keys: "https://build.nvidia.com/settings/api-keys", docs: "https://docs.api.nvidia.com/" },
       free: "free", freeNote: "Free for development and testing with the NVIDIA Developer Program (about 40 requests per minute).",
       keyViewable: false, models: { fast: "nvidia/nemotron-3.5-lightning-30b-a3b", quality: "moonshotai/kimi-k3" }, cors: "no",
-      notes: "Web pages cannot call this API directly; QuillPost sends these requests through its own backend (the QuillPost server or app on your device).",
+      notes: "Web pages cannot call this API directly; Anne's Post sends these requests through its own backend (the Anne's Post server or app on your device).",
     },
     {
       id: "cloudflare", name: "Cloudflare Workers AI", kind: "openai", baseUrl: "https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1", needsKey: true,
@@ -112,19 +112,19 @@
       links: { signup: "https://dash.cloudflare.com/sign-up", keys: "https://dash.cloudflare.com/profile/api-tokens", docs: "https://developers.cloudflare.com/workers-ai/" },
       free: "free", freeNote: "Free plan: 10,000 Neurons per day. Create an API token with the Workers AI permission.",
       keyViewable: false, models: { fast: "@cf/zai-org/glm-5.3-flash", quality: "@cf/zai-org/glm-5.3" }, cors: "no",
-      notes: "Web pages cannot call this API directly; QuillPost sends these requests through its own backend (the QuillPost server or app on your device).",
+      notes: "Web pages cannot call this API directly; Anne's Post sends these requests through its own backend (the Anne's Post server or app on your device).",
     },
     // ------------------------------------------------------------ local servers (free)
     {
       id: "ollama", name: "Ollama (local server)", kind: "openai", baseUrl: "http://localhost:11434/v1", needsKey: false, optionalKey: true,
-      fields: [{ key: "baseUrl", label: "Server address", placeholder: "http://localhost:11434/v1", help: "A server on the same computer as QuillPost works as is (QuillPost's backend relays the requests). For a server elsewhere, use its https:// address." }],
+      fields: [{ key: "baseUrl", label: "Server address", placeholder: "http://localhost:11434/v1", help: "A server on the same computer as Anne's Post works as is (Anne's Post's backend relays the requests). For a server elsewhere, use its https:// address." }],
       links: { download: "https://ollama.com/download", docs: "https://github.com/ollama/ollama/blob/main/docs/faq.md", free: "https://ollama.com/library" },
       free: "local", freeNote: "Free open models on your own computer. Run \"ollama pull qwen3\" (or any model) first.",
       keyViewable: true, models: { fast: "llama3.2", quality: "qwen3" }, cors: "local",
     },
     {
       id: "lmstudio", name: "LM Studio (local server)", kind: "openai", baseUrl: "http://localhost:1234/v1", needsKey: false, optionalKey: true,
-      fields: [{ key: "baseUrl", label: "Server address", placeholder: "http://localhost:1234/v1", help: "Start the server in LM Studio (Developer tab). A server on the same computer as QuillPost works as is; elsewhere, use its https:// address." }],
+      fields: [{ key: "baseUrl", label: "Server address", placeholder: "http://localhost:1234/v1", help: "Start the server in LM Studio (Developer tab). A server on the same computer as Anne's Post works as is; elsewhere, use its https:// address." }],
       links: { download: "https://lmstudio.ai/", docs: "https://lmstudio.ai/docs/app/api" },
       free: "local", freeNote: "Free open models on your own computer.",
       keyViewable: true, models: { fast: "local-model", quality: "local-model" }, cors: "local",
@@ -164,7 +164,7 @@
       links: { signup: "https://www.perplexity.ai/", keys: "https://www.perplexity.ai/account/api", billing: "https://www.perplexity.ai/account/api", docs: "https://docs.perplexity.ai/" },
       free: "paid", freeNote: "Paid; answers cite live web sources.",
       keyViewable: false, models: { fast: "sonar", quality: "sonar-pro" }, cors: "no",
-      notes: "Web pages cannot call this API directly; QuillPost sends these requests through its own backend (the QuillPost server or app on your device).",
+      notes: "Web pages cannot call this API directly; Anne's Post sends these requests through its own backend (the Anne's Post server or app on your device).",
     },
     {
       id: "together", name: "Together AI", kind: "openai", baseUrl: "https://api.together.xyz/v1", needsKey: true,

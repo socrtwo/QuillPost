@@ -137,8 +137,8 @@ test("commands cover Outlook's tabs, other mail programs and new ideas", () => {
   const tabs = new Set(Commands.all().map((c) => c.tab));
   for (const t of ["File", "Home", "Send / Receive", "Folder", "View", "Help", "Message", "Insert", "Options", "Format Text", "Review", "Draw", "Tools"]) assert.ok(tabs.has(t), t);
   const origins = Commands.all().map((c) => c.origin || "").join(" ");
-  for (const p of ["Eudora", "Pine", "mutt", "Pegasus", "Lotus Notes", "Thunderbird", "Outlook Express", "Gmail", "Apple Mail", "Superhuman", "Spark", "Hey", "Claris Emailer", "Opera M2", "QuillPost"]) assert.ok(origins.includes(p), p);
-  assert.ok(Commands.all().filter((c) => c.origin === "QuillPost").length >= 8);
+  for (const p of ["Eudora", "Pine", "mutt", "Pegasus", "Lotus Notes", "Thunderbird", "Outlook Express", "Gmail", "Apple Mail", "Superhuman", "Spark", "Hey", "Claris Emailer", "Opera M2", "Anne's Post"]) assert.ok(origins.includes(p), p);
+  assert.ok(Commands.all().filter((c) => c.origin === "Anne's Post").length >= 8);
 });
 
 test("the generated command reference lists every command", () => {

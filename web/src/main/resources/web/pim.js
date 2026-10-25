@@ -1,4 +1,4 @@
-/* QuillPost — shared calendar/contacts/tasks client: dates and time zones, recurrence
+/* Anne's Post — shared calendar/contacts/tasks client: dates and time zones, recurrence
  * expansion, holiday and birthday calendars, the data cache and reminders.
  * Loaded before app.js; everything here only touches app.js globals (api, prefs, state, el,
  * icon, toast) inside functions, never at load time.

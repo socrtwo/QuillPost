@@ -174,7 +174,7 @@ data class VerdictDto(
     val safeSender: Boolean = false,
     val blockedSender: Boolean = false,
     val analyzedAt: Long = 0,
-    /** Set when QuillPost itself moved the message out of the Inbox. */
+    /** Set when Anne's Post itself moved the message out of the Inbox. */
     val autoMoved: Boolean = false,
     val autoMovedTo: String? = null,
     /** "spam" or "ham" when the user has trained the classifier with this message. */

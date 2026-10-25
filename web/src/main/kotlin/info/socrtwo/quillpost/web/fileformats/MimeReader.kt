@@ -482,10 +482,10 @@ object MimeReader {
         attach(e, "application/pkcs7-mime", ctx, fallbackName = "smime.p7m")
     }
 
-    const val SMIME_SIGNED = "This message is signed with S/MIME. QuillPost shows the signed content but does not verify the signature."
-    const val SMIME_ENCRYPTED = "This message is encrypted with S/MIME. QuillPost cannot decrypt it; open it in a mail program that holds your certificate."
-    const val PGP_SIGNED = "This message is signed with OpenPGP. QuillPost shows the signed text but does not verify the signature."
-    const val PGP_ENCRYPTED = "This message is encrypted with OpenPGP. QuillPost cannot decrypt it; open it with your OpenPGP software."
+    const val SMIME_SIGNED = "This message is signed with S/MIME. Anne's Post shows the signed content but does not verify the signature."
+    const val SMIME_ENCRYPTED = "This message is encrypted with S/MIME. Anne's Post cannot decrypt it; open it in a mail program that holds your certificate."
+    const val PGP_SIGNED = "This message is signed with OpenPGP. Anne's Post shows the signed text but does not verify the signature."
+    const val PGP_ENCRYPTED = "This message is encrypted with OpenPGP. Anne's Post cannot decrypt it; open it with your OpenPGP software."
 }
 
 /** Content-Type / Content-Disposition values with RFC 2231 continuations, charsets and lenient quoting. */

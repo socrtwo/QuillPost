@@ -260,7 +260,7 @@ internal suspend fun AccountContext.unsubscribe(folder: String, uid: Long): Unsu
                 requestMethod = "POST"; doOutput = true; instanceFollowRedirects = false
                 connectTimeout = 10_000; readTimeout = 20_000
                 setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-                setRequestProperty("User-Agent", "QuillPost one-click unsubscribe (RFC 8058)")
+                setRequestProperty("User-Agent", "Anne's Post one-click unsubscribe (RFC 8058)")
             }
             try { conn.outputStream.use { it.write("List-Unsubscribe=One-Click".toByteArray()) }; conn.responseCode } finally { conn.disconnect() }
         }
