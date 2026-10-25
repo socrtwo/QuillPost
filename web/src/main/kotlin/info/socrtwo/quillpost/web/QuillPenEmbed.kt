@@ -48,14 +48,18 @@ object QuillPenEmbed {
         val o = os.lowercase()
         return when {
             o.contains("win") -> listOfNotNull(
-                env("LOCALAPPDATA")?.takeIf { it.isNotBlank() }?.let { File(it, "Programs\\QuillPen\\resources\\embed") },
-                env("PROGRAMFILES")?.takeIf { it.isNotBlank() }?.let { File(it, "QuillPen\\resources\\embed") }
+                env("LOCALAPPDATA")?.takeIf { it.isNotBlank() }?.let { File(it, "Programs\\Anne's Pen\\resources\\embed") },
+                env("LOCALAPPDATA")?.takeIf { it.isNotBlank() }?.let { File(it, "Programs\\QuillPen\\resources\\embed") }, // rename:keep — the folder name of earlier installs
+                env("PROGRAMFILES")?.takeIf { it.isNotBlank() }?.let { File(it, "Anne's Pen\\resources\\embed") },
+                env("PROGRAMFILES")?.takeIf { it.isNotBlank() }?.let { File(it, "QuillPen\\resources\\embed") } // rename:keep
             )
             o.contains("mac") || o.contains("darwin") -> listOf(
-                File("/Applications/QuillPen.app/Contents/Resources/embed"),
-                File(home, "Applications/QuillPen.app/Contents/Resources/embed")
+                File("/Applications/Anne's Pen.app/Contents/Resources/embed"),
+                File(home, "Applications/Anne's Pen.app/Contents/Resources/embed"),
+                File("/Applications/QuillPen.app/Contents/Resources/embed"), // rename:keep
+                File(home, "Applications/QuillPen.app/Contents/Resources/embed") // rename:keep
             )
-            else -> listOf(File("/opt/QuillPen/resources/embed"))
+            else -> listOf(File("/opt/Anne's Pen/resources/embed"), File("/opt/QuillPen/resources/embed")) // rename:keep
         }
     }
 

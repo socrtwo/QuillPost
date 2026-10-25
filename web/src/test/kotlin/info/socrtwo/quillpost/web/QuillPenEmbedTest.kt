@@ -50,8 +50,8 @@ class QuillPenEmbedTest {
         assertEquals(4, win.size)
         assertTrue(win[0].endsWith("Programs\\Anne's Pen\\resources\\embed"))
         assertTrue(win[1].endsWith("Programs\\QuillPen\\resources\\embed")) // rename:keep
-        assertTrue(win[2].endsWith("Files\\Anne's Pen\\resources\\embed"))
-        assertTrue(win[3].endsWith("Files\\QuillPen\\resources\\embed")) // rename:keep
+        assertTrue(win[2].endsWith("Anne's Pen\\resources\\embed"))   // java.io.File joins with the host separator
+        assertTrue(win[3].endsWith("QuillPen\\resources\\embed")) // rename:keep
         val mac = QuillPenEmbed.standardLocations("Mac OS X", { null }, "/Users/a").map { it.path }
         assertEquals(listOf("/Applications/Anne's Pen.app/Contents/Resources/embed", "/Users/a/Applications/Anne's Pen.app/Contents/Resources/embed",
             "/Applications/QuillPen.app/Contents/Resources/embed", "/Users/a/Applications/QuillPen.app/Contents/Resources/embed"), mac) // rename:keep
