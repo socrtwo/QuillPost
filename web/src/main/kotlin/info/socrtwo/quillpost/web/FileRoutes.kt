@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
 import java.time.ZoneId
 
 // ---------------------------------------------------------------------------------------
-// "Open file": any message, contact, calendar or office file dropped on or opened in QuillPost.
+// "Open file": any message, contact, calendar or office file dropped on or opened in Anne's Post.
 // ---------------------------------------------------------------------------------------
 
 @Serializable
