@@ -3,7 +3,7 @@ package info.socrtwo.quillpost.web.fileformats
 /**
  * Recognises word-processor, spreadsheet and presentation files by their content (the file
  * extension only breaks ties or names formats that have no signature), so Anne's Post can offer
- * the suite program that opens them: Anne's Pen, Anne's Grid or QuillStage.
+ * the suite program that opens them: Anne's Pen, Anne's Grid or Anne's Stage.
  */
 object DocumentFormats {
 

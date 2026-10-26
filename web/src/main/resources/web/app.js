@@ -2124,7 +2124,7 @@ const settingsUI = {
         catch (e) { status.textContent = "Not reachable: " + e.message; }
       } }, "Test connection"),
       el("button", { class: "btn primary", onclick: async () => { await settingsSave({ ...state.settings, ollama: { enabled: state.settings.ollama?.enabled || false, url: url.value.trim(), model: model.value.trim() } }); toast("Saved"); } }, "Save"), status));
-    host.appendChild(el("p", { class: "small muted", html: "Install from <a href='https://ollama.com' target='_blank' rel='noopener'>ollama.com</a>, then run <code>ollama pull llama3.2</code> (or any other model) on the machine that hosts QuillPost." }));
+    host.appendChild(el("p", { class: "small muted", html: "Install from <a href='https://ollama.com' target='_blank' rel='noopener'>ollama.com</a>, then run <code>ollama pull llama3.2</code> (or any other model) on the machine that hosts Anne\'s Post." }));
   },
 };
 

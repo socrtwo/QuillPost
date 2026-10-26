@@ -143,12 +143,12 @@ const quillPen = (() => {
 
   // ------------------------------------------------------------------ opening and closing
   async function open() {
-    if (!state.compose) { toast("Start a message first, then open it in QuillPen."); return false; }
+    if (!state.compose) { toast("Start a message first, then open it in Anne\'s Pen."); return false; }
     if (frame) { frame.focus(); return true; }
     const found = await detect();
     if (!found.available || !found.base) { toast("Anne\'s Pen is not available. Install it, or set it up in Settings ▸ Compose and reply.", { danger: true }); return false; }
     if (!state.compose) return false;
-    if (state.compose.plain) { toast("This message is plain text. Switch it to HTML (Format text ▸ HTML) to edit it in QuillPen.", { danger: true }); return false; }
+    if (state.compose.plain) { toast("This message is plain text. Switch it to HTML (Format text ▸ HTML) to edit it in Anne\'s Pen.", { danger: true }); return false; }
     removeOffer();
     const dlg = $("composeDialog"), editor = $("cEditor");
     originalHtml = editor.innerHTML; mirrorHtml = originalHtml;
