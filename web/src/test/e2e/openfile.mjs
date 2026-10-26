@@ -76,7 +76,7 @@ try {
   // ---------------------------------------------------------------- .eml (file chooser)
   await openByChooser("Welcome.eml");
   await dialogOpen();
-  t.eq(await title(), "Welcome to QuillPost ✓", "eml: subject decoded from RFC 2047");
+  t.eq(await title(), "Welcome to Anne\'s Post ✓", "eml: subject decoded from RFC 2047");
   t.ok((await badge()).includes(".eml"), "eml: format badge");
   {
     const { frame, text } = await frameText();
@@ -175,7 +175,7 @@ try {
   await dialogOpen();
   t.ok((await badge()).includes("Word document"), "docx: recognised as a Word document");
   const docButtons = (await barButtons()).join("|");
-  t.ok(docButtons.includes("Open in QuillPen") && docButtons.includes("Send as attachment"), "docx: Open in QuillPen and Send as attachment offered");
+  t.ok(docButtons.includes("Open in Anne\'s Pen") && docButtons.includes("Send as attachment"), "docx: Open in Anne\'s Pen and Send as attachment offered");
   await shot("07-docx");
   await page.click("#fileBar button:has-text('Send as attachment')");
   await page.waitForSelector("#composeDialog[open]", { timeout: 8000 });

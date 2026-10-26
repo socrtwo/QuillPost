@@ -1,5 +1,5 @@
-// Generates the raster and packaged icons from the suite's QuillPost icon (branding/QuillPost/,
-// copied from the Quill suite icon family). Run from the repository root:
+// Generates the raster and packaged icons from the suite's Anne's Post icon (branding/QuillPost/,
+// copied from the Anne's Office suite icon family). Run from the repository root:
 //
 //   node scripts/gen-icons.mjs
 //

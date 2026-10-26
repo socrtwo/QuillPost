@@ -19,7 +19,7 @@
 //   PORT=8121 DEMO_IMAP_PORT=13144 DEMO_SMTP_PORT=13026 QUILLPOST_DATA_DIR=/tmp/qbB ./gradlew demo &
 //   node src/test/e2e/layout.mjs
 // (embed.mjs runs a second, desktop-mode server; this audit needs only the web-mode one. The script
-// serves the fake QuillPen of src/test/quillpen-fake itself for the embedded-editor states.)
+// serves the fake Anne's Pen of src/test/quillpen-fake itself for the embedded-editor states.)
 // Set QUILLPOST_WEB_DIR=src/main/resources/web on the server to audit edits without restarting it.
 // A full run (every profile, every command) takes a while: run profiles in parallel with DEVICE.
 // Environment: BASE_URL (default http://127.0.0.1:8121/), IMAP_PORT / SMTP_PORT (13144 / 13026),
@@ -446,7 +446,7 @@ const STATES = [
   ["open file: document", async (p) => { await openFile(p, "Report.docx", sample("Report.docx")); }],
   ["open file: winmail.dat", async (p) => { await openFile(p, "winmail.dat", sample("winmail.dat")); }],
 
-  // ---------------------------------------------------------------- embedded QuillPen editor
+  // ---------------------------------------------------------------- embedded Anne's Pen editor
   ["quillpen offer", async (p) => { await p.evaluate((u) => { prefs.set("quillpenUrl", u); prefs.set("quillpenMode", "ask"); return quillPen.detect(true); }, PEN_URL); await openCompose(p); await p.waitForSelector("#cQuillPenOffer:not(.hidden)", { timeout: 5000 }).catch(() => {}); }],
   ["quillpen open", async (p) => {
     await p.evaluate((u) => { prefs.set("quillpenUrl", u); prefs.set("quillpenMode", "ask"); return quillPen.detect(true); }, PEN_URL);

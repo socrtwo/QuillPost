@@ -1,6 +1,6 @@
-# Building and releasing QuillPost
+# Building and releasing Anne's Post
 
-QuillPost ships for eight targets from one repository:
+Anne's Post ships for eight targets from one repository:
 
 | Target | Artifact | Built by |
 |---|---|---|
@@ -15,12 +15,12 @@ QuillPost ships for eight targets from one repository:
 Every target shows the same Outlook-style client. The desktop apps and the Android app embed
 the web client: they start the same Ktor backend on `127.0.0.1` (in the app process on
 Android) and show the UI in your browser / in a WebView. The iOS app shows the same UI served
-by a QuillPost server on your network (Apple allows no JVM on iOS). Every feature of the web
+by an Anne's Post server on your network (Apple allows no JVM on iOS). Every feature of the web
 client (junk protection, AI rule proposals, etc.) is therefore present everywhere from a
 single code base.
 
 **Pushing a tag such as `v1.5.0` triggers all of this.** Each workflow attaches its files to
-the same GitHub Release (`Releases` → `QuillPost v1.5.0`) as it finishes.
+the same GitHub Release (`Releases` → `Anne's Post v1.5.0`) as it finishes.
 
 ## Releasing from Termux (Android)
 
@@ -41,7 +41,7 @@ git config --global user.email "socrtwo@gmail.com"
 
 gh auth login                   # GitHub CLI: choose HTTPS, log in with a browser/token
 git clone https://github.com/socrtwo/QuillPost.git
-cd QuillPost
+cd Anne's Post
 ```
 
 Gradle downloads its own wrapper on first use; give it memory head-room on a phone:
@@ -83,7 +83,7 @@ git pull
 #   ios/project.yml (CFBundleShortVersionString/MARKETING_VERSION)
 git commit -am "Release v1.5.0"
 git push
-git tag -a v1.5.0 -m "QuillPost 1.5.0"
+git tag -a v1.5.0 -m "Anne's Post 1.5.0"
 git push origin v1.5.0
 
 gh run watch                    # follow the four workflows

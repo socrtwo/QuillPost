@@ -6,7 +6,7 @@ import java.io.File
 /**
  * Outlook Express 5/6 (.dbx) and Outlook Express 4 (.mbx/.idx) mail folders.
  *
- * Microsoft never published these formats; QuillPost follows the community descriptions of them
+ * Microsoft never published these formats; Anne's Post follows the community descriptions of them
  * (Arne Schloh's "Outlook Express DBX file format" notes and others):
  *
  *  - DBX: signature CF AD 12 FE followed by a class id (…C5 FD 74 6F for a message folder,

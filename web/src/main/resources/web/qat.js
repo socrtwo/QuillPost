@@ -1,4 +1,4 @@
-/* QuillPost — Quick Access Toolbar and the command UI: the QAT (above or below the ribbon, or at the
+/* Anne's Post — Quick Access Toolbar and the command UI: the QAT (above or below the ribbon, or at the
  * bottom near the keyboard), its drop-down checklist, the "More Commands…" chooser, command search
  * (Alt+Q), keyboard customisation, the command reference, the File backstage, the extra ribbon and
  * compose tabs, and the keyboard dispatcher that runs registered commands. Loaded after app.js.
@@ -501,7 +501,7 @@ function commandsMarkdown() {
   const rows = Commands.all();
   const tabs = [...new Set(rows.map((c) => c.tab))];
   const cell = (s) => String(s || "").replace(/\|/g, "\\|");
-  const out = [`# QuillPost commands`, "", `${rows.length} commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "QuillPost" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).`, ""];
+  const out = [`# Anne\'s Post commands`, "", `${rows.length} commands. Origin "Outlook" marks the desktop mail client's own commands; other origins name the mail program a command comes from, and "Anne\'s Post" marks commands original to this client. Every one can be placed on the Quick Access Toolbar (Customize → More Commands…), found with command search (Alt+Q) and given a shortcut (Help → Customize Keyboard Shortcuts).`, ""];
   for (const t of tabs) {
     const list2 = rows.filter((c) => c.tab === t);
     out.push(`## ${t} (${list2.length})`, "", "| Command | Id | Group | Keys | Origin |", "|---|---|---|---|---|");

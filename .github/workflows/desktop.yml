@@ -116,5 +116,5 @@ jobs:
         with:
           tag_name: ${{ steps.rel.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: QuillPost ${{ steps.rel.outputs.tag }}
+          name: Anne's Post ${{ steps.rel.outputs.tag }}
           files: desktop/release-assets/*

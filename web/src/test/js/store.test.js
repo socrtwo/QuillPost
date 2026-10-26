@@ -45,7 +45,7 @@ test("key fields smuggled into settings or an import are dropped", () => {
   assert.ok(!storage.dump().includes("leak"), "nothing key-like persisted");
   assert.equal(S.settings().providers.mistral.model, "x");
   assert.equal(S.settings().providers.bogus, undefined, "unknown providers ignored");
-  assert.throws(() => S.importSettings({ hello: 1 }), /not a QuillPost AI settings file/);
+  assert.throws(() => S.importSettings({ hello: 1 }), /not an Anne\'s Post AI settings file/);
 });
 
 test("Android bridge backend: encrypted store is used, never web storage", async () => {

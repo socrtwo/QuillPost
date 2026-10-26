@@ -15,18 +15,18 @@ import java.net.URL
 import kotlin.concurrent.thread
 
 /**
- * Files moving between QuillPost and other apps:
- *  - "Open with QuillPost" and "Share to QuillPost" (ACTION_VIEW / ACTION_SEND / ACTION_SEND_MULTIPLE):
+ * Files moving between Anne's Post and other apps:
+ *  - "Open with Anne's Post" and "Share to Anne's Post" (ACTION_VIEW / ACTION_SEND / ACTION_SEND_MULTIPLE):
  *    the files are read and queued in the in-process backend ([OpenedFiles.enqueue]); the web UI
  *    picks them up (`/api/file/pending`) and shows each one — a message in the reader window, a
- *    document with "Open in QuillPen" and "Send as attachment";
- *  - "Open in QuillPen / QuillGrid / QuillStage": the opened file is copied to the cache and handed
+ *    document with "Open in Anne's Pen" and "Send as attachment";
+ *  - "Open in Anne's Pen / Anne's Grid / Anne's Stage": the opened file is copied to the cache and handed
  *    to the suite app with a content:// URI (or to any app that can view it).
  */
 object FileHandoff {
     private const val MAX_BYTES = 200L * 1024 * 1024
 
-    /** The content URIs [intent] asks QuillPost to open (none for mailto: links and plain text shares). */
+    /** The content URIs [intent] asks Anne's Post to open (none for mailto: links and plain text shares). */
     fun uris(intent: Intent?): List<Uri> {
         intent ?: return emptyList()
         return when (intent.action) {
@@ -81,7 +81,7 @@ object FileHandoff {
 
     /**
      * Downloads [url] (the local backend's copy of an opened file) and opens it in the app [pkg]
-     * (QuillPen, QuillGrid or QuillStage); when that app is missing, offers every app that can view it.
+     * (Anne's Pen, Anne's Grid or Anne's Stage); when that app is missing, offers every app that can view it.
      */
     fun openInApp(activity: Activity, url: String, fileName: String, mimeType: String, pkg: String) {
         thread(name = "quillpost-open-in-app") {
@@ -113,8 +113,8 @@ object FileHandoff {
     }
 
     private fun appLabel(pkg: String) = when (pkg) {
-        "io.github.socrtwo.quillgrid" -> "QuillGrid"
-        "io.github.socrtwo.quillstage" -> "QuillStage"
-        else -> "QuillPen"
+        "io.github.socrtwo.quillgrid" -> "Anne's Grid"
+        "io.github.socrtwo.quillstage" -> "Anne's Stage"
+        else -> "Anne's Pen"
     }
 }

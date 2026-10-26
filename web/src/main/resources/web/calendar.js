@@ -1,4 +1,4 @@
-/* QuillPost — Calendar: day / three-day / work week / week / month / agenda views, mini
+/* Anne's Post — Calendar: day / three-day / work week / week / month / agenda views, mini
  * month, calendar list, event editor with recurrence, reminders, attendees and invitations,
  * .ics import/export, internet calendar subscriptions. Loaded before app.js.
  */

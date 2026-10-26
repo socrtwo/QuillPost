@@ -575,7 +575,7 @@ class MailSession(val account: AccountDto) {
             sentDate = java.util.Date()
             req.inReplyTo?.takeIf { it.isNotBlank() }?.let { setHeader("In-Reply-To", it) }
             req.references?.takeIf { it.isNotBlank() }?.let { setHeader("References", it) }
-            setHeader("X-Mailer", "QuillPost")
+            setHeader("X-Mailer", "Anne's Post")
         }
         val alternative = MimeMultipart("alternative").apply {
             addBodyPart(MimeBodyPart().apply { setText(req.body, "UTF-8") })

@@ -129,14 +129,14 @@ await page.waitForFunction("document.querySelector('#fileDialog[open]')?.textCon
 t.ok(true, "dropped .eml opened");
 await page.evaluate(() => document.getElementById("fileDialog")?.close());
 
-// 6. A word-processor file given to Import Mailbox is handed back to the Open File window (QuillPen).
+// 6. A word-processor file given to Import Mailbox is handed back to the Open File window (Anne's Pen).
 const doc = fs.readFileSync(path.join(FIX, "letter.doc")).toString("base64");
 await page.evaluate((b64) => {
   const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
   mailImport.open([{ file: new File([bytes], "letter.dat"), path: "letter.dat" }]);
 }, doc);
 await page.waitForSelector("#fileDialog[open]", { timeout: 15000 });
-t.ok((await page.textContent("#fileDialog")).includes("QuillPen"), "Word file handed to QuillPen");
+t.ok((await page.textContent("#fileDialog")).includes("Anne\'s Pen"), "Word file handed to Anne\'s Pen");
 await shot("10-word-handoff");
 await page.evaluate(() => document.getElementById("fileDialog")?.close());
 

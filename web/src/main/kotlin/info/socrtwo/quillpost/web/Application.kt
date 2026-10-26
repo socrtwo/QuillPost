@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory
 private val log = LoggerFactory.getLogger("quillpost")
 
 /**
- * The whole QuillPost backend as a Ktor module. The JVM server (`ServerMain.kt`), the desktop
+ * The whole Anne's Post backend as a Ktor module. The JVM server (`ServerMain.kt`), the desktop
  * launcher and the Android app all install exactly this module on their own engine, so every
  * platform serves the same API and the same Outlook-style UI.
  */
@@ -43,7 +43,7 @@ fun Application.module() {
     val store = DataStore()
     val blacklists = BlacklistChecker()
     val sessions = Sessions(store, blacklists)
-    log.info("QuillPost data directory: ${store.root.absolutePath}")
+    log.info("Anne's Post data directory: ${store.root.absolutePath}")
 
     fun ApplicationCall.ctx(): AccountContext = sessions.get(token())
 
@@ -52,7 +52,7 @@ fun Application.module() {
         commandRoutes(sessions)
         mailImportRoutes(sessions) // File ▸ Open, mailbox import, Local Archives (MailImportRoutes.kt)
         fileRoutes(sessions) // "Open file": messages, contacts, calendars and office files (FileRoutes.kt)
-        // QuillPen embedded editor (desktop): /api/quillpen and /quillpen-embed/<path>. See QuillPenEmbed.kt.
+        // Anne's Pen embedded editor (desktop): /api/quillpen and /quillpen-embed/<path>. See QuillPenEmbed.kt.
         quillPenEmbedRoutes(sessions, store.root)
         aiRoutes(sessions, store) // AI tab: ai/*.js, relay, desktop key store (AiRoutes.kt)
         // The UI (index.html, styles.css, app.js) is read straight from the class path. This

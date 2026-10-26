@@ -26,7 +26,7 @@ data class Detection(
     val program: String = "",
     /** mboxo / mboxrd / mboxcl / mboxcl2, ANSI / Unicode, … */
     val variant: String = "",
-    /** False when QuillPost recognises the format but cannot read it (the note says why). */
+    /** False when Anne's Post recognises the format but cannot read it (the note says why). */
     val supported: Boolean = true,
     val note: String = "",
     val mime: String = ""

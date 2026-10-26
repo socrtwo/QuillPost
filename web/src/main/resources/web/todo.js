@@ -1,4 +1,4 @@
-/* QuillPost — To Do: My Day, Important, Planned, Tasks, Flagged email and custom lists, with
+/* Anne's Post — To Do: My Day, Important, Planned, Tasks, Flagged email and custom lists, with
  * steps, due dates, reminders, repeats, categories and notes. Loaded before app.js.
  */
 "use strict";

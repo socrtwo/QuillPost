@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// QuillPost for iPhone and iPad.
+/// Anne's Post for iPhone and iPad.
 ///
 /// Jakarta Mail (the IMAP/SMTP engine) is JVM-only, so the iOS app cannot run the backend
-/// itself. Instead it shows the very same Outlook-style web client — served by a QuillPost
+/// itself. Instead it shows the very same Outlook-style web client — served by an Anne's Post
 /// server you run at home, on a Raspberry Pi, a NAS or a VPS (`quillpost-web` zip or the
 /// desktop app) — full-screen in a WebKit view, with printing, attachment saving, external
 /// links and mailto: handled natively. Every feature of the web/desktop version is present.
@@ -15,7 +15,7 @@ struct QuillPostApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(state)
-                // "Open in QuillPost" / Files app: mail files are handed to the page, which uploads them.
+                // "Open in Anne's Post" / Files app: mail files are handed to the page, which uploads them.
                 .onOpenURL { url in if url.isFileURL { state.pendingFiles.append(url) } }
         }
     }
@@ -23,7 +23,7 @@ struct QuillPostApp: App {
 
 @MainActor
 final class AppState: ObservableObject {
-    /// Base URL of the QuillPost server, e.g. `http://192.168.1.20:8080`. Persisted across launches.
+    /// Base URL of the Anne's Post server, e.g. `http://192.168.1.20:8080`. Persisted across launches.
     @Published var serverURL: String {
         didSet { UserDefaults.standard.set(serverURL, forKey: "serverURL") }
     }
@@ -35,7 +35,7 @@ final class AppState: ObservableObject {
     @Published var reloadToken: Int = 0
     /// True once the web client has rendered; the in-app splash fades out then.
     @Published var webReady: Bool = false
-    /// Mail files opened with QuillPost (.eml, .msg, .mbox, .pst…), waiting for the page to take them.
+    /// Mail files opened with Anne's Post (.eml, .msg, .mbox, .pst…), waiting for the page to take them.
     @Published var pendingFiles: [URL] = []
 
     init() {

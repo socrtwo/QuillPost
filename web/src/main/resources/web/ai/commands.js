@@ -1,4 +1,4 @@
-/* QuillPost AI — the AI tab: email commands, their ribbon buttons, the compose window's AI bar,
+/* Anne's Post AI — the AI tab: email commands, their ribbon buttons, the compose window's AI bar,
  * the reading pane's AI menu, the pane chat ("Ask about this mailbox"), the Prompt library and
  * start-up. Loaded last, after app.js and the other ai/*.js files.
  *
@@ -106,7 +106,7 @@
     askEach.checked = !!s.confirmEachSend;
     const body = el("div", {},
       el("p", { text: first
-        ? `AI commands send the text they need from this device to ${p.name} (${qbAi.hostOf(info.endpoint)}). QuillPost keeps no copy and has no AI server of its own. ${p.name}'s terms and privacy policy apply${p.free === "free" ? ", and free tiers may use what you send to improve their models" : ""}. For confidential mail, use the on-device model or a local server.`
+        ? `AI commands send the text they need from this device to ${p.name} (${qbAi.hostOf(info.endpoint)}). Anne\'s Post keeps no copy and has no AI server of its own. ${p.name}'s terms and privacy policy apply${p.free === "free" ? ", and free tiers may use what you send to improve their models" : ""}. For confidential mail, use the on-device model or a local server.`
         : `This request goes to ${p.name}. Check what will be sent:` }),
       details,
       el("label", { class: "check" }, askEach, el("span", { text: "Show what will be sent and ask before every request" })));
@@ -133,8 +133,8 @@
     const mode = ens.plan.mode === "consensus" ? "The AIs deliberate until they agree (Quaker consensus): in the discussion each one also receives the others' answers." : "One AI combines the answers: the master also receives the others' answers.";
     const body = el("div", {},
       el("p", { text: `Several AIs are set up for each request (AI settings ▸ Use several AIs). The text this command needs goes from this device to each of these services:` }),
-      el("ul", { class: "ai-svc-list" }, ...ens.services.map((x) => el("li", {}, el("b", { text: x.providerName }), ` · ${x.model} · `, x.route === "device" ? "stays on this device" : qbAi.hostOf(x.endpoint) + (x.route === "proxy" ? " (relayed by the QuillPost backend)" : ""), x.role ? el("span", { class: "muted", text: ` — ${x.role}` }) : null))),
-      el("p", { class: "small", text: `${mode} QuillPost keeps no copy and has no AI server of its own. Each service's terms and privacy policy apply${cloud.some((x) => x.def.free === "free") ? ", and free tiers may use what you send to improve their models" : ""}. For confidential mail, use the on-device model or a local server.` }),
+      el("ul", { class: "ai-svc-list" }, ...ens.services.map((x) => el("li", {}, el("b", { text: x.providerName }), ` · ${x.model} · `, x.route === "device" ? "stays on this device" : qbAi.hostOf(x.endpoint) + (x.route === "proxy" ? " (relayed by the Anne\'s Post backend)" : ""), x.role ? el("span", { class: "muted", text: ` — ${x.role}` }) : null))),
+      el("p", { class: "small", text: `${mode} Anne\'s Post keeps no copy and has no AI server of its own. Each service's terms and privacy policy apply${cloud.some((x) => x.def.free === "free") ? ", and free tiers may use what you send to improve their models" : ""}. For confidential mail, use the on-device model or a local server.` }),
       details,
       el("label", { class: "check" }, askEach, el("span", { text: "Show what will be sent and ask before every request" })));
     const ok = await qbAi.dialog({ title: "Send to several AI services?", body, wide: true, buttons: [{ label: "Cancel", value: false }, { label: "Send", value: true, primary: true }] });
@@ -742,7 +742,7 @@
     const cloud = ens ? ens.services.filter((x) => !P.isOnDevice(x.def)).map((x) => x.providerName) : p && !P.isOnDevice(p) ? [p.name] : [];
     if (!cloud.length || disclosed.has(state.folder)) return true;
     const ok = await qbAi.dialog({ title: "Send this folder's message list?", wide: true, body: el("div", {},
-      el("p", { text: `QuillPost will send ${plural(mb.count, "line")} describing messages in "${folderName()}" — date, sender, subject and flags${S.settings().mailboxPreviews ? ", and the first words of each message" : ""} — to ${cloud.join(", ")}. Message bodies are not sent. Change this in AI settings.` }),
+      el("p", { text: `Anne\'s Post will send ${plural(mb.count, "line")} describing messages in "${folderName()}" — date, sender, subject and flags${S.settings().mailboxPreviews ? ", and the first words of each message" : ""} — to ${cloud.join(", ")}. Message bodies are not sent. Change this in AI settings.` }),
       el("details", { class: "ai-sent" }, el("summary", { text: "Show the exact text" }), el("pre", { text: mb.text }))),
     buttons: [{ label: "Cancel", value: false }, { label: "Send", value: true, primary: true }] });
     if (ok) disclosed.add(state.folder);

@@ -1,4 +1,4 @@
-/* QuillPost — the mail command set, part 2: commands from other mail programs (Eudora, Pine/Alpine,
+/* Anne's Post — the mail command set, part 2: commands from other mail programs (Eudora, Pine/Alpine,
  * mutt, Pegasus Mail, Lotus Notes, Netscape/Thunderbird, Outlook Express, Gmail, Apple Mail, Spark,
  * Superhuman, Hey, Claris Emailer, Opera M2) and new commands original to this client, plus the
  * hooks that give them their behaviour in the list and reading pane (tags, screener, split inbox,
@@ -7,7 +7,7 @@
  */
 "use strict";
 /** Origin label for commands that no earlier mail program had. */
-const ORIGINAL = "QuillPost";
+const ORIGINAL = "Anne\'s Post";
 
 /** Thunderbird's five standard tags (IMAP keywords $label1…$label5); custom tags are kept per account. */
 const STANDARD_TAGS = [

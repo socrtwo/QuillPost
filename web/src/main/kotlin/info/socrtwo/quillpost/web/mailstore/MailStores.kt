@@ -37,7 +37,7 @@ object MailStores {
             }
             else -> {
                 val f = fileFolders(path, name, Ctx(path.parentFile ?: path, warnings, closers, cancelled))
-                    ?: throw MailStoreException("${det.label} holds no mail QuillPost can read.")
+                    ?: throw MailStoreException("${det.label} holds no mail Anne's Post can read.")
                 store(det, name, f, warnings) { closers.forEach { runCatching { it() } } }
             }
         }

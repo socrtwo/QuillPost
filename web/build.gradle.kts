@@ -44,11 +44,11 @@ tasks.test {
 }
 
 // `./gradlew demo` starts a throw-away IMAP/SMTP server seeded with sample mail (including
-// spoofed and blacklisted messages) and then QuillPost itself, so the UI can be tried without
+// spoofed and blacklisted messages) and then Anne's Post itself, so the UI can be tried without
 // touching a real mailbox. Sign in with demo@quillpost.test / demo.
 tasks.register<JavaExec>("demo") {
     group = "application"
-    description = "Run QuillPost against an in-memory demo mailbox (demo@quillpost.test / demo)."
+    description = "Run Anne's Post against an in-memory demo mailbox (demo@quillpost.test / demo)."
     classpath = sourceSets["test"].runtimeClasspath
     mainClass.set("info.socrtwo.quillpost.web.demo.DemoServerKt")
 }

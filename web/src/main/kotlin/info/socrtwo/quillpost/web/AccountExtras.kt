@@ -510,7 +510,7 @@ fun AccountContext.exportIcs(calendarId: String?): String {
     val data = pim.data()
     val cals = if (calendarId.isNullOrBlank()) data.calendars else data.calendars.filter { it.id == calendarId }
     val ids = cals.map { it.id }.toSet()
-    return ICal.calendar(data.events.filter { it.calendarId in ids }, ZoneId.systemDefault(), name = cals.singleOrNull()?.name ?: "QuillPost")
+    return ICal.calendar(data.events.filter { it.calendarId in ids }, ZoneId.systemDefault(), name = cals.singleOrNull()?.name ?: "Anne's Post")
 }
 
 fun AccountContext.importContacts(text: String, format: String): ImportResult {

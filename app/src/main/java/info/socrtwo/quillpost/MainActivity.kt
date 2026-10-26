@@ -70,7 +70,7 @@ class MainActivity : ComponentActivity() {
     private var loadedUrl: String? = null
     /** False until the web UI has rendered once (or start-up failed): keeps the launch splash on screen. */
     private var uiReady = false
-    /** The WebView shows the local QuillPost page (the AI key bridge answers only then). */
+    /** The WebView shows the local Anne's Post page (the AI key bridge answers only then). */
     @Volatile private var pageIsLocal = false
 
     private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
         window.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.quillpost_background)))
         configureWebView()
         pendingMailto = mailtoFrom(intent)
-        // "Open with" / "Share to" QuillPost (FileHandoff.kt); not again when the Activity is recreated.
+        // "Open with" / "Share to" Anne's Post (FileHandoff.kt); not again when the Activity is recreated.
         if (savedInstanceState == null) FileHandoff.receive(this, intent) { deliverFiles() }
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -129,7 +129,7 @@ class MainActivity : ComponentActivity() {
         // The process may have been kept alive while the server died (or vice versa); make
         // sure a backend is running and the page points at it.
         if (loadedUrl != null && LocalServer.url == null) startBackend()
-        QuillPenAndroid.forget() // QuillPen may have been installed or removed meanwhile.
+        QuillPenAndroid.forget() // Anne's Pen may have been installed or removed meanwhile.
     }
 
     override fun onDestroy() {
@@ -237,13 +237,13 @@ class MainActivity : ComponentActivity() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val url = request.url
                 if (isLocal(url)) return false
-                // The embedded QuillPen editor (compose iframe) stays inside the app.
+                // The embedded Anne's Pen editor (compose iframe) stays inside the app.
                 if (QuillPenAndroid.isEmbedUrl(url) && !request.isForMainFrame) return false
                 if (url.scheme == "mailto") { deliverMailto(url.toString()); return true }
                 openExternal(url.toString())
                 return true
             }
-            // QuillPen embedded editor: https://quillpen.embed/<path> is answered from QuillPen's ContentProvider.
+            // Anne's Pen embedded editor: https://quillpen.embed/<path> is answered from Anne's Pen's ContentProvider.
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
                 QuillPenAndroid.intercept(this@MainActivity, request)
             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
@@ -346,7 +346,7 @@ class MainActivity : ComponentActivity() {
                     contentResolver.update(u, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
                     u
                 } else {
-                    val dir = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "QuillPost").apply { mkdirs() }
+                    val dir = File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "Anne's Post").apply { mkdirs() }
                     val f = File(dir, safeName); f.writeBytes(bytes)
                     FileProvider.getUriForFile(this, "$packageName.fileprovider", f)
                 }
@@ -371,13 +371,13 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface fun print(jobName: String?) {
             runOnUiThread {
                 val pm = getSystemService(PRINT_SERVICE) as PrintManager
-                val name = (jobName ?: "QuillPost message").take(80)
+                val name = (jobName ?: "Anne's Post message").take(80)
                 pm.print(name, webView.createPrintDocumentAdapter(name), PrintAttributes.Builder().build())
             }
         }
-        /** True when QuillPen is installed and its embed provider answers (compose "QuillPen" button). */
+        /** True when Anne's Pen is installed and its embed provider answers (compose "Anne's Pen" button). */
         @JavascriptInterface fun quillPenAvailable(): Boolean = QuillPenAndroid.isAvailable(this@MainActivity)
-        /** "Open in QuillPen / QuillGrid / QuillStage" for an opened document (fileopen.js). */
+        /** "Open in Anne's Pen / Anne's Grid / Anne's Stage" for an opened document (fileopen.js). */
         @JavascriptInterface fun openInApp(url: String, fileName: String, mimeType: String, packageName: String) {
             if (pageIsLocal && isLocal(Uri.parse(url))) FileHandoff.openInApp(this@MainActivity, url, fileName, mimeType, packageName)
         }
